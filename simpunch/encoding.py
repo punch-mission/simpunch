@@ -157,8 +157,6 @@ def gen_decode_table(
 
     table = gen_decode_table(frombits, tobits, gain, bias_level, readnoise_level)
 
-    # TODO - FITS output
-
     filename = (
         TABLE_PATH
         + "/decoding_tables/"

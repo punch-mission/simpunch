@@ -1,9 +1,6 @@
 import numpy as np
 from simpunch.encoding import encode, decode
 
-# TODO - Parameterize to go over a few tobits values
-# TODO - Test to make sure encoded / decoded values are... similar. Perhaps a new test function.
-
 
 def test_encoding():
     arr_dim = 2048
