@@ -2,11 +2,11 @@ import numpy as np
 
 
 def generate_noise(
-    data: np.ndarray = np.zeros([2048, 2048]),
+    data: np.ndarray,
     bias_level: float = 100,
     dark_level: float = 55.81,
     gain: float = 4.3,
-    readnoise_level: float = 17,
+    read_noise_level: float = 17,
     bitrate_signal: int = 16,
 ) -> np.ndarray:
     """
@@ -22,7 +22,7 @@ def generate_noise(
         ccd dark level
     gain
         ccd gain
-    readnoise_level
+    read_noise_level
         ccd read noise level
     bitrate_signal
         desired ccd data bit level
@@ -41,7 +41,7 @@ def generate_noise(
     # Think of this as the raw signal input into the camera
     data = np.interp(
         data_signal,
-        (data_signal.min(), data_signal.max()),
+        (np.min(data_signal), np.max(data_signal)),
         (0, 2**bitrate_signal - 1),
     )
     data = data.astype("long")
@@ -60,11 +60,8 @@ def generate_noise(
     noise_dark = np.random.poisson(lam=noise_level, size=data.shape) / gain
 
     # Read noise generation
-    noise_read = np.random.normal(scale=readnoise_level, size=data.shape)
+    noise_read = np.random.normal(scale=read_noise_level, size=data.shape)
     noise_read = noise_read / gain  # Convert back to DN
-
-    # Add these noise terms in quadrature if required
-    # noise_quad = np.sqrt(noise_photon ** 2 + noise_dark ** 2 + noise_read ** 2)
 
     # And then add noise terms directly
     noise_sum = noise_photon + noise_dark + noise_read
