@@ -4,7 +4,6 @@ int_type = np.int32
 
 def decode_top(data, frombits, tobits, ccd_gain, ccd_offset, ccd_fixedsigma):
     table = gen_decode_table(frombits, tobits, ccd_gain, ccd_offset, ccd_fixedsigma)
-    np.save("my_table.npy", table)
     return decode_bytable(data, table)
 
 def encode(source,frombits,tobits):
