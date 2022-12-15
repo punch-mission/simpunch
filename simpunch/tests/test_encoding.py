@@ -1,5 +1,5 @@
 import numpy as np
-from simpunch.encoding import encode, decode
+from simpunch.encoding import encode, decode, decode_top
 
 
 def test_encoding():
@@ -24,9 +24,13 @@ def test_decoding():
 
 def test_encode_decode_circular():
     arr_dim = 2048
+    ccd_gain = 1.0 / 4.3  # DN/electron
+    ccd_offset = 100  # DN
+    ccd_fixedsigma = 17  # DN
+
     original_arr = (np.random.random([arr_dim, arr_dim]) * (2**16)).astype(int)
 
-    encoded_arr = encode(original_arr, frombits=16, tobits=16)
-    decoded_arr = decode(encoded_arr, frombits=16, tobits=16)
+    encoded_arr = encode(original_arr, 16, 10)
+    decoded_arr = decode_top(encoded_arr, frombits=16, tobits=10, ccd_gain=ccd_gain, ccd_offset=ccd_offset, ccd_fixedsigma=ccd_fixedsigma)
 
-    assert np.allclose(original_arr, decoded_arr)
+    assert np.all(np.abs(original_arr - decoded_arr) <= 200)  # np.allclose(original_arr, decoded_arr)
