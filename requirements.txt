@@ -1,1 +1,6 @@
 numpy==1.23.5
+astropy
+pandas
+matplotlib
+regularizepsf
+punchbowl
