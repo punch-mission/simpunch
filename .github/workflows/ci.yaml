@@ -25,6 +25,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
+        eval `ssh-agent -s`
+        ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY }}'
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest pytest-cov hypothesis
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
