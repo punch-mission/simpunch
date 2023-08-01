@@ -3,4 +3,4 @@ astropy
 pandas
 matplotlib
 regularizepsf
-punchbowl
+git@github.com:punch-mission/punchbowl.git
