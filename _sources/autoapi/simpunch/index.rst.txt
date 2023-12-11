@@ -1,0 +1,26 @@
+:py:mod:`simpunch`
+==================
+
+.. py:module:: simpunch
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   tests/index.rst
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   generate-level0/index.rst
+   noise/index.rst
+   stars/index.rst
+
+

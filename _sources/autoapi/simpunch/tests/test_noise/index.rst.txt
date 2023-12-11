@@ -1,0 +1,22 @@
+:py:mod:`simpunch.tests.test_noise`
+===================================
+
+.. py:module:: simpunch.tests.test_noise
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   simpunch.tests.test_noise.test_noise_generation
+
+
+
+.. py:function:: test_noise_generation()
+
+

@@ -1,0 +1,6 @@
+:py:mod:`simpunch.tests.test_stars`
+===================================
+
+.. py:module:: simpunch.tests.test_stars
+
+
