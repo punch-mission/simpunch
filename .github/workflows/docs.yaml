@@ -11,7 +11,7 @@ jobs:
   deploy-docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     # Install dependencies
     - name: Set up Python 3.10
@@ -21,6 +21,9 @@ jobs:
 
     - name: Install dependencies
       run: |
+        eval `ssh-agent -s`
+        ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY }}'
+        python -m pip install --upgrade pip
         pip install -r ./docs/requirements.txt
         pip install -r requirements.txt
 
