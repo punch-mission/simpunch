@@ -10,6 +10,8 @@ PNN - PUNCH Level-3 Polarized NFI Image
 import numpy as np
 import glob
 
+import astropy.units as u
+
 from astropy.wcs import WCS
 from astropy.io import fits
 from astropy.wcs.utils import add_stokes_axis_to_wcs
@@ -18,6 +20,9 @@ from astropy.coordinates import get_sun
 import reproject
 import scipy.ndimage
 
+
+from astropy.coordinates import SkyCoord, EarthLocation
+from sunpy.coordinates import frames, sun
 
 from datetime import datetime, timedelta
 
@@ -78,6 +83,45 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
     return data
 
 
+def update_spacecraft_location(input_data, time_obs):
+    input_data.meta['GEOD_LAT'] = 0.
+    input_data.meta['GEOD_LON'] = 0.
+    input_data.meta['GEOD_ALT'] = 0.
+
+    earth_center = EarthLocation(lat=0*u.deg, lon=0*u.deg, height=0*u.km)
+
+    coord = SkyCoord(0*u.deg, 0*u.deg, frame=frames.HeliographicStonyhurst, obstime=time_obs, location=earth_center, observer='earth')
+
+    input_data.meta['HGLN_OBS'] = coord.heliographic_stonyhurst.lon.value
+    input_data.meta['HGLT_OBS'] = coord.heliographic_stonyhurst.lat.value
+
+    input_data.meta['CRLN_OBS'] = coord.heliographic_carrington.lon.value
+    input_data.meta['CRLT_OBS'] = coord.heliographic_carrington.lat.value
+
+    input_data.meta['DSUN_OBS'] = sun.earth_distance(time_obs).to(u.m).value
+
+    input_data.meta['HEEX_OBS'] = coord.heliocentricearthecliptic.cartesian.x.to(u.m).value
+    input_data.meta['HEEY_OBS'] = coord.heliocentricearthecliptic.cartesian.y.to(u.m).value
+    input_data.meta['HEEZ_OBS'] = coord.heliocentricearthecliptic.cartesian.z.to(u.m).value
+
+    # TODO - Confirm the frames below
+    # S/C Heliocentric Inertial
+    input_data.meta['HCIX_OBS'] = coord.heliocentricinertial.cartesian.x.to(u.m).value
+    input_data.meta['HCIY_OBS'] = coord.heliocentricinertial.cartesian.y.to(u.m).value
+    input_data.meta['HCIZ_OBS'] = coord.heliocentricinertial.cartesian.z.to(u.m).value
+
+    # S/C Heliocentric Earth Equatorial
+    input_data.meta['HEQX_OBS'] = (coord.heliographic_stonyhurst.cartesian.x.value * u.AU).to(u.m).value
+    input_data.meta['HEQY_OBS'] = (coord.heliographic_stonyhurst.cartesian.y.value * u.AU).to(u.m).value
+    input_data.meta['HEQZ_OBS'] = (coord.heliographic_stonyhurst.cartesian.z.value * u.AU).to(u.m).value
+
+    # TODO - Confirm this P-angle calculation
+    input_data.meta['SOLAR_EP'] = sun.P(time_obs).value
+    input_data.meta['CAR_ROT'] = float(sun.carrington_rotation_number(time_obs))
+
+    return input_data
+
+
 def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage):
     """Generate PTM - PUNCH Level-3 Polarized Mosaic"""
 
@@ -107,8 +151,10 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     pdata.meta['DATE-AVG'] = tstring_avg
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
+    pdata = update_spacecraft_location(pdata, time_obs)
+
     # Write out
-    pdata.write(path_output + pdata.filename_base + '.fits')
+    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -168,8 +214,10 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata.meta['DATE-AVG'] = tstring_avg
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
+    pdata = update_spacecraft_location(pdata, time_obs)
+
     # Write out
-    outdata.write(path_output + pdata.filename_base + '.fits')
+    outdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -202,8 +250,10 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata.meta['DATE-AVG'] = tstring_avg
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
+    pdata = update_spacecraft_location(pdata, time_obs)
+
     # Write out
-    pdata.write(path_output + pdata.filename_base + '.fits')
+    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -264,8 +314,10 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata.meta['DATE-AVG'] = tstring_avg
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
+    pdata = update_spacecraft_location(pdata, time_obs)
+
     # Write out
-    outdata.write(path_output + pdata.filename_base + '.fits')
+    outdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_all(datadir='/Users/jhughes/Desktop/data/GAMERA Mosaic data TB and PB jan 2024 /'):
