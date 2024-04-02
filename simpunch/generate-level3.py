@@ -23,6 +23,7 @@ import scipy.ndimage
 
 from astropy.coordinates import SkyCoord, EarthLocation
 from sunpy.coordinates import frames, sun
+from sunpy.coordinates.ephemeris import get_earth
 
 from datetime import datetime, timedelta
 
@@ -59,14 +60,14 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
     """Assemble a punchdata object with correct metadata"""
 
     with fits.open(input_tb) as hdul:
-        data_tb = hdul[1].data
-        data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
+        data_tb = hdul[0].data
+        # data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
         data_tb[np.where(data_tb == -9999.0)] = 0
         if mask is not None:
             data_tb = data_tb * mask
     with fits.open(input_pb) as hdul:
-        data_pb = hdul[1].data
-        data_pb = scipy.ndimage.zoom(data_pb, 2, order=0)
+        data_pb = hdul[0].data
+        # data_pb = scipy.ndimage.zoom(data_pb, 2, order=0)
         data_pb[np.where(data_pb == -9999.0)] = 0
         if mask is not None:
             data_pb = data_pb * mask
@@ -88,34 +89,40 @@ def update_spacecraft_location(input_data, time_obs):
     input_data.meta['GEOD_LON'] = 0.
     input_data.meta['GEOD_ALT'] = 0.
 
-    earth_center = EarthLocation(lat=0*u.deg, lon=0*u.deg, height=0*u.km)
+    coord = get_earth(time_obs)
+    coord.observer = 'earth'
 
-    coord = SkyCoord(0*u.deg, 0*u.deg, frame=frames.HeliographicStonyhurst, obstime=time_obs, location=earth_center, observer='earth')
-
+    # S/C Heliographic Stonyhurst
     input_data.meta['HGLN_OBS'] = coord.heliographic_stonyhurst.lon.value
     input_data.meta['HGLT_OBS'] = coord.heliographic_stonyhurst.lat.value
 
+    # S/C Heliographic Carrington
     input_data.meta['CRLN_OBS'] = coord.heliographic_carrington.lon.value
     input_data.meta['CRLT_OBS'] = coord.heliographic_carrington.lat.value
 
     input_data.meta['DSUN_OBS'] = sun.earth_distance(time_obs).to(u.m).value
 
+    # S/C Heliocentric Earth Ecliptic
     input_data.meta['HEEX_OBS'] = coord.heliocentricearthecliptic.cartesian.x.to(u.m).value
     input_data.meta['HEEY_OBS'] = coord.heliocentricearthecliptic.cartesian.y.to(u.m).value
     input_data.meta['HEEZ_OBS'] = coord.heliocentricearthecliptic.cartesian.z.to(u.m).value
+    # print('heliocentricearthecliptic - HEEX_OBS value distance')
+    # print((np.sqrt(input_data.meta['HEEX_OBS'].value**2 + input_data.meta['HEEY_OBS'].value**2 + input_data.meta['HEEZ_OBS'].value**2)*u.m).to(u.au))
 
-    # TODO - Confirm the frames below
     # S/C Heliocentric Inertial
     input_data.meta['HCIX_OBS'] = coord.heliocentricinertial.cartesian.x.to(u.m).value
     input_data.meta['HCIY_OBS'] = coord.heliocentricinertial.cartesian.y.to(u.m).value
     input_data.meta['HCIZ_OBS'] = coord.heliocentricinertial.cartesian.z.to(u.m).value
+    # print('Heliocentric Inertial - HCIX_OBS value distance')
+    # print((np.sqrt(input_data.meta['HCIX_OBS'].value**2 + input_data.meta['HCIY_OBS'].value**2 + input_data.meta['HCIZ_OBS'].value**2)*u.m).to(u.au))
 
     # S/C Heliocentric Earth Equatorial
     input_data.meta['HEQX_OBS'] = (coord.heliographic_stonyhurst.cartesian.x.value * u.AU).to(u.m).value
     input_data.meta['HEQY_OBS'] = (coord.heliographic_stonyhurst.cartesian.y.value * u.AU).to(u.m).value
     input_data.meta['HEQZ_OBS'] = (coord.heliographic_stonyhurst.cartesian.z.value * u.AU).to(u.m).value
+    # print('Heliocentric Earth Equatorial - HEQX_OB value distance')
+    # print((np.sqrt(input_data.meta['HEQX_OBS'].value**2 + input_data.meta['HEQY_OBS'].value**2 + input_data.meta['HEQZ_OBS'].value**2)*u.m).to(u.au))
 
-    # TODO - Confirm this P-angle calculation
     input_data.meta['SOLAR_EP'] = sun.P(time_obs).value
     input_data.meta['CAR_ROT'] = float(sun.carrington_rotation_number(time_obs))
 
@@ -320,19 +327,19 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
-def generate_l3_all(datadir='/Users/jhughes/Desktop/data/GAMERA Mosaic data TB and PB jan 2024 /'):
+def generate_l3_all(datadir='/Users/clowder/data/punch/'):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
     outdir = datadir + 'synthetic_L3/'
 
     # Parse list of model data
-    print(datadir + 'synthetic_cme/*_TB*.fits')
-    files_tb = glob.glob(datadir + 'synthetic_cme/*_TB*.fits')
-    files_pb = glob.glob(datadir + 'synthetic_cme/*_PB*.fits')
+    files_tb = glob.glob(datadir + 'synthetic_cme/TB*.fits')
+    files_pb = glob.glob(datadir + 'synthetic_cme/PB*.fits')
     files_tb.sort()
     files_pb.sort()
-    print(len(files_tb), len(files_pb))
+
+    files_tb = files_tb[0:3]
 
     # Stack and repeat these data for testing - about 25 times to get around 5 days of data
     files_tb = np.tile(files_tb, 25)
