@@ -64,6 +64,4 @@ def generate_noise(
     noise_read = noise_read / gain  # Convert back to DN
 
     # And then add noise terms directly
-    noise_sum = noise_photon + noise_dark + noise_read
-
-    return noise_sum
+    return noise_photon + noise_dark + noise_read
