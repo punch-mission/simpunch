@@ -1,0 +1,84 @@
+:py:mod:`simpunch.generate-level3`
+==================================
+
+.. py:module:: simpunch.generate-level3
+
+.. autoapi-nested-parse::
+
+   Generates synthetic level 3 data
+   PAM - PUNCH Level-3 Polarized Low Noise Mosaic
+   PAN - PUNCH Level-3 Polarized Low Noise NFI Image
+
+   PTM - PUNCH Level-3 Polarized Mosaic
+   PNN - PUNCH Level-3 Polarized NFI Image
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   simpunch.generate-level3.get_sun_ra_dec
+   simpunch.generate-level3.define_mask
+   simpunch.generate-level3.define_trefoil_mask
+   simpunch.generate-level3.assemble_punchdata
+   simpunch.generate-level3.update_spacecraft_location
+   simpunch.generate-level3.generate_l3_ptm
+   simpunch.generate-level3.generate_l3_pnn
+   simpunch.generate-level3.generate_l3_pam
+   simpunch.generate-level3.generate_l3_pan
+   simpunch.generate-level3.generate_l3_all
+
+
+
+.. py:function:: get_sun_ra_dec(dt: datetime.datetime)
+
+
+.. py:function:: define_mask(shape=(4096, 4096), distance_value=0.68)
+
+   Define a mask to describe the FOV for low-noise PUNCH data products
+
+
+.. py:function:: define_trefoil_mask(rotation_stage=0)
+
+   Define a mask to describe the FOV for trefoil mosaic PUNCH data products
+
+
+.. py:function:: assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None)
+
+   Assemble a punchdata object with correct metadata
+
+
+.. py:function:: update_spacecraft_location(input_data, time_obs)
+
+
+.. py:function:: generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage)
+
+   Generate PTM - PUNCH Level-3 Polarized Mosaic
+
+
+.. py:function:: generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta)
+
+   Generate PNN - PUNCH Level-3 Polarized NFI Image
+
+
+.. py:function:: generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta)
+
+   Generate PAM - PUNCH Level-3 Polarized Low Noise Mosaic
+
+
+.. py:function:: generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta)
+
+   Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image
+
+
+.. py:function:: generate_l3_all(datadir='/Users/clowder/data/punch/')
+
+   Generate all level 3 synthetic data
+
+
