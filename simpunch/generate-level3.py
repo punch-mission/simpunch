@@ -106,22 +106,17 @@ def update_spacecraft_location(input_data, time_obs):
     input_data.meta['HEEX_OBS'] = coord.heliocentricearthecliptic.cartesian.x.to(u.m).value
     input_data.meta['HEEY_OBS'] = coord.heliocentricearthecliptic.cartesian.y.to(u.m).value
     input_data.meta['HEEZ_OBS'] = coord.heliocentricearthecliptic.cartesian.z.to(u.m).value
-    # print('heliocentricearthecliptic - HEEX_OBS value distance')
-    # print((np.sqrt(input_data.meta['HEEX_OBS'].value**2 + input_data.meta['HEEY_OBS'].value**2 + input_data.meta['HEEZ_OBS'].value**2)*u.m).to(u.au))
 
     # S/C Heliocentric Inertial
     input_data.meta['HCIX_OBS'] = coord.heliocentricinertial.cartesian.x.to(u.m).value
     input_data.meta['HCIY_OBS'] = coord.heliocentricinertial.cartesian.y.to(u.m).value
     input_data.meta['HCIZ_OBS'] = coord.heliocentricinertial.cartesian.z.to(u.m).value
-    # print('Heliocentric Inertial - HCIX_OBS value distance')
-    # print((np.sqrt(input_data.meta['HCIX_OBS'].value**2 + input_data.meta['HCIY_OBS'].value**2 + input_data.meta['HCIZ_OBS'].value**2)*u.m).to(u.au))
 
     # S/C Heliocentric Earth Equatorial
     input_data.meta['HEQX_OBS'] = (coord.heliographic_stonyhurst.cartesian.x.value * u.AU).to(u.m).value
     input_data.meta['HEQY_OBS'] = (coord.heliographic_stonyhurst.cartesian.y.value * u.AU).to(u.m).value
     input_data.meta['HEQZ_OBS'] = (coord.heliographic_stonyhurst.cartesian.z.value * u.AU).to(u.m).value
-    # print('Heliocentric Earth Equatorial - HEQX_OB value distance')
-    # print((np.sqrt(input_data.meta['HEQX_OBS'].value**2 + input_data.meta['HEQY_OBS'].value**2 + input_data.meta['HEQZ_OBS'].value**2)*u.m).to(u.au))
+
 
     input_data.meta['SOLAR_EP'] = sun.P(time_obs).value
     input_data.meta['CAR_ROT'] = float(sun.carrington_rotation_number(time_obs))
@@ -359,12 +354,10 @@ def generate_l3_all(datadir='/Users/clowder/data/punch/'):
     # Run individual generators
     for i, (file_tb, file_pb, time_obs) in enumerate(zip(files_tb, files_pb, times_obs)):
         rotation_stage = i % 8
-        # print(str(rotation_stage) + ' - PTM / PNN - ' + time_obs.strftime('%Y-%m-%dT%H:%M:%S.000'))
         generate_l3_ptm(file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage)
         generate_l3_pnn(file_tb, file_pb, outdir, time_obs, time_delta)
 
         if rotation_stage == 0:
-            # print(str(rotation_stage) + ' - PAM / PAN - ' + time_obs.strftime('%Y-%m-%dT%H:%M:%S.000'))
             generate_l3_pam(file_tb, file_pb, outdir, time_obs, time_delta_ln)
             generate_l3_pan(file_tb, file_pb, outdir, time_obs, time_delta_ln)
 
