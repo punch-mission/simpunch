@@ -7,27 +7,21 @@ PTM - PUNCH Level-3 Polarized Mosaic
 PNN - PUNCH Level-3 Polarized NFI Image
 """
 
-import numpy as np
 import glob
-
-import astropy.units as u
-
-from astropy.wcs import WCS
-from astropy.io import fits
-from astropy.wcs.utils import add_stokes_axis_to_wcs
-from astropy.time import Time
-from astropy.coordinates import get_sun
-import reproject
-import scipy.ndimage
-
-
-from astropy.coordinates import SkyCoord, EarthLocation
-from sunpy.coordinates import frames, sun
-from sunpy.coordinates.ephemeris import get_earth
-
 from datetime import datetime, timedelta
 
-from punchbowl.data import PUNCHData, NormalizedMetadata
+import astropy.units as u
+import click
+import numpy as np
+import reproject
+from astropy.coordinates import get_sun
+from astropy.io import fits
+from astropy.time import Time
+from astropy.wcs import WCS
+from astropy.wcs.utils import add_stokes_axis_to_wcs
+from punchbowl.data import NormalizedMetadata, PUNCHData
+from sunpy.coordinates import sun
+from sunpy.coordinates.ephemeris import get_earth
 
 
 def get_sun_ra_dec(dt: datetime):
@@ -38,22 +32,16 @@ def get_sun_ra_dec(dt: datetime):
 def define_mask(shape=(4096, 4096), distance_value=0.68):
     """Define a mask to describe the FOV for low-noise PUNCH data products"""
     center = (int(shape[0] / 2), int(shape[1] / 2))
-    radius = min(center[0], center[1], shape[0] - center[0], shape[1] - center[1])
 
     Y, X = np.ogrid[:shape[0], :shape[1]]
     dist_arr = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
 
-    mask = (dist_arr / dist_arr.max()) < distance_value
-
-    return mask
-
+    return (dist_arr / dist_arr.max()) < distance_value
 
 def define_trefoil_mask(rotation_stage=0):
     """Define a mask to describe the FOV for trefoil mosaic PUNCH data products"""
 
-    trefoil_mask = np.load('data/trefoil_mask.npz')['trefoil_mask'][rotation_stage,:,:]
-
-    return trefoil_mask
+    return np.load('data/trefoil_mask.npz')['trefoil_mask'][rotation_stage,:,:]
 
 
 def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None):
@@ -79,9 +67,7 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
     uncert = (np.sqrt(datacube) / np.sqrt(datacube).max() * 255).astype('uint8')
 
     meta = NormalizedMetadata.load_template(product_code, product_level)
-    data = PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncert)
-
-    return data
+    return PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncert)
 
 
 def update_spacecraft_location(input_data, time_obs):
@@ -322,7 +308,9 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
-def generate_l3_all(datadir='/Users/clowder/data/punch/'):
+@click.command()
+@click.argument('datadir', type=click.Path(exists=True))
+def generate_l3_all(datadir):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
@@ -360,7 +348,3 @@ def generate_l3_all(datadir='/Users/clowder/data/punch/'):
         if rotation_stage == 0:
             generate_l3_pam(file_tb, file_pb, outdir, time_obs, time_delta_ln)
             generate_l3_pan(file_tb, file_pb, outdir, time_obs, time_delta_ln)
-
-
-if __name__ == "__main__":
-    generate_l3_all()
