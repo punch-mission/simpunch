@@ -14,7 +14,8 @@ dependencies = [
     "regularizepsf",
     "click",
     "punchbowl @ git+ssh://git@github.com/punch-mission/punchbowl",
-    "toml"
+    "toml",
+    "scipy"
 ]
 requires-python = ">=3.9"
 authors = [

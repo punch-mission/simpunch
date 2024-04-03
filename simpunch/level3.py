@@ -6,14 +6,15 @@ PAN - PUNCH Level-3 Polarized Low Noise NFI Image
 PTM - PUNCH Level-3 Polarized Mosaic
 PNN - PUNCH Level-3 Polarized NFI Image
 """
-
 import glob
+import os
 from datetime import datetime, timedelta
 
 import astropy.units as u
 import click
 import numpy as np
 import reproject
+import scipy.ndimage
 from astropy.coordinates import get_sun
 from astropy.io import fits
 from astropy.time import Time
@@ -38,34 +39,34 @@ def define_mask(shape=(4096, 4096), distance_value=0.68):
 
     return (dist_arr / dist_arr.max()) < distance_value
 
+
 def define_trefoil_mask(rotation_stage=0):
     """Define a mask to describe the FOV for trefoil mosaic PUNCH data products"""
-
-    return np.load('data/trefoil_mask.npz')['trefoil_mask'][rotation_stage,:,:]
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    return np.load(os.path.join(dir_path, 'data/trefoil_mask.npz'))['trefoil_mask'][rotation_stage,:,:]
 
 
 def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None):
     """Assemble a punchdata object with correct metadata"""
 
     with fits.open(input_tb) as hdul:
-        data_tb = hdul[0].data
-        # data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
+        data_tb = hdul[1].data
+        if data_tb.shape == (2048, 2048):
+            data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
         data_tb[np.where(data_tb == -9999.0)] = 0
         if mask is not None:
             data_tb = data_tb * mask
+
     with fits.open(input_pb) as hdul:
-        data_pb = hdul[0].data
-        # data_pb = scipy.ndimage.zoom(data_pb, 2, order=0)
+        data_pb = hdul[1].data
+        if data_pb.shape == (2048, 2048):
+            data_pb = scipy.ndimage.zoom(data_pb, 2, order=0)
         data_pb[np.where(data_pb == -9999.0)] = 0
         if mask is not None:
             data_pb = data_pb * mask
 
     datacube = np.stack([data_tb, data_pb]).astype('float32')
-
-    # TODO - Data / uncertainty scaling?
-
-    uncert = (np.sqrt(datacube) / np.sqrt(datacube).max() * 255).astype('uint8')
-
+    uncert = np.clip(np.sqrt(np.abs(datacube)) / np.abs(datacube), 0, 1)
     meta = NormalizedMetadata.load_template(product_code, product_level)
     return PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncert)
 
@@ -178,7 +179,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
                                                                  roundtrip_coords=False, return_footprint=False,
                                                                  kernel='Gaussian', boundary_mode='ignore')
 
-    uncert = (np.sqrt(reprojected_data) / np.sqrt(reprojected_data).max() * 255).astype('uint8')
+    uncert = np.clip(np.sqrt(np.abs(reprojected_data)) / np.abs(reprojected_data), 0, 1)
 
     meta = NormalizedMetadata.load_template('PAN', '3')
     tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
@@ -277,7 +278,8 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
                                                                  roundtrip_coords=False, return_footprint=False,
                                                                  kernel='Gaussian', boundary_mode='ignore')
 
-    uncert = (np.sqrt(reprojected_data) / np.sqrt(reprojected_data).max() * 255).astype('uint8')
+    uncert = np.clip(np.sqrt(np.abs(reprojected_data)) / np.abs(reprojected_data), 0, 1)
+
 
     meta = NormalizedMetadata.load_template('PAN', '3')
     tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
@@ -314,11 +316,14 @@ def generate_l3_all(datadir):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
-    outdir = datadir + 'synthetic_L3/'
+    print(f"Running from {datadir}")
+    outdir = os.path.join(datadir, 'synthetic_L3/')
+    print(f"Outputting to {outdir}")
 
     # Parse list of model data
-    files_tb = glob.glob(datadir + 'synthetic_cme/TB*.fits')
-    files_pb = glob.glob(datadir + 'synthetic_cme/PB*.fits')
+    files_tb = glob.glob(datadir + '/synthetic_cme/*_TB.fits')
+    files_pb = glob.glob(datadir + '/synthetic_cme/*_PB.fits')
+    print(f"Generating based on {len(files_tb)} TB files and {len(files_pb)} PB files.")
     files_tb.sort()
     files_pb.sort()
 
