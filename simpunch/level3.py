@@ -8,6 +8,7 @@ PNN - PUNCH Level-3 Polarized NFI Image
 """
 import glob
 import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy.units as u
@@ -316,7 +317,8 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
 
 @click.command()
 @click.argument('datadir', type=click.Path(exists=True))
-def generate_l3_all(datadir):
+@click.argument('num_repeats', type=int, default=5)
+def generate_l3_all(datadir, num_repeats):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
@@ -331,11 +333,11 @@ def generate_l3_all(datadir):
     files_tb.sort()
     files_pb.sort()
 
-    files_tb = files_tb[0:3]
+    # files_tb = files_tb[0:3]
 
     # Stack and repeat these data for testing - about 25 times to get around 5 days of data
-    files_tb = np.tile(files_tb, 25)
-    files_pb = np.tile(files_pb, 25)
+    files_tb = np.tile(files_tb, num_repeats)
+    files_pb = np.tile(files_pb, num_repeats)
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -348,12 +350,18 @@ def generate_l3_all(datadir):
     # Generate a corresponding set of observation times for low-noise mosaic / NFI data
     time_delta_ln = timedelta(minutes=32)
 
+    pool = ProcessPoolExecutor()
+    futures = []
     # Run individual generators
     for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
         rotation_stage = i % 8
-        generate_l3_ptm(file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage)
-        generate_l3_pnn(file_tb, file_pb, outdir, time_obs, time_delta)
+        futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage))
+        futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
 
         if rotation_stage == 0:
-            generate_l3_pam(file_tb, file_pb, outdir, time_obs, time_delta_ln)
-            generate_l3_pan(file_tb, file_pb, outdir, time_obs, time_delta_ln)
+            futures.append(pool.submit(generate_l3_pam, file_tb, file_pb, outdir, time_obs, time_delta_ln))
+            futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
+
+    with tqdm(total=len(futures)) as pbar:
+        for _ in as_completed(futures):
+            pbar.update(1)
