@@ -17,12 +17,14 @@ import reproject
 import scipy.ndimage
 from astropy.coordinates import get_sun
 from astropy.io import fits
+from astropy.nddata import StdDevUncertainty
 from astropy.time import Time
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from punchbowl.data import NormalizedMetadata, PUNCHData
 from sunpy.coordinates import sun
 from sunpy.coordinates.ephemeris import get_earth
+from tqdm import tqdm
 
 
 def get_sun_ra_dec(dt: datetime):
@@ -66,7 +68,8 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
             data_pb = data_pb * mask
 
     datacube = np.stack([data_tb, data_pb]).astype('float32')
-    uncert = np.clip(np.sqrt(np.abs(datacube)) / np.abs(datacube), 0, 1)
+    uncert = StdDevUncertainty(np.random.random(datacube.shape))
+    uncert.array[datacube == 0] = 1
     meta = NormalizedMetadata.load_template(product_code, product_level)
     return PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncert)
 
@@ -119,9 +122,9 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
     mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
-    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 0)
+    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
     # Mask data to define the field of view
     mask = define_trefoil_mask(rotation_stage=rotation_stage)
@@ -143,7 +146,7 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     pdata = update_spacecraft_location(pdata, time_obs)
 
     # Write out
-    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
 def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -154,7 +157,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
     mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
 
     # Define the NFI WCS
@@ -162,7 +165,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     nfi1_wcs = WCS(naxis=2)
     nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
     nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    nfi1_wcs.wcs.cdelt = 0.01, 0.01
+    nfi1_wcs.wcs.cdelt = -0.01, 0.01
     nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
 
     # Mask data to define the field of view
@@ -179,7 +182,8 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
                                                                  roundtrip_coords=False, return_footprint=False,
                                                                  kernel='Gaussian', boundary_mode='ignore')
 
-    uncert = np.clip(np.sqrt(np.abs(reprojected_data)) / np.abs(reprojected_data), 0, 1)
+    uncert = StdDevUncertainty(np.random.random(reprojected_data.shape))
+    uncert.array[reprojected_data == 0] = 1
 
     meta = NormalizedMetadata.load_template('PAN', '3')
     tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
@@ -189,7 +193,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     meta['DATE-BEG'] = tstring_start
     meta['DATE-END'] = tstring_end
     meta['DATE-AVG'] = tstring_avg
-    nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 0)
+    nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 2)
     outdata = PUNCHData(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
 
     # Update required metadata
@@ -197,16 +201,16 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
     tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-    pdata.meta['DATE-OBS'] = tstring_start
-    pdata.meta['DATE-BEG'] = tstring_start
-    pdata.meta['DATE-END'] = tstring_end
-    pdata.meta['DATE-AVG'] = tstring_avg
-    pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
+    outdata.meta['DATE-OBS'] = tstring_start
+    outdata.meta['DATE-BEG'] = tstring_start
+    outdata.meta['DATE-END'] = tstring_end
+    outdata.meta['DATE-AVG'] = tstring_avg
+    outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-    pdata = update_spacecraft_location(pdata, time_obs)
+    outdata = update_spacecraft_location(outdata, time_obs)
 
     # Write out
-    outdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
 def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -217,9 +221,9 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
     mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
-    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 0)
+    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
 
     # Mask data to define the field of view
@@ -242,7 +246,7 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata = update_spacecraft_location(pdata, time_obs)
 
     # Write out
-    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
 def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -253,7 +257,7 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
     mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
 
     # Define the NFI WCS
@@ -261,7 +265,7 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     nfi1_wcs = WCS(naxis=2)
     nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
     nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    nfi1_wcs.wcs.cdelt = 0.01, 0.01
+    nfi1_wcs.wcs.cdelt = -0.01, 0.01
     nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
 
     # Mask data to define the field of view
@@ -278,8 +282,8 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
                                                                  roundtrip_coords=False, return_footprint=False,
                                                                  kernel='Gaussian', boundary_mode='ignore')
 
-    uncert = np.clip(np.sqrt(np.abs(reprojected_data)) / np.abs(reprojected_data), 0, 1)
-
+    uncert = StdDevUncertainty(np.random.random(reprojected_data.shape))
+    uncert.array[reprojected_data == 0] = 1
 
     meta = NormalizedMetadata.load_template('PAN', '3')
     tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
@@ -290,7 +294,7 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     meta['DATE-END'] = tstring_end
     meta['DATE-AVG'] = tstring_avg
     meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
-    nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 0)
+    nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 2)
     outdata = PUNCHData(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
 
     # Update required metadata
@@ -298,16 +302,16 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
     tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-    pdata.meta['DATE-OBS'] = tstring_start
-    pdata.meta['DATE-BEG'] = tstring_start
-    pdata.meta['DATE-END'] = tstring_end
-    pdata.meta['DATE-AVG'] = tstring_avg
-    pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
+    outdata.meta['DATE-OBS'] = tstring_start
+    outdata.meta['DATE-BEG'] = tstring_start
+    outdata.meta['DATE-END'] = tstring_end
+    outdata.meta['DATE-AVG'] = tstring_avg
+    outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-    pdata = update_spacecraft_location(pdata, time_obs)
+    outdata = update_spacecraft_location(outdata, time_obs)
 
     # Write out
-    outdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
 @click.command()
@@ -345,7 +349,7 @@ def generate_l3_all(datadir):
     time_delta_ln = timedelta(minutes=32)
 
     # Run individual generators
-    for i, (file_tb, file_pb, time_obs) in enumerate(zip(files_tb, files_pb, times_obs)):
+    for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
         rotation_stage = i % 8
         generate_l3_ptm(file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage)
         generate_l3_pnn(file_tb, file_pb, outdir, time_obs, time_delta)
