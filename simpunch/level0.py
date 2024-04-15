@@ -1,7 +1,6 @@
 import numpy as np
-from astropy.wcs import WCS
 from astropy.io import fits
-
+from astropy.wcs import WCS
 from punchbowl.data import PUNCHData
 
 from simpunch.stars import make_fake_stars_for_wfi

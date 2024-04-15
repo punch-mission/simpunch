@@ -24,9 +24,8 @@ def load_catalog(catalog_path=os.path.join(THIS_DIR, "data/hip_main.dat.txt")):
         'dHp', 'e_dHp', 'Survey', 'Chart', 'Notes', 'HD', 'BD', 'CoD',
         'CPD', '(V-I)red', 'SpType', 'r_SpType',
     )
-    df = pd.read_csv(catalog_path, sep="|", names=column_names, usecols=['HIP', 'Vmag', 'RAdeg', 'DEdeg'],
+    return pd.read_csv(catalog_path, sep="|", names=column_names, usecols=['HIP', 'Vmag', 'RAdeg', 'DEdeg'],
                      na_values=['     ', '       ', '        ', '            '])
-    return df
 
 
 def make_fake_stars_for_wfi(my_wcs,
@@ -40,7 +39,8 @@ def make_fake_stars_for_wfi(my_wcs,
 
     # determine which stars are in the FOV
     world_coords = my_wcs.wcs_world2pix(np.stack([catalog['RAdeg'], catalog['DEdeg']], axis=-1) * u.degree, 0)
-    valid = np.where((0 <= world_coords[:, 0]) * (world_coords[:, 0] < 2048) * (0 <= world_coords[:, 1]) * (world_coords[:, 1] < 2048))
+    valid = np.where((0 <= world_coords[:, 0]) * (world_coords[:, 0] < 2048)
+                     * (0 <= world_coords[:, 1]) * (world_coords[:, 1] < 2048))
     fluxes = catalog.flux.iloc[valid[0]]
     pixel_coords = world_coords[valid].astype(int)
 
@@ -75,7 +75,5 @@ def make_fake_stars_for_wfi(my_wcs,
         out_i = np.real(ifftshift(ifft2(fft2(img_i * apodization_window) * fft2(psf_i)))) * apodization_window
         set_synthetic_p(x, y, out_i)
 
-    observation = observation_synthetic_p[psf_shape[0]:img_shape[0] + psf_shape[0],
+    return observation_synthetic_p[psf_shape[0]:img_shape[0] + psf_shape[0],
                   psf_shape[1]:img_shape[1] + psf_shape[1]]
-
-    return observation

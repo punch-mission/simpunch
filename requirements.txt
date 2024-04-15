@@ -1,6 +1,0 @@
-numpy==1.23.5
-astropy
-pandas
-matplotlib
-regularizepsf
-git+ssh://git@github.com/punch-mission/punchbowl.git#egg=punchbowl

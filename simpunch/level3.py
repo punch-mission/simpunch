@@ -6,28 +6,26 @@ PAN - PUNCH Level-3 Polarized Low Noise NFI Image
 PTM - PUNCH Level-3 Polarized Mosaic
 PNN - PUNCH Level-3 Polarized NFI Image
 """
-
-import numpy as np
 import glob
-
-import astropy.units as u
-
-from astropy.wcs import WCS
-from astropy.io import fits
-from astropy.wcs.utils import add_stokes_axis_to_wcs
-from astropy.time import Time
-from astropy.coordinates import get_sun
-import reproject
-import scipy.ndimage
-
-
-from astropy.coordinates import SkyCoord, EarthLocation
-from sunpy.coordinates import frames, sun
-from sunpy.coordinates.ephemeris import get_earth
-
+import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
-from punchbowl.data import PUNCHData, NormalizedMetadata
+import astropy.units as u
+import click
+import numpy as np
+import reproject
+import scipy.ndimage
+from astropy.coordinates import get_sun
+from astropy.io import fits
+from astropy.nddata import StdDevUncertainty
+from astropy.time import Time
+from astropy.wcs import WCS
+from astropy.wcs.utils import add_stokes_axis_to_wcs
+from punchbowl.data import NormalizedMetadata, PUNCHData
+from sunpy.coordinates import sun
+from sunpy.coordinates.ephemeris import get_earth
+from tqdm import tqdm
 
 
 def get_sun_ra_dec(dt: datetime):
@@ -38,50 +36,43 @@ def get_sun_ra_dec(dt: datetime):
 def define_mask(shape=(4096, 4096), distance_value=0.68):
     """Define a mask to describe the FOV for low-noise PUNCH data products"""
     center = (int(shape[0] / 2), int(shape[1] / 2))
-    radius = min(center[0], center[1], shape[0] - center[0], shape[1] - center[1])
 
     Y, X = np.ogrid[:shape[0], :shape[1]]
     dist_arr = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
 
-    mask = (dist_arr / dist_arr.max()) < distance_value
-
-    return mask
+    return (dist_arr / dist_arr.max()) < distance_value
 
 
 def define_trefoil_mask(rotation_stage=0):
     """Define a mask to describe the FOV for trefoil mosaic PUNCH data products"""
-
-    trefoil_mask = np.load('data/trefoil_mask.npz')['trefoil_mask'][rotation_stage,:,:]
-
-    return trefoil_mask
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    return np.load(os.path.join(dir_path, 'data/trefoil_mask.npz'))['trefoil_mask'][rotation_stage,:,:]
 
 
 def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None):
     """Assemble a punchdata object with correct metadata"""
 
     with fits.open(input_tb) as hdul:
-        data_tb = hdul[0].data
-        # data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
+        data_tb = hdul[1].data
+        if data_tb.shape == (2048, 2048):
+            data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
         data_tb[np.where(data_tb == -9999.0)] = 0
         if mask is not None:
             data_tb = data_tb * mask
+
     with fits.open(input_pb) as hdul:
-        data_pb = hdul[0].data
-        # data_pb = scipy.ndimage.zoom(data_pb, 2, order=0)
+        data_pb = hdul[1].data
+        if data_pb.shape == (2048, 2048):
+            data_pb = scipy.ndimage.zoom(data_pb, 2, order=0)
         data_pb[np.where(data_pb == -9999.0)] = 0
         if mask is not None:
             data_pb = data_pb * mask
 
     datacube = np.stack([data_tb, data_pb]).astype('float32')
-
-    # TODO - Data / uncertainty scaling?
-
-    uncert = (np.sqrt(datacube) / np.sqrt(datacube).max() * 255).astype('uint8')
-
+    uncert = StdDevUncertainty(np.random.random(datacube.shape))
+    uncert.array[datacube == 0] = 1
     meta = NormalizedMetadata.load_template(product_code, product_level)
-    data = PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncert)
-
-    return data
+    return PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncert)
 
 
 def update_spacecraft_location(input_data, time_obs):
@@ -132,9 +123,9 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
     mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
-    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 0)
+    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
     # Mask data to define the field of view
     mask = define_trefoil_mask(rotation_stage=rotation_stage)
@@ -156,7 +147,7 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     pdata = update_spacecraft_location(pdata, time_obs)
 
     # Write out
-    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
 def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -167,7 +158,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
     mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
 
     # Define the NFI WCS
@@ -175,7 +166,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     nfi1_wcs = WCS(naxis=2)
     nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
     nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    nfi1_wcs.wcs.cdelt = 0.01, 0.01
+    nfi1_wcs.wcs.cdelt = -0.01, 0.01
     nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
 
     # Mask data to define the field of view
@@ -192,7 +183,8 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
                                                                  roundtrip_coords=False, return_footprint=False,
                                                                  kernel='Gaussian', boundary_mode='ignore')
 
-    uncert = (np.sqrt(reprojected_data) / np.sqrt(reprojected_data).max() * 255).astype('uint8')
+    uncert = StdDevUncertainty(np.random.random(reprojected_data.shape))
+    uncert.array[reprojected_data == 0] = 1
 
     meta = NormalizedMetadata.load_template('PAN', '3')
     tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
@@ -202,7 +194,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     meta['DATE-BEG'] = tstring_start
     meta['DATE-END'] = tstring_end
     meta['DATE-AVG'] = tstring_avg
-    nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 0)
+    nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 2)
     outdata = PUNCHData(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
 
     # Update required metadata
@@ -210,16 +202,16 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
     tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-    pdata.meta['DATE-OBS'] = tstring_start
-    pdata.meta['DATE-BEG'] = tstring_start
-    pdata.meta['DATE-END'] = tstring_end
-    pdata.meta['DATE-AVG'] = tstring_avg
-    pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
+    outdata.meta['DATE-OBS'] = tstring_start
+    outdata.meta['DATE-BEG'] = tstring_start
+    outdata.meta['DATE-END'] = tstring_end
+    outdata.meta['DATE-AVG'] = tstring_avg
+    outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-    pdata = update_spacecraft_location(pdata, time_obs)
+    outdata = update_spacecraft_location(outdata, time_obs)
 
     # Write out
-    outdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
 def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -230,9 +222,9 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
     mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
-    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 0)
+    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
 
     # Mask data to define the field of view
@@ -255,7 +247,7 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata = update_spacecraft_location(pdata, time_obs)
 
     # Write out
-    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
 def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -266,7 +258,7 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
     mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
 
     # Define the NFI WCS
@@ -274,7 +266,7 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     nfi1_wcs = WCS(naxis=2)
     nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
     nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    nfi1_wcs.wcs.cdelt = 0.01, 0.01
+    nfi1_wcs.wcs.cdelt = -0.01, 0.01
     nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
 
     # Mask data to define the field of view
@@ -291,7 +283,8 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
                                                                  roundtrip_coords=False, return_footprint=False,
                                                                  kernel='Gaussian', boundary_mode='ignore')
 
-    uncert = (np.sqrt(reprojected_data) / np.sqrt(reprojected_data).max() * 255).astype('uint8')
+    uncert = StdDevUncertainty(np.random.random(reprojected_data.shape))
+    uncert.array[reprojected_data == 0] = 1
 
     meta = NormalizedMetadata.load_template('PAN', '3')
     tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
@@ -302,7 +295,7 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     meta['DATE-END'] = tstring_end
     meta['DATE-AVG'] = tstring_avg
     meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
-    nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 0)
+    nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 2)
     outdata = PUNCHData(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
 
     # Update required metadata
@@ -310,35 +303,41 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
     tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-    pdata.meta['DATE-OBS'] = tstring_start
-    pdata.meta['DATE-BEG'] = tstring_start
-    pdata.meta['DATE-END'] = tstring_end
-    pdata.meta['DATE-AVG'] = tstring_avg
-    pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
+    outdata.meta['DATE-OBS'] = tstring_start
+    outdata.meta['DATE-BEG'] = tstring_start
+    outdata.meta['DATE-END'] = tstring_end
+    outdata.meta['DATE-AVG'] = tstring_avg
+    outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-    pdata = update_spacecraft_location(pdata, time_obs)
+    outdata = update_spacecraft_location(outdata, time_obs)
 
     # Write out
-    outdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
-def generate_l3_all(datadir='/Users/clowder/data/punch/'):
+@click.command()
+@click.argument('datadir', type=click.Path(exists=True))
+@click.argument('num_repeats', type=int, default=5)
+def generate_l3_all(datadir, num_repeats):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
-    outdir = datadir + 'synthetic_L3/'
+    print(f"Running from {datadir}")
+    outdir = os.path.join(datadir, 'synthetic_L3/')
+    print(f"Outputting to {outdir}")
 
     # Parse list of model data
-    files_tb = glob.glob(datadir + 'synthetic_cme/TB*.fits')
-    files_pb = glob.glob(datadir + 'synthetic_cme/PB*.fits')
+    files_tb = glob.glob(datadir + '/synthetic_cme/*_TB.fits')
+    files_pb = glob.glob(datadir + '/synthetic_cme/*_PB.fits')
+    print(f"Generating based on {len(files_tb)} TB files and {len(files_pb)} PB files.")
     files_tb.sort()
     files_pb.sort()
 
-    files_tb = files_tb[0:3]
+    # files_tb = files_tb[0:3]
 
     # Stack and repeat these data for testing - about 25 times to get around 5 days of data
-    files_tb = np.tile(files_tb, 25)
-    files_pb = np.tile(files_pb, 25)
+    files_tb = np.tile(files_tb, num_repeats)
+    files_pb = np.tile(files_pb, num_repeats)
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -351,16 +350,18 @@ def generate_l3_all(datadir='/Users/clowder/data/punch/'):
     # Generate a corresponding set of observation times for low-noise mosaic / NFI data
     time_delta_ln = timedelta(minutes=32)
 
+    pool = ProcessPoolExecutor()
+    futures = []
     # Run individual generators
-    for i, (file_tb, file_pb, time_obs) in enumerate(zip(files_tb, files_pb, times_obs)):
+    for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
         rotation_stage = i % 8
-        generate_l3_ptm(file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage)
-        generate_l3_pnn(file_tb, file_pb, outdir, time_obs, time_delta)
+        futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage))
+        futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
 
         if rotation_stage == 0:
-            generate_l3_pam(file_tb, file_pb, outdir, time_obs, time_delta_ln)
-            generate_l3_pan(file_tb, file_pb, outdir, time_obs, time_delta_ln)
+            futures.append(pool.submit(generate_l3_pam, file_tb, file_pb, outdir, time_obs, time_delta_ln))
+            futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
 
-
-if __name__ == "__main__":
-    generate_l3_all()
+    with tqdm(total=len(futures)) as pbar:
+        for _ in as_completed(futures):
+            pbar.update(1)
