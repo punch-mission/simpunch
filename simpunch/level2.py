@@ -26,17 +26,33 @@ from tqdm import tqdm
 import solpolpy
 
 
+def gen_fcorona(shape):
+    # TODO - generate actual model fcorona here
+    fcorona = np.zeros(shape)
+    return fcorona
+
+
 def add_fcorona(input_data):
     """Adds synthetic f-corona model"""
 
-    output_data = input_data
+    fcorona = gen_fcorona(input_data.data.shape)
+
+    output_data = input_data + fcorona
     return output_data
+
+
+def gen_starfield(shape):
+    # TODO - generate actual starfield here (via reprojection or directly?)
+    starfield = np.zeros(shape)
+    return starfield
 
 
 def add_starfield(input_data):
     """Adds synthetic starfield"""
 
-    output_data = input_data
+    starfield = gen_starfield(input_data.data.shape)
+
+    output_data = input_data + starfield
     return output_data
 
 
@@ -47,8 +63,16 @@ def remix_polarization(input_data):
     return output_data
 
 
-def generate_l2_ptm(input_pdata, path_output, time_obs, time_delta, rotation_stage):
+def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stage):
     """Generates level 2 PTM synthetic data"""
+
+    # Read in the input data
+    # input_pdata = PUNCHData.from_fits(input_file)
+    with fits.open(input_file) as hdul:
+        input_data = hdul[1].data
+        input_header = hdul[1].header
+
+    input_pdata = PUNCHData(data = input_data, meta = input_header, wcs = WCS(input_header))
 
     # Define the output data product
     product_code = 'PTM'
@@ -57,9 +81,10 @@ def generate_l2_ptm(input_pdata, path_output, time_obs, time_delta, rotation_sta
     output_wcs = input_pdata.wcs
 
     # Synchronize overlapping metadata keys
-    for key in output_meta.keys():
-        if key in input_pdata.keys():
-            output_meta[key].value = input_pdata[key].value
+    output_header = output_meta.to_fits_header()
+    for key in output_header.keys():
+        if (key in input_header) and (key != 'COMMENT') and (key != 'HISTORY'):
+            output_meta[key].value = input_pdata.meta[key]
 
     # Remix polarization
     output_data = remix_polarization(input_pdata)
@@ -77,21 +102,24 @@ def generate_l2_ptm(input_pdata, path_output, time_obs, time_delta, rotation_sta
     output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
-@click.command()
-@click.argument('datadir', type=click.Path(exists=True))
+# @click.command()
+# @click.argument('datadir', type=click.Path(exists=True))
 def generate_l2_all(datadir):
     """Generate all level 2 synthetic data
      L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_L3/')
+    outdir = os.path.join(datadir, 'synthetic_l2/')
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
     files_ptm = glob.glob(datadir + '/synthetic_l3/*PTM*.fits')
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
+
+    # TODO - remove after testing
+    files_ptm = files_ptm[0:2]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -101,13 +129,22 @@ def generate_l2_all(datadir):
     time_delta = timedelta(minutes=4)
     times_obs = np.arange(len(files_ptm)) * time_delta + time_start
 
-    pool = ProcessPoolExecutor()
-    futures = []
-    # Run individual generators
+    # TODO - revert after testing
     for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
         rotation_stage = i % 8
-        futures.append(pool.submit(generate_l2_ptm, file_ptm, outdir, time_obs, time_delta, rotation_stage))
+        generate_l2_ptm(file_ptm, outdir, time_obs, time_delta, rotation_stage)
 
-    with tqdm(total=len(futures)) as pbar:
-        for _ in as_completed(futures):
-            pbar.update(1)
+    # pool = ProcessPoolExecutor()
+    # futures = []
+    # # Run individual generators
+    # for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
+    #     rotation_stage = i % 8
+    #     futures.append(pool.submit(generate_l2_ptm, file_ptm, outdir, time_obs, time_delta, rotation_stage))
+    #
+    # with tqdm(total=len(futures)) as pbar:
+    #     for _ in as_completed(futures):
+    #         pbar.update(1)
+
+
+if __name__ == "__main__":
+    generate_l2_all('/Users/clowder/data/punch')
