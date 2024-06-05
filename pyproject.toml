@@ -17,7 +17,7 @@ dependencies = [
     "toml",
     "scipy"
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     {name = "J. Marcus Hughes", email = "hughes.jmb@gmail.com"},
     {name = "Chris Lowder", email="chris.lowder@swri.org"}
