@@ -21,10 +21,15 @@ from astropy.wcs.utils import add_stokes_axis_to_wcs
 from punchbowl.data import NormalizedMetadata, PUNCHData
 from sunpy.coordinates import sun
 from sunpy.coordinates.ephemeris import get_earth
+from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping
 from tqdm import tqdm
+
+from ndcube import NDCube, NDCollection
 
 import solpolpy
 
+PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
+                                                     11: StokesSymbol("B", "total brightness")})
 
 def gen_fcorona(shape):
     # TODO - generate actual model fcorona here
@@ -42,7 +47,7 @@ def add_fcorona(input_data):
 
 
 def gen_starfield(shape):
-    # TODO - generate actual starfield here (via reprojection or directly?)
+    # TODO - generate actual starfield here (from existing code)
     starfield = np.zeros(shape)
     return starfield
 
@@ -59,7 +64,36 @@ def add_starfield(input_data):
 def remix_polarization(input_data):
     """Remix polarization from (B, pB) to (M,Z,P) using solpolpy"""
 
-    output_data = input_data
+    # Unpack data into a NDCollection object
+    data_collection = NDCollection([("B", input_data[0, :, :]), ("pB", input_data[1, :, :])], aligned_axes='all')
+
+    resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=False)
+
+    # Repack data
+    data_list = []
+    wcs_list = []
+    uncertainty_list = []
+    for key in resolved_data_collection:
+        data_list.append(resolved_data_collection[key].data)
+        wcs_list.append(resolved_data_collection[key].wcs)
+        uncertainty_list.append(resolved_data_collection[key].uncertainty)
+
+    # Remove alpha channel
+    data_list.pop()
+    wcs_list.pop()
+    uncertainty_list.pop()
+
+    # Repack into a PUNCHData object
+    new_data = np.stack(data_list, axis=0)
+    if uncertainty_list[0] is not None:
+        new_uncertainty = np.stack(uncertainty_list, axis=0)
+    else:
+        new_uncertainty = None
+
+    new_wcs = input_data.wcs.copy()
+
+    output_data = PUNCHData(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
+
     return output_data
 
 
