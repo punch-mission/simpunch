@@ -1,22 +1,35 @@
-:py:mod:`simpunch.tests.test_noise`
-===================================
+simpunch.tests.test_noise
+=========================
 
 .. py:module:: simpunch.tests.test_noise
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.tests.test_noise.generate_noise
+   simpunch.tests.test_noise.test_noise_generation
 
 
 Module Contents
 ---------------
 
+.. py:function:: generate_noise(data: numpy.ndarray, bias_level: float = 100, dark_level: float = 55.81, gain: float = 4.3, read_noise_level: float = 17, bitrate_signal: int = 16) -> numpy.ndarray
 
-Functions
-~~~~~~~~~
+   Generates noise based on an input data array, with specified noise parameters
 
-.. autoapisummary::
+   :param data: input data array (n x n)
+   :param bias_level: ccd bias level
+   :param dark_level: ccd dark level
+   :param gain: ccd gain
+   :param read_noise_level: ccd read noise level
+   :param bitrate_signal: desired ccd data bit level
 
-   simpunch.tests.test_noise.test_noise_generation
-
+   :returns: computed noise array corresponding to input data and ccd/noise parameters
+   :rtype: np.ndarray
 
 
 .. py:function:: test_noise_generation()
-
 

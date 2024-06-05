@@ -1,21 +1,19 @@
-:py:mod:`simpunch.noise`
-========================
+simpunch.noise
+==============
 
 .. py:module:: simpunch.noise
 
 
-Module Contents
----------------
-
-
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
    simpunch.noise.generate_noise
 
 
+Module Contents
+---------------
 
 .. py:function:: generate_noise(data: numpy.ndarray, bias_level: float = 100, dark_level: float = 55.81, gain: float = 4.3, read_noise_level: float = 17, bitrate_signal: int = 16) -> numpy.ndarray
 

@@ -1,7 +1,7 @@
-:py:mod:`simpunch.generate-level3`
-==================================
+simpunch.level3
+===============
 
-.. py:module:: simpunch.generate-level3
+.. py:module:: simpunch.level3
 
 .. autoapi-nested-parse::
 
@@ -14,30 +14,27 @@
 
 
 
-Module Contents
----------------
-
-
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
-   simpunch.generate-level3.get_sun_ra_dec
-   simpunch.generate-level3.define_mask
-   simpunch.generate-level3.define_trefoil_mask
-   simpunch.generate-level3.assemble_punchdata
-   simpunch.generate-level3.update_spacecraft_location
-   simpunch.generate-level3.generate_l3_ptm
-   simpunch.generate-level3.generate_l3_pnn
-   simpunch.generate-level3.generate_l3_pam
-   simpunch.generate-level3.generate_l3_pan
-   simpunch.generate-level3.generate_l3_all
+   simpunch.level3.get_sun_ra_dec
+   simpunch.level3.define_mask
+   simpunch.level3.define_trefoil_mask
+   simpunch.level3.assemble_punchdata
+   simpunch.level3.update_spacecraft_location
+   simpunch.level3.generate_l3_ptm
+   simpunch.level3.generate_l3_pnn
+   simpunch.level3.generate_l3_pam
+   simpunch.level3.generate_l3_pan
+   simpunch.level3.generate_l3_all
 
 
+Module Contents
+---------------
 
 .. py:function:: get_sun_ra_dec(dt: datetime.datetime)
-
 
 .. py:function:: define_mask(shape=(4096, 4096), distance_value=0.68)
 
@@ -55,7 +52,6 @@ Functions
 
 
 .. py:function:: update_spacecraft_location(input_data, time_obs)
-
 
 .. py:function:: generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage)
 
@@ -77,7 +73,7 @@ Functions
    Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image
 
 
-.. py:function:: generate_l3_all(datadir='/Users/clowder/data/punch/')
+.. py:function:: generate_l3_all(datadir, num_repeats)
 
    Generate all level 3 synthetic data
 

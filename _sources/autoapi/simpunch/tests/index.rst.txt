@@ -1,16 +1,16 @@
-:py:mod:`simpunch.tests`
-========================
+simpunch.tests
+==============
 
 .. py:module:: simpunch.tests
 
 
 Submodules
 ----------
+
 .. toctree::
-   :titlesonly:
    :maxdepth: 1
 
-   test_noise/index.rst
-   test_stars/index.rst
+   /autoapi/simpunch/tests/test_noise/index
+   /autoapi/simpunch/tests/test_stars/index
 
 

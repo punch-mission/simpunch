@@ -1,0 +1,22 @@
+simpunch.level0
+===============
+
+.. py:module:: simpunch.level0
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.level0.make_fake_stars_for_wfi
+   simpunch.level0.make_fake_level0
+
+
+Module Contents
+---------------
+
+.. py:function:: make_fake_stars_for_wfi(my_wcs, array_corrector_path, reference_mag=-1.44, reference_flux=100000, psf_shape=(400, 400))
+
+.. py:function:: make_fake_level0(path_to_input, array_corrector_path, path_to_save)
+

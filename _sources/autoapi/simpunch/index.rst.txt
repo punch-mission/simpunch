@@ -1,27 +1,27 @@
-:py:mod:`simpunch`
-==================
+simpunch
+========
 
 .. py:module:: simpunch
 
 
 Subpackages
 -----------
-.. toctree::
-   :titlesonly:
-   :maxdepth: 3
 
-   tests/index.rst
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/simpunch/tests/index
 
 
 Submodules
 ----------
+
 .. toctree::
-   :titlesonly:
    :maxdepth: 1
 
-   generate-level0/index.rst
-   generate-level3/index.rst
-   noise/index.rst
-   stars/index.rst
+   /autoapi/simpunch/level0/index
+   /autoapi/simpunch/level3/index
+   /autoapi/simpunch/noise/index
+   /autoapi/simpunch/stars/index
 
 

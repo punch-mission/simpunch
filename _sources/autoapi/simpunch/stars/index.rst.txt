@@ -1,15 +1,19 @@
-:py:mod:`simpunch.stars`
-========================
+simpunch.stars
+==============
 
 .. py:module:: simpunch.stars
 
 
-Module Contents
----------------
+Attributes
+----------
+
+.. autoapisummary::
+
+   simpunch.stars.THIS_DIR
 
 
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
@@ -17,22 +21,12 @@ Functions
    simpunch.stars.make_fake_stars_for_wfi
 
 
-
-Attributes
-~~~~~~~~~~
-
-.. autoapisummary::
-
-   simpunch.stars.THIS_DIR
-
+Module Contents
+---------------
 
 .. py:data:: THIS_DIR
 
-   
-
 .. py:function:: load_catalog(catalog_path=os.path.join(THIS_DIR, 'data/hip_main.dat.txt'))
 
-
 .. py:function:: make_fake_stars_for_wfi(my_wcs, array_corrector_path, reference_mag=-1.44, reference_flux=100000, psf_shape=(400, 400))
-
 

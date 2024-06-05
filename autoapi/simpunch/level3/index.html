@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="../../../_static/favicon.ico" rel="icon" type="image/x-icon">
-    <title>simpunch.stars &#8212; simpunch 0.0.1 documentation</title>
+    <title>simpunch.level3 &#8212; simpunch 0.0.1 documentation</title>
   
   
   
@@ -39,10 +39,11 @@
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/stars/index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/level3/index';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="prev" title="simpunch.noise" href="../noise/index.html" />
+    <link rel="next" title="simpunch.noise" href="../noise/index.html" />
+    <link rel="prev" title="simpunch.level0" href="../level0/index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -305,9 +306,9 @@ document.write(`
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="../level0/index.html">simpunch.level0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../level3/index.html">simpunch.level3</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">simpunch.level3</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../noise/index.html">simpunch.noise</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">simpunch.stars</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stars/index.html">simpunch.stars</a></li>
 </ul>
 </details></li>
 </ul>
@@ -353,7 +354,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../index.html" class="nav-link">simpunch</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">simpunch.stars</li>
+    <li class="breadcrumb-item active" aria-current="page">simpunch.level3</li>
   </ul>
 </nav>
 </div>
@@ -370,28 +371,46 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-simpunch.stars">
-<span id="simpunch-stars"></span><h1>simpunch.stars<a class="headerlink" href="#module-simpunch.stars" title="Link to this heading">#</a></h1>
-<section id="attributes">
-<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.THIS_DIR" title="simpunch.stars.THIS_DIR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">THIS_DIR</span></code></a></p></td>
-<td><p></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
+  <section id="module-simpunch.level3">
+<span id="simpunch-level3"></span><h1>simpunch.level3<a class="headerlink" href="#module-simpunch.level3" title="Link to this heading">#</a></h1>
+<p>Generates synthetic level 3 data
+PAM - PUNCH Level-3 Polarized Low Noise Mosaic
+PAN - PUNCH Level-3 Polarized Low Noise NFI Image</p>
+<p>PTM - PUNCH Level-3 Polarized Mosaic
+PNN - PUNCH Level-3 Polarized NFI Image</p>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.load_catalog" title="simpunch.stars.load_catalog"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_catalog</span></code></a>([catalog_path])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.get_sun_ra_dec" title="simpunch.level3.get_sun_ra_dec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_sun_ra_dec</span></code></a>(dt)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.stars.make_fake_stars_for_wfi" title="simpunch.stars.make_fake_stars_for_wfi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_fake_stars_for_wfi</span></code></a>(my_wcs, array_corrector_path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.define_mask" title="simpunch.level3.define_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">define_mask</span></code></a>([shape, distance_value])</p></td>
+<td><p>Define a mask to describe the FOV for low-noise PUNCH data products</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.define_trefoil_mask" title="simpunch.level3.define_trefoil_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">define_trefoil_mask</span></code></a>([rotation_stage])</p></td>
+<td><p>Define a mask to describe the FOV for trefoil mosaic PUNCH data products</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.assemble_punchdata" title="simpunch.level3.assemble_punchdata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assemble_punchdata</span></code></a>(input_tb, input_pb, wcs, ...[, mask])</p></td>
+<td><p>Assemble a punchdata object with correct metadata</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.update_spacecraft_location" title="simpunch.level3.update_spacecraft_location"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_spacecraft_location</span></code></a>(input_data, time_obs)</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_ptm" title="simpunch.level3.generate_l3_ptm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_ptm</span></code></a>(input_tb, input_pb, path_output, ...)</p></td>
+<td><p>Generate PTM - PUNCH Level-3 Polarized Mosaic</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_pnn" title="simpunch.level3.generate_l3_pnn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_pnn</span></code></a>(input_tb, input_pb, path_output, ...)</p></td>
+<td><p>Generate PNN - PUNCH Level-3 Polarized NFI Image</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_pam" title="simpunch.level3.generate_l3_pam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_pam</span></code></a>(input_tb, input_pb, path_output, ...)</p></td>
+<td><p>Generate PAM - PUNCH Level-3 Polarized Low Noise Mosaic</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_pan" title="simpunch.level3.generate_l3_pan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_pan</span></code></a>(input_tb, input_pb, path_output, ...)</p></td>
+<td><p>Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_all" title="simpunch.level3.generate_l3_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_all</span></code></a>(datadir, num_repeats)</p></td>
+<td><p>Generate all level 3 synthetic data</p></td>
 </tr>
 </tbody>
 </table>
@@ -399,20 +418,63 @@ document.write(`
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
-<dl class="py data">
-<dt class="sig sig-object py" id="simpunch.stars.THIS_DIR">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">THIS_DIR</span></span><a class="headerlink" href="#simpunch.stars.THIS_DIR" title="Link to this definition">#</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level3.get_sun_ra_dec">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">get_sun_ra_dec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.datetime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.get_sun_ra_dec" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.stars.load_catalog">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">load_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">os.path.join(THIS_DIR,</span> <span class="pre">'data/hip_main.dat.txt')</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.stars.load_catalog" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="simpunch.level3.define_mask">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">define_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(4096,</span> <span class="pre">4096)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.define_mask" title="Link to this definition">#</a></dt>
+<dd><p>Define a mask to describe the FOV for low-noise PUNCH data products</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level3.define_trefoil_mask">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">define_trefoil_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.define_trefoil_mask" title="Link to this definition">#</a></dt>
+<dd><p>Define a mask to describe the FOV for trefoil mosaic PUNCH data products</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level3.assemble_punchdata">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">assemble_punchdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.assemble_punchdata" title="Link to this definition">#</a></dt>
+<dd><p>Assemble a punchdata object with correct metadata</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level3.update_spacecraft_location">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">update_spacecraft_location</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.update_spacecraft_location" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.stars.make_fake_stars_for_wfi">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">make_fake_stars_for_wfi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">my_wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_corrector_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_mag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.44</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_flux</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(400,</span> <span class="pre">400)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.stars.make_fake_stars_for_wfi" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="simpunch.level3.generate_l3_ptm">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_ptm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_ptm" title="Link to this definition">#</a></dt>
+<dd><p>Generate PTM - PUNCH Level-3 Polarized Mosaic</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level3.generate_l3_pnn">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_pnn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_pnn" title="Link to this definition">#</a></dt>
+<dd><p>Generate PNN - PUNCH Level-3 Polarized NFI Image</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level3.generate_l3_pam">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_pam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_pam" title="Link to this definition">#</a></dt>
+<dd><p>Generate PAM - PUNCH Level-3 Polarized Low Noise Mosaic</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level3.generate_l3_pan">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_pan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_pan" title="Link to this definition">#</a></dt>
+<dd><p>Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level3.generate_l3_all">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_repeats</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_all" title="Link to this definition">#</a></dt>
+<dd><p>Generate all level 3 synthetic data</p>
+</dd></dl>
 
 </section>
 </section>
@@ -428,13 +490,22 @@ document.write(`
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../noise/index.html"
+       href="../level0/index.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">simpunch.level0</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../noise/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
         <p class="prev-next-title">simpunch.noise</p>
       </div>
+      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>
@@ -454,12 +525,18 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#attributes">Attributes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.THIS_DIR"><code class="docutils literal notranslate"><span class="pre">THIS_DIR</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.load_catalog"><code class="docutils literal notranslate"><span class="pre">load_catalog()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.make_fake_stars_for_wfi"><code class="docutils literal notranslate"><span class="pre">make_fake_stars_for_wfi()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.get_sun_ra_dec"><code class="docutils literal notranslate"><span class="pre">get_sun_ra_dec()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.define_mask"><code class="docutils literal notranslate"><span class="pre">define_mask()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.define_trefoil_mask"><code class="docutils literal notranslate"><span class="pre">define_trefoil_mask()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.assemble_punchdata"><code class="docutils literal notranslate"><span class="pre">assemble_punchdata()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.update_spacecraft_location"><code class="docutils literal notranslate"><span class="pre">update_spacecraft_location()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_ptm"><code class="docutils literal notranslate"><span class="pre">generate_l3_ptm()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_pnn"><code class="docutils literal notranslate"><span class="pre">generate_l3_pnn()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_pam"><code class="docutils literal notranslate"><span class="pre">generate_l3_pam()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_pan"><code class="docutils literal notranslate"><span class="pre">generate_l3_pan()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_all"><code class="docutils literal notranslate"><span class="pre">generate_l3_all()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -469,7 +546,7 @@ document.write(`
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/punch-mission/simpunch/edit/main/docs/source/autoapi/simpunch/stars/index.rst">
+    <a href="https://github.com/punch-mission/simpunch/edit/main/docs/source/autoapi/simpunch/level3/index.rst">
       <i class="fa-solid fa-pencil"></i>
       
       
