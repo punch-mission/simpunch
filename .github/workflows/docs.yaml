@@ -25,7 +25,7 @@ jobs:
         ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY }}'
         python -m pip install --upgrade pip
         pip install -r ./docs/requirements.txt
-        pip install -r requirements.txt
+        pip install ".[docs]"
 
     # Build the book
     - name: Sphinx build
