@@ -53,7 +53,7 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
     """Assemble a punchdata object with correct metadata"""
 
     with fits.open(input_tb) as hdul:
-        data_tb = hdul[1].data / 1e8
+        data_tb = hdul[1].data / 1e8  # the 1e8 comes from the units on FORWARD output
         if data_tb.shape == (2048, 2048):
             data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
         data_tb[np.where(data_tb == -9999.0)] = 0
@@ -61,7 +61,7 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
             data_tb = data_tb * mask
 
     with fits.open(input_pb) as hdul:
-        data_pb = hdul[1].data / 1e8
+        data_pb = hdul[1].data / 1e8 # the 1e8 comes from the units on FORWARD output
         if data_pb.shape == (2048, 2048):
             data_pb = scipy.ndimage.zoom(data_pb, 2, order=0)
         data_pb[np.where(data_pb == -9999.0)] = 0
