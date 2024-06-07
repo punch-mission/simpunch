@@ -34,6 +34,17 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
 def gen_fcorona(shape):
     # TODO - generate actual model fcorona here
     fcorona = np.zeros(shape)
+
+    sigma = 1000
+
+    x, y = np.meshgrid(np.arange(shape[1]), np.arange(shape[2]))
+    x_center, y_center = shape[1] // 2, shape[2] // 2
+    distance_squared = (x - x_center)**2 + (y - y_center)**2
+    fcorona_profile = np.exp(-distance_squared / (2 * sigma**2))
+
+    for i in np.arange(fcorona.shape[0]):
+        fcorona[i,:,:] = fcorona_profile[:,:] * 1e-12
+
     return fcorona
 
 
@@ -49,6 +60,7 @@ def add_fcorona(input_data):
 def gen_starfield(shape):
     # TODO - generate actual starfield here (from existing code)
     starfield = np.zeros(shape)
+    starfield[:,np.random.randint(0,shape[1], size=100), np.random.randint(0,shape[2], size=100)] = 1e-12
     return starfield
 
 
@@ -103,7 +115,8 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     # Read in the input data
     # input_pdata = PUNCHData.from_fits(input_file)
     with fits.open(input_file) as hdul:
-        input_data = hdul[1].data
+        # TODO - remove this scaling once updated L3 data is generated
+        input_data = hdul[1].data / 1e8
         input_header = hdul[1].header
 
     input_pdata = PUNCHData(data = input_data, meta = input_header, wcs = WCS(input_header))
@@ -117,7 +130,7 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header()
     for key in output_header.keys():
-        if (key in input_header) and (key != 'COMMENT') and (key != 'HISTORY'):
+        if (key in input_header) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
             output_meta[key].value = input_pdata.meta[key]
 
     # Remix polarization
@@ -133,7 +146,7 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     output_pdata = PUNCHData(data=output_data, wcs=output_wcs, meta=output_meta)
 
     # Write out
-    output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=False)
+    output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 # @click.command()
