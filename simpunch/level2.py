@@ -143,7 +143,7 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     output_data = add_fcorona(output_data)
 
     # Package into a PUNCHdata object
-    output_pdata = PUNCHData(data=output_data, wcs=output_wcs, meta=output_meta)
+    output_pdata = PUNCHData(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
 
     # Write out
     output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
