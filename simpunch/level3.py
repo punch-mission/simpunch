@@ -27,9 +27,15 @@ from sunpy.coordinates import sun
 from sunpy.coordinates.ephemeris import get_earth
 from tqdm import tqdm
 
+from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping
+from sunpy.coordinates import frames, sun
+from sunpy.coordinates.sun import _sun_north_angle_to_z
+from sunpy.map import solar_angular_radius, make_fitswcs_header
+from astropy.coordinates import ICRS, GCRS
 
-def compute_celestial_wcs(pdata: PUNCHData) -> PUNCHData:
-    """Updates secondary celestial WCS for level 3 data products"""
+
+def compute_pc_matrix_rotation(pdata: PUNCHData) -> PUNCHData:
+    """Updates secondary celestial WCS for level 3 data products, using manual PC-matrix rotation"""
 
     sun_location = get_sun_ra_dec(pdata.meta['DATE-OBS'].value)
     pdata.meta['CRVAL1A'] = sun_location[0]
@@ -46,6 +52,82 @@ def compute_celestial_wcs(pdata: PUNCHData) -> PUNCHData:
 
     celestial_pc = np.dot(helio_pc, inv_rmatrix)
 
+    pdata.meta['PC1_1A'] = celestial_pc[0,0]
+    pdata.meta['PC1_2A'] = celestial_pc[1,0]
+    pdata.meta['PC1_3A'] = celestial_pc[2,0]
+    pdata.meta['PC2_1A'] = celestial_pc[0,1]
+    pdata.meta['PC2_2A'] = celestial_pc[1,1]
+    pdata.meta['PC2_3A'] = celestial_pc[2,1]
+    pdata.meta['PC3_1A'] = celestial_pc[0,2]
+    pdata.meta['PC3_2A'] = celestial_pc[1,2]
+    pdata.meta['PC3_3A'] = celestial_pc[2,2]
+
+    return pdata
+
+
+def extract_crota_from_wcs(wcs):
+    return np.arctan2(wcs.wcs.pc[1, 0], wcs.wcs.pc[0, 0]) * u.rad
+
+
+def compute_celestial_from_helio(pdata: PUNCHData) -> PUNCHData:
+    """Updates secondary celestial WCS for level 3 data products, using coordinate transformation"""
+
+    wcs_helio = pdata.wcs.copy()
+    date_obs = Time(pdata.meta['DATE-OBS'].value)
+    data_shape = pdata.data.shape
+
+    is_3d = len(data_shape) == 3
+
+    # we're at the center of the Earth
+    test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
+    test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
+
+    reference_coord = SkyCoord(
+        wcs_helio.wcs.crval[0] * u.Unit(wcs_helio.wcs.cunit[0]),
+        wcs_helio.wcs.crval[1] * u.Unit(wcs_helio.wcs.cunit[1]),
+        frame="gcrs",
+        obstime=date_obs,
+        obsgeoloc=test_gcrs.cartesian,
+        obsgeovel=test_gcrs.velocity.to_cartesian(),
+        distance=test_gcrs.hcrs.distance,
+    )
+
+    reference_coord_arcsec = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
+
+    cdelt1 = (np.abs(wcs_helio.wcs.cdelt[0]) * u.deg).to(u.arcsec)
+    cdelt2 = (np.abs(wcs_helio.wcs.cdelt[1]) * u.deg).to(u.arcsec)
+
+    geocentric = GCRS(obstime=date_obs)
+    p_angle = _sun_north_angle_to_z(geocentric)
+
+    crota = extract_crota_from_wcs(wcs_helio)
+
+    new_header = make_fitswcs_header(
+        data_shape[1:] if is_3d else data_shape,
+        reference_coord_arcsec,
+        reference_pixel=u.Quantity(
+            [wcs_helio.wcs.crpix[0] - 1, wcs_helio.wcs.crpix[1] - 1] * u.pixel
+        ),
+        scale=u.Quantity([cdelt1, cdelt2] * u.arcsec / u.pix),
+        rotation_angle=-p_angle - crota,
+        observatory="PUNCH",
+        projection_code=wcs_helio.wcs.ctype[0][-3:]
+    )
+
+    wcs_celestial = WCS(new_header)
+    wcs_celestial.wcs.ctype = "RA---ARC", "DEC--ARC"
+    sun_location = get_sun_ra_dec(pdata.meta['DATE-OBS'].value)
+    wcs_celestial.wcs.crval = sun_location[0], sun_location[1]
+    wcs_celestial.wcs.cdelt = wcs_celestial.wcs.cdelt * (-1, 1)
+
+    if is_3d:
+        wcs_celestial = add_stokes_axis_to_wcs(wcs_celestial, 2)
+        wcs_celestial.array_shape = pdata.data.shape[0], pdata.data.shape[1], pdata.data.shape[2]
+
+    pdata.meta['CRVAL1A'] = sun_location[0]
+    pdata.meta['CRVAL2A'] = sun_location[1]
+
+    celestial_pc = wcs_celestial.wcs.pc
     pdata.meta['PC1_1A'] = celestial_pc[0,0]
     pdata.meta['PC1_2A'] = celestial_pc[1,0]
     pdata.meta['PC1_3A'] = celestial_pc[2,0]
@@ -150,13 +232,22 @@ def update_spacecraft_location(input_data, time_obs):
 def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage):
     """Generate PTM - PUNCH Level-3 Polarized Mosaic"""
 
-    # Define the mosaic WCS
+    # # Define the mosaic WCS (celestial)
+    # mosaic_shape = (4096, 4096)
+    # mosaic_wcs = WCS(naxis=2)
+    # mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
+    # mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
+    # mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
+    # mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
+    # mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
+
+    # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
-    mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
-    mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
+    mosaic_wcs.wcs.crval = 0, 0
+    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
     mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
     # Mask data to define the field of view
@@ -178,28 +269,48 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
 
     pdata = update_spacecraft_location(pdata, time_obs)
 
+    # Update secondary WCS
+    pdata = compute_celestial_from_helio(pdata)
+
     # Write out
-    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=False)
+    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     """Generate PNN - PUNCH Level-3 Polarized NFI Image"""
 
-    # Define the mosaic WCS
+    # # Define the mosaic WCS (celestial)
+    # mosaic_shape = (4096, 4096)
+    # mosaic_wcs = WCS(naxis=2)
+    # mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
+    # mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
+    # mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
+    # mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
+
+    # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
-    mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
-    mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
+    mosaic_wcs.wcs.crval = 0, 0
+    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
+    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
-    # Define the NFI WCS
+    # # Define the NFI WCS (celestial)
+    # nfi1_shape = [2048, 2048]
+    # nfi1_wcs = WCS(naxis=2)
+    # nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
+    # nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
+    # nfi1_wcs.wcs.cdelt = -0.01, 0.01
+    # nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
+
+    # Define the NFI WCS (helio)
     nfi1_shape = [2048, 2048]
     nfi1_wcs = WCS(naxis=2)
     nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
-    nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    nfi1_wcs.wcs.cdelt = -0.01, 0.01
-    nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
+    nfi1_wcs.wcs.crval = 0, 0
+    nfi1_wcs.wcs.cdelt = 0.01, 0.01
+    nfi1_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
 
     # Mask data to define the field of view
     mask = define_mask(shape=(4096, 4096), distance_value=0.155)
@@ -242,14 +353,17 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
 
     outdata = update_spacecraft_location(outdata, time_obs)
 
+    # Update secondary WCS
+    outdata = compute_celestial_from_helio(outdata)
+
     # Write out
-    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=False)
+    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     """Generate PAM - PUNCH Level-3 Polarized Low Noise Mosaic"""
 
-    # # Define the mosaic WCS
+    # # Define the mosaic WCS (celestial)
     # mosaic_shape = (4096, 4096)
     # mosaic_wcs = WCS(naxis=2)
     # mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
@@ -258,7 +372,7 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     # mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
     # mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
-    # Define the mosaic WCS
+    # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
@@ -266,7 +380,6 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
     mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
     mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
-
 
     # Mask data to define the field of view
     mask = define_mask(shape=(4096, 4096), distance_value=0.68)
@@ -288,7 +401,7 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata = update_spacecraft_location(pdata, time_obs)
 
     # Update secondary WCS
-    pdata = compute_celestial_wcs(pdata)
+    pdata = compute_celestial_from_helio(pdata)
 
     # Write out
     pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
@@ -297,21 +410,38 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
 def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     """Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image"""
 
-    # Define the mosaic WCS
+    # # Define the mosaic WCS (celestial)
+    # mosaic_shape = (4096, 4096)
+    # mosaic_wcs = WCS(naxis=2)
+    # mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
+    # mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
+    # mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
+    # mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
+
+    # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
-    mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
-    mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
+    mosaic_wcs.wcs.crval = 0, 0
+    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
+    mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
-    # Define the NFI WCS
+    # # Define the NFI WCS (celestial)
+    # nfi1_shape = [2048, 2048]
+    # nfi1_wcs = WCS(naxis=2)
+    # nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
+    # nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
+    # nfi1_wcs.wcs.cdelt = -0.01, 0.01
+    # nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
+
+    # Define the NFI WCS (helio)
     nfi1_shape = [2048, 2048]
     nfi1_wcs = WCS(naxis=2)
     nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
-    nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    nfi1_wcs.wcs.cdelt = -0.01, 0.01
-    nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
+    nfi1_wcs.wcs.crval = 0, 0
+    nfi1_wcs.wcs.cdelt = 0.01, 0.01
+    nfi1_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
 
     # Mask data to define the field of view
     mask = define_mask(shape=(4096, 4096), distance_value=0.155)
@@ -355,8 +485,11 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
 
     outdata = update_spacecraft_location(outdata, time_obs)
 
+    # Update secondary WCS
+    outdata = compute_celestial_from_helio(outdata)
+
     # Write out
-    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=False)
+    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 # @click.command()
@@ -381,8 +514,8 @@ def generate_l3_all(datadir, num_repeats):
     files_tb = np.tile(files_tb, num_repeats)
     files_pb = np.tile(files_pb, num_repeats)
 
-    files_tb = files_tb[0:3]
-    files_pb = files_pb[0:3]
+    files_tb = files_tb[0:10]
+    files_pb = files_pb[0:10]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -400,12 +533,12 @@ def generate_l3_all(datadir, num_repeats):
     # Run individual generators
     for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
         rotation_stage = i % 8
-        # futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage))
-        # futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
+        futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage))
+        futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
 
         if rotation_stage == 0:
             futures.append(pool.submit(generate_l3_pam, file_tb, file_pb, outdir, time_obs, time_delta_ln))
-            # futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
+            futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
 
     with tqdm(total=len(futures)) as pbar:
         for _ in as_completed(futures):

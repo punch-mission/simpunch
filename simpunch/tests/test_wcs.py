@@ -27,7 +27,6 @@ from punchbowl.data import (
     load_trefoil_wcs,
 )
 
-# TODO - Try original methodology for coordinate transform - document this quickly.
 
 def test_helio_celestial_wcs():
     filename = '/Users/clowder/data/punch/synthetic_L3_testing/PUNCH_L3_PAM_20240620000000.fits'
