@@ -28,8 +28,39 @@ from sunpy.coordinates.ephemeris import get_earth
 from tqdm import tqdm
 
 
+def compute_celestial_wcs(pdata: PUNCHData) -> PUNCHData:
+    """Updates secondary celestial WCS for level 3 data products"""
+
+    sun_location = get_sun_ra_dec(pdata.meta['DATE-OBS'].value)
+    pdata.meta['CRVAL1A'] = sun_location[0]
+    pdata.meta['CRVAL2A'] = sun_location[1]
+
+    helio_pc = pdata.wcs.wcs.pc
+    pangle = sun.P(pdata.meta['DATE-OBS'].value)
+    c = np.cos(np.deg2rad(pangle))
+    s = np.sin(np.deg2rad(pangle))
+    rmatrix = np.identity(3)
+    rmatrix[0:2,0:2] = np.array([[c, -s],
+                                 [s, c]])
+    inv_rmatrix = np.linalg.inv(rmatrix)
+
+    celestial_pc = np.dot(helio_pc, inv_rmatrix)
+
+    pdata.meta['PC1_1A'] = celestial_pc[0,0]
+    pdata.meta['PC1_2A'] = celestial_pc[1,0]
+    pdata.meta['PC1_3A'] = celestial_pc[2,0]
+    pdata.meta['PC2_1A'] = celestial_pc[0,1]
+    pdata.meta['PC2_2A'] = celestial_pc[1,1]
+    pdata.meta['PC2_3A'] = celestial_pc[2,1]
+    pdata.meta['PC3_1A'] = celestial_pc[0,2]
+    pdata.meta['PC3_2A'] = celestial_pc[1,2]
+    pdata.meta['PC3_3A'] = celestial_pc[2,2]
+
+    return pdata
+
+
 def get_sun_ra_dec(dt: datetime):
-    position =  get_sun(Time(str(dt), scale='utc'))
+    position = get_sun(Time(str(dt), scale='utc'))
     return position.ra.value, position.dec.value
 
 
@@ -56,7 +87,7 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
         data_tb = hdul[1].data / 1e8  # the 1e8 comes from the units on FORWARD output
         if data_tb.shape == (2048, 2048):
             data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
-        data_tb[np.where(data_tb == -9999.0)] = 0
+        data_tb[np.where(data_tb == -9.999e-05)] = 0
         if mask is not None:
             data_tb = data_tb * mask
 
@@ -64,12 +95,13 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
         data_pb = hdul[1].data / 1e8 # the 1e8 comes from the units on FORWARD output
         if data_pb.shape == (2048, 2048):
             data_pb = scipy.ndimage.zoom(data_pb, 2, order=0)
-        data_pb[np.where(data_pb == -9999.0)] = 0
+        data_pb[np.where(data_pb == -9.999e-05)] = 0
         if mask is not None:
             data_pb = data_pb * mask
 
     datacube = np.stack([data_tb, data_pb]).astype('float32')
-    uncert = StdDevUncertainty(np.random.random(datacube.shape))
+    # uncert = StdDevUncertainty(np.random.random(datacube.shape))
+    uncert = StdDevUncertainty(np.sqrt(datacube) / np.sqrt(datacube).max())
     uncert.array[datacube == 0] = 1
     meta = NormalizedMetadata.load_template(product_code, product_level)
     return PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncert)
@@ -217,13 +249,22 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
 def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     """Generate PAM - PUNCH Level-3 Polarized Low Noise Mosaic"""
 
+    # # Define the mosaic WCS
+    # mosaic_shape = (4096, 4096)
+    # mosaic_wcs = WCS(naxis=2)
+    # mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
+    # mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
+    # mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
+    # mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
+    # mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
+
     # Define the mosaic WCS
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
-    mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
-    mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
+    mosaic_wcs.wcs.crval = 0, 0
+    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
     mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
 
@@ -246,8 +287,11 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
 
     pdata = update_spacecraft_location(pdata, time_obs)
 
+    # Update secondary WCS
+    pdata = compute_celestial_wcs(pdata)
+
     # Write out
-    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=False)
+    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -315,15 +359,15 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=False)
 
 
-@click.command()
-@click.argument('datadir', type=click.Path(exists=True))
-@click.argument('num_repeats', type=int, default=5)
+# @click.command()
+# @click.argument('datadir', type=click.Path(exists=True))
+# @click.argument('num_repeats', type=int, default=5)
 def generate_l3_all(datadir, num_repeats):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_L3/')
+    outdir = os.path.join(datadir, 'synthetic_L3_testing/')
     print(f"Outputting to {outdir}")
 
     # Parse list of model data
@@ -333,15 +377,16 @@ def generate_l3_all(datadir, num_repeats):
     files_tb.sort()
     files_pb.sort()
 
-    # files_tb = files_tb[0:3]
-
     # Stack and repeat these data for testing - about 25 times to get around 5 days of data
     files_tb = np.tile(files_tb, num_repeats)
     files_pb = np.tile(files_pb, num_repeats)
 
+    files_tb = files_tb[0:3]
+    files_pb = files_pb[0:3]
+
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
-    time_start = datetime(2023, 7, 4, 0, 0, 0)
+    time_start = datetime(2024, 6, 20, 0, 0, 0)
 
     # Generate a corresponding set of observation times for polarized trefoil / NFI data
     time_delta = timedelta(minutes=4)
@@ -355,13 +400,17 @@ def generate_l3_all(datadir, num_repeats):
     # Run individual generators
     for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
         rotation_stage = i % 8
-        futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage))
-        futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
+        # futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage))
+        # futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
 
         if rotation_stage == 0:
             futures.append(pool.submit(generate_l3_pam, file_tb, file_pb, outdir, time_obs, time_delta_ln))
-            futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
+            # futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
 
     with tqdm(total=len(futures)) as pbar:
         for _ in as_completed(futures):
             pbar.update(1)
+
+
+if __name__ == '__main__':
+    generate_l3_all('/Users/clowder/data/punch', 1)
