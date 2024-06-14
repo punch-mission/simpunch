@@ -33,6 +33,10 @@ from sunpy.coordinates.sun import _sun_north_angle_to_z
 from sunpy.map import solar_angular_radius, make_fitswcs_header
 from astropy.coordinates import ICRS, GCRS
 
+from punchbowl.level1.initial_uncertainty import compute_uncertainty
+from astropy.constants import R_sun
+from astropy.wcs.utils import proj_plane_pixel_area
+
 
 def compute_pc_matrix_rotation(pdata: PUNCHData) -> PUNCHData:
     """Updates secondary celestial WCS for level 3 data products, using manual PC-matrix rotation"""
@@ -162,6 +166,126 @@ def define_trefoil_mask(rotation_stage=0):
     return np.load(os.path.join(dir_path, 'data/trefoil_mask.npz'))['trefoil_mask'][rotation_stage,:,:]
 
 
+def generate_noise_photon(
+    pdata: np.ndarray,
+    bias_level: float = 100,
+    dark_level: float = 55.81,
+    gain: float = 4.3,
+    read_noise_level: float = 17,
+    bitrate_signal: int = 16) -> np.ndarray:
+    """
+    Generates noise based on an input data array in photons, with specified noise parameters
+
+    Parameters
+    ----------
+    data
+        input data array in photons (n x n)
+    bias_level
+        ccd bias level
+    dark_level
+        ccd dark level
+    gain
+        ccd gain
+    read_noise_level
+        ccd read noise level
+    bitrate_signal
+        desired ccd data bit level
+
+    Returns
+    -------
+    np.ndarray
+        computed noise array corresponding to input data and ccd/noise parameters
+
+    """
+
+    # Convert the input array to DN
+    ddata = pdata / gain
+
+    # Generate a copy of the input signal
+    data_signal = np.copy(ddata)
+
+    # Convert / scale data
+    # Think of this as the raw signal input into the camera
+    data = np.interp(
+        data_signal,
+        (np.min(data_signal), np.max(data_signal)),
+        (0, 2**bitrate_signal - 1),
+    )
+    data = data.astype("long")
+
+    # Add bias level and clip pixels to avoid overflow
+    data = np.clip(data + bias_level, 0, 2**bitrate_signal - 1)
+
+    # Photon / shot noise generation
+    data_photon = data_signal * gain  # DN to photoelectrons
+    sigma_photon = np.sqrt(data_photon)  # Converting sigma of this
+    sigma = sigma_photon / gain  # Converting back to DN
+    noise_photon = np.random.normal(scale=sigma)
+
+    # Dark noise generation
+    noise_level = dark_level * gain
+    noise_dark = np.random.poisson(lam=noise_level, size=data.shape) / gain
+
+    # Read noise generation
+    noise_read = np.random.normal(scale=read_noise_level, size=data.shape)
+    noise_read = noise_read / gain  # Convert back to DN
+
+    # And then add noise terms directly
+    noise_sum = noise_photon + noise_dark + noise_read
+
+    return noise_sum
+
+
+def generate_uncertainty(pdata: PUNCHData) -> PUNCHData:
+
+    # Input data is scaled to MSB
+    # Convert to photons
+    # Get the pixel scale in degrees
+    pixel_scale = abs(pdata.wcs.pixel_scale_matrix[0, 0]) * u.deg
+
+    # Convert the pixel scale to radians
+    pixel_scale_rad = pixel_scale.to(u.rad)
+
+    # Get the physical size of the Sun
+    sun_radius = R_sun.to(u.m)
+
+    # Calculate the physical area per pixel
+    pixel_area = proj_plane_pixel_area(pdata.wcs) * (u.deg ** 2)
+    physical_area_per_pixel = (pixel_area * (sun_radius ** 2) / (pixel_scale_rad ** 2)).to(u.m ** 2)
+
+    # Constants
+    h = 6.62607015e-34 * u.m ** 2 * u.kg / u.s  # Planck's constant
+    c = 2.99792458e8 * u.m / u.s  # Speed of light
+    wavelength = 530 * u.nm  # Wavelength in nanometers
+    exposure_time = 60 * u.s  # Exposure in seconds
+
+    # Calculate energy of a single photon
+    energy_per_photon = (h * c / wavelength).to(u.J)
+
+    # Now get the energy per unit of irradiance
+    # Given irradiance in W/m^2/sr
+    irradiance = 1 * u.W / (u.m ** 2 * u.sr)
+
+    # Convert irradiance to energy per second per pixel
+    energy_per_second = irradiance * 4 * np.pi * u.sr * physical_area_per_pixel
+
+    # Convert energy per second to photon count
+    photon_count = (energy_per_second * exposure_time).to(u.J) / energy_per_photon
+
+    photon_array = pdata.data * photon_count
+
+    # photon_noise = generate_noise_photon(photon_array)
+    photon_noise = np.sqrt(photon_array)
+
+    uncertainty = photon_noise / photon_noise.max()
+
+    uncertainty[pdata.data == 0] = 1
+
+    pdata.uncertainty.array = uncertainty
+
+    return pdata
+
+
 def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None):
     """Assemble a punchdata object with correct metadata"""
 
@@ -182,11 +306,11 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
             data_pb = data_pb * mask
 
     datacube = np.stack([data_tb, data_pb]).astype('float32')
-    # uncert = StdDevUncertainty(np.random.random(datacube.shape))
-    uncert = StdDevUncertainty(np.sqrt(datacube) / np.sqrt(datacube).max())
-    uncert.array[datacube == 0] = 1
+    # uncertainty = generate_uncertainty(datacube)
+    uncertainty = StdDevUncertainty(np.zeros(datacube.shape))
+    uncertainty.array[datacube == 0] = 1
     meta = NormalizedMetadata.load_template(product_code, product_level)
-    return PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncert)
+    return PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
 
 def update_spacecraft_location(input_data, time_obs):
@@ -272,6 +396,9 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     # Update secondary WCS
     pdata = compute_celestial_from_helio(pdata)
 
+    # Update uncertainty
+    pdata = generate_uncertainty(pdata)
+
     # Write out
     pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
@@ -321,12 +448,12 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     reprojected_data = np.zeros((2, 2048, 2048), dtype=pdata.data.dtype)
 
     for i in np.arange(2):
-        reprojected_data[i, :, :] = reproject.reproject_adaptive((pdata.data[i, :, :], mosaic_wcs), nfi1_wcs,
+        reprojected_data[i, :, :] = reproject.reproject_adaptive((pdata.data[i, :, :], mosaic_wcs[i]), nfi1_wcs,
                                                                  (2048, 2048),
                                                                  roundtrip_coords=False, return_footprint=False,
                                                                  kernel='Gaussian', boundary_mode='ignore')
 
-    uncert = StdDevUncertainty(np.random.random(reprojected_data.shape))
+    uncert = StdDevUncertainty(np.zeros(reprojected_data.shape))
     uncert.array[reprojected_data == 0] = 1
 
     meta = NormalizedMetadata.load_template('PAN', '3')
@@ -355,6 +482,9 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
 
     # Update secondary WCS
     outdata = compute_celestial_from_helio(outdata)
+
+    # Update uncertainty
+    outdata = generate_uncertainty(outdata)
 
     # Write out
     outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
@@ -402,6 +532,9 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
 
     # Update secondary WCS
     pdata = compute_celestial_from_helio(pdata)
+
+    # Update uncertainty
+    pdata = generate_uncertainty(pdata)
 
     # Write out
     pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
@@ -452,12 +585,12 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     reprojected_data = np.zeros((2, 2048, 2048), dtype=pdata.data.dtype)
 
     for i in np.arange(2):
-        reprojected_data[i, :, :] = reproject.reproject_adaptive((pdata.data[i, :, :], mosaic_wcs), nfi1_wcs,
+        reprojected_data[i, :, :] = reproject.reproject_adaptive((pdata.data[i, :, :], mosaic_wcs[i]), nfi1_wcs,
                                                                  (2048, 2048),
                                                                  roundtrip_coords=False, return_footprint=False,
                                                                  kernel='Gaussian', boundary_mode='ignore')
 
-    uncert = StdDevUncertainty(np.random.random(reprojected_data.shape))
+    uncert = StdDevUncertainty(np.zeros(reprojected_data.shape))
     uncert.array[reprojected_data == 0] = 1
 
     meta = NormalizedMetadata.load_template('PAN', '3')
@@ -487,6 +620,9 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
 
     # Update secondary WCS
     outdata = compute_celestial_from_helio(outdata)
+
+    # Update uncertainty
+    outdata = generate_uncertainty(outdata)
 
     # Write out
     outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
