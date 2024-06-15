@@ -2,7 +2,6 @@
 Generates synthetic level 3 data
 PAM - PUNCH Level-3 Polarized Low Noise Mosaic
 PAN - PUNCH Level-3 Polarized Low Noise NFI Image
-
 PTM - PUNCH Level-3 Polarized Mosaic
 PNN - PUNCH Level-3 Polarized NFI Image
 """
@@ -29,37 +28,6 @@ from sunpy.coordinates.ephemeris import get_earth
 from sunpy.coordinates.sun import _sun_north_angle_to_z
 from sunpy.map import make_fitswcs_header
 from tqdm import tqdm
-
-
-def compute_pc_matrix_rotation(pdata: PUNCHData) -> PUNCHData:
-    """Updates secondary celestial WCS for level 3 data products, using manual PC-matrix rotation"""
-
-    sun_location = get_sun_ra_dec(pdata.meta['DATE-OBS'].value)
-    pdata.meta['CRVAL1A'] = sun_location[0]
-    pdata.meta['CRVAL2A'] = sun_location[1]
-
-    helio_pc = pdata.wcs.wcs.pc
-    pangle = sun.P(pdata.meta['DATE-OBS'].value)
-    c = np.cos(np.deg2rad(pangle))
-    s = np.sin(np.deg2rad(pangle))
-    rmatrix = np.identity(3)
-    rmatrix[0:2,0:2] = np.array([[c, -s],
-                                 [s, c]])
-    inv_rmatrix = np.linalg.inv(rmatrix)
-
-    celestial_pc = np.dot(helio_pc, inv_rmatrix)
-
-    pdata.meta['PC1_1A'] = celestial_pc[0,0]
-    pdata.meta['PC1_2A'] = celestial_pc[1,0]
-    pdata.meta['PC1_3A'] = celestial_pc[2,0]
-    pdata.meta['PC2_1A'] = celestial_pc[0,1]
-    pdata.meta['PC2_2A'] = celestial_pc[1,1]
-    pdata.meta['PC2_3A'] = celestial_pc[2,1]
-    pdata.meta['PC3_1A'] = celestial_pc[0,2]
-    pdata.meta['PC3_2A'] = celestial_pc[1,2]
-    pdata.meta['PC3_3A'] = celestial_pc[2,2]
-
-    return pdata
 
 
 def extract_crota_from_wcs(wcs):
@@ -159,74 +127,6 @@ def define_trefoil_mask(rotation_stage=0):
     return np.load(os.path.join(dir_path, 'data/trefoil_mask.npz'))['trefoil_mask'][rotation_stage,:,:]
 
 
-def generate_noise_photon(
-    pdata: np.ndarray,
-    bias_level: float = 100,
-    dark_level: float = 55.81,
-    gain: float = 4.3,
-    read_noise_level: float = 17,
-    bitrate_signal: int = 16) -> np.ndarray:
-    """
-    Generates noise based on an input data array in photons, with specified noise parameters
-
-    Parameters
-    ----------
-    data
-        input data array in photons (n x n)
-    bias_level
-        ccd bias level
-    dark_level
-        ccd dark level
-    gain
-        ccd gain
-    read_noise_level
-        ccd read noise level
-    bitrate_signal
-        desired ccd data bit level
-
-    Returns
-    -------
-    np.ndarray
-        computed noise array corresponding to input data and ccd/noise parameters
-
-    """
-
-    # Convert the input array to DN
-    ddata = pdata / gain
-
-    # Generate a copy of the input signal
-    data_signal = np.copy(ddata)
-
-    # Convert / scale data
-    # Think of this as the raw signal input into the camera
-    data = np.interp(
-        data_signal,
-        (np.min(data_signal), np.max(data_signal)),
-        (0, 2**bitrate_signal - 1),
-    )
-    data = data.astype("long")
-
-    # Add bias level and clip pixels to avoid overflow
-    data = np.clip(data + bias_level, 0, 2**bitrate_signal - 1)
-
-    # Photon / shot noise generation
-    data_photon = data_signal * gain  # DN to photoelectrons
-    sigma_photon = np.sqrt(data_photon)  # Converting sigma of this
-    sigma = sigma_photon / gain  # Converting back to DN
-    noise_photon = np.random.normal(scale=sigma)
-
-    # Dark noise generation
-    noise_level = dark_level * gain
-    noise_dark = np.random.poisson(lam=noise_level, size=data.shape) / gain
-
-    # Read noise generation
-    noise_read = np.random.normal(scale=read_noise_level, size=data.shape)
-    noise_read = noise_read / gain  # Convert back to DN
-
-    # And then add noise terms directly
-    return noise_photon + noise_dark + noise_read
-
-
 def generate_uncertainty(pdata: PUNCHData) -> PUNCHData:
 
     # Input data is scaled to MSB
@@ -297,7 +197,6 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
             data_pb = data_pb * mask
 
     datacube = np.stack([data_tb, data_pb]).astype('float32')
-    # uncertainty = generate_uncertainty(datacube)
     uncertainty = StdDevUncertainty(np.zeros(datacube.shape))
     uncertainty.array[datacube == 0] = 1
     meta = NormalizedMetadata.load_template(product_code, product_level)
@@ -337,7 +236,6 @@ def update_spacecraft_location(input_data, time_obs):
     input_data.meta['HEQY_OBS'] = (coord.heliographic_stonyhurst.cartesian.y.value * u.AU).to(u.m).value
     input_data.meta['HEQZ_OBS'] = (coord.heliographic_stonyhurst.cartesian.z.value * u.AU).to(u.m).value
 
-
     input_data.meta['SOLAR_EP'] = sun.P(time_obs).value
     input_data.meta['CAR_ROT'] = float(sun.carrington_rotation_number(time_obs))
 
@@ -346,16 +244,6 @@ def update_spacecraft_location(input_data, time_obs):
 
 def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage):
     """Generate PTM - PUNCH Level-3 Polarized Mosaic"""
-
-    # # Define the mosaic WCS (celestial)
-    # mosaic_shape = (4096, 4096)
-    # mosaic_wcs = WCS(naxis=2)
-    # mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
-    # mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    # mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
-    # mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
-    # mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
-
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
@@ -383,28 +271,13 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     pdata = update_spacecraft_location(pdata, time_obs)
-
-    # Update secondary WCS
     pdata = compute_celestial_from_helio(pdata)
-
-    # Update uncertainty
     pdata = generate_uncertainty(pdata)
-
-    # Write out
     pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     """Generate PNN - PUNCH Level-3 Polarized NFI Image"""
-
-    # # Define the mosaic WCS (celestial)
-    # mosaic_shape = (4096, 4096)
-    # mosaic_wcs = WCS(naxis=2)
-    # mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
-    # mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    # mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
-    # mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
-
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
@@ -413,14 +286,6 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
     mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
     mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
-
-    # # Define the NFI WCS (celestial)
-    # nfi1_shape = [2048, 2048]
-    # nfi1_wcs = WCS(naxis=2)
-    # nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
-    # nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    # nfi1_wcs.wcs.cdelt = -0.01, 0.01
-    # nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
 
     # Define the NFI WCS (helio)
     nfi1_shape = [2048, 2048]
@@ -470,29 +335,13 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     outdata = update_spacecraft_location(outdata, time_obs)
-
-    # Update secondary WCS
     outdata = compute_celestial_from_helio(outdata)
-
-    # Update uncertainty
     outdata = generate_uncertainty(outdata)
-
-    # Write out
     outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     """Generate PAM - PUNCH Level-3 Polarized Low Noise Mosaic"""
-
-    # # Define the mosaic WCS (celestial)
-    # mosaic_shape = (4096, 4096)
-    # mosaic_wcs = WCS(naxis=2)
-    # mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
-    # mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    # mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
-    # mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
-    # mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
-
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
@@ -520,28 +369,13 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     pdata = update_spacecraft_location(pdata, time_obs)
-
-    # Update secondary WCS
     pdata = compute_celestial_from_helio(pdata)
-
-    # Update uncertainty
     pdata = generate_uncertainty(pdata)
-
-    # Write out
     pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     """Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image"""
-
-    # # Define the mosaic WCS (celestial)
-    # mosaic_shape = (4096, 4096)
-    # mosaic_wcs = WCS(naxis=2)
-    # mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
-    # mosaic_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    # mosaic_wcs.wcs.cdelt = -0.0225, 0.0225
-    # mosaic_wcs.wcs.ctype = "RA---ARC", "DEC--ARC"
-
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
@@ -550,14 +384,6 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
     mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
     mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
-
-    # # Define the NFI WCS (celestial)
-    # nfi1_shape = [2048, 2048]
-    # nfi1_wcs = WCS(naxis=2)
-    # nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
-    # nfi1_wcs.wcs.crval = get_sun_ra_dec(time_obs + time_delta)
-    # nfi1_wcs.wcs.cdelt = -0.01, 0.01
-    # nfi1_wcs.wcs.ctype = "RA---TAN", "DEC--TAN"
 
     # Define the NFI WCS (helio)
     nfi1_shape = [2048, 2048]
@@ -608,14 +434,8 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     outdata = update_spacecraft_location(outdata, time_obs)
-
-    # Update secondary WCS
     outdata = compute_celestial_from_helio(outdata)
-
-    # Update uncertainty
     outdata = generate_uncertainty(outdata)
-
-    # Write out
     outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
@@ -641,9 +461,6 @@ def generate_l3_all(datadir, num_repeats):
     # Stack and repeat these data for testing - about 25 times to get around 5 days of data
     files_tb = np.tile(files_tb, num_repeats)
     files_pb = np.tile(files_pb, num_repeats)
-
-    files_tb = files_tb[0:20]
-    files_pb = files_pb[0:20]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
