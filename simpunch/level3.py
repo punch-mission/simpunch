@@ -16,26 +16,19 @@ import click
 import numpy as np
 import reproject
 import scipy.ndimage
-from astropy.coordinates import get_sun
+from astropy.constants import R_sun
+from astropy.coordinates import GCRS, EarthLocation, SkyCoord, get_sun
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.time import Time
 from astropy.wcs import WCS
-from astropy.wcs.utils import add_stokes_axis_to_wcs
+from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
 from punchbowl.data import NormalizedMetadata, PUNCHData
-from sunpy.coordinates import sun
-from sunpy.coordinates.ephemeris import get_earth
-from tqdm import tqdm
-
-from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping
 from sunpy.coordinates import frames, sun
+from sunpy.coordinates.ephemeris import get_earth
 from sunpy.coordinates.sun import _sun_north_angle_to_z
-from sunpy.map import solar_angular_radius, make_fitswcs_header
-from astropy.coordinates import ICRS, GCRS
-
-from punchbowl.level1.initial_uncertainty import compute_uncertainty
-from astropy.constants import R_sun
-from astropy.wcs.utils import proj_plane_pixel_area
+from sunpy.map import make_fitswcs_header
+from tqdm import tqdm
 
 
 def compute_pc_matrix_rotation(pdata: PUNCHData) -> PUNCHData:
@@ -231,9 +224,7 @@ def generate_noise_photon(
     noise_read = noise_read / gain  # Convert back to DN
 
     # And then add noise terms directly
-    noise_sum = noise_photon + noise_dark + noise_read
-
-    return noise_sum
+    return noise_photon + noise_dark + noise_read
 
 
 def generate_uncertainty(pdata: PUNCHData) -> PUNCHData:
@@ -628,15 +619,16 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
-# @click.command()
-# @click.argument('datadir', type=click.Path(exists=True))
-# @click.argument('num_repeats', type=int, default=5)
+@click.command()
+@click.argument('datadir', type=click.Path(exists=True))
+@click.argument('num_repeats', type=int, default=5)
 def generate_l3_all(datadir, num_repeats):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_L3_testing/')
+    outdir = os.path.join(datadir, 'synthetic_L3_trial/')
+    os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
     # Parse list of model data
@@ -650,8 +642,8 @@ def generate_l3_all(datadir, num_repeats):
     files_tb = np.tile(files_tb, num_repeats)
     files_pb = np.tile(files_pb, num_repeats)
 
-    files_tb = files_tb[0:10]
-    files_pb = files_pb[0:10]
+    files_tb = files_tb[0:20]
+    files_pb = files_pb[0:20]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -664,15 +656,17 @@ def generate_l3_all(datadir, num_repeats):
     # Generate a corresponding set of observation times for low-noise mosaic / NFI data
     time_delta_ln = timedelta(minutes=32)
 
+    rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
+
     pool = ProcessPoolExecutor()
     futures = []
     # Run individual generators
     for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
-        rotation_stage = i % 8
-        futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta, rotation_stage))
+        futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta,
+                                   rotation_indices[i % 8]))
         futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
 
-        if rotation_stage == 0:
+        if i % 8 == 0:
             futures.append(pool.submit(generate_l3_pam, file_tb, file_pb, outdir, time_obs, time_delta_ln))
             futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
 
@@ -680,6 +674,8 @@ def generate_l3_all(datadir, num_repeats):
         for _ in as_completed(futures):
             pbar.update(1)
 
+    pool.shutdown()
+
 
 if __name__ == '__main__':
-    generate_l3_all('/Users/clowder/data/punch', 1)
+    generate_l3_all('/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/', 1)
