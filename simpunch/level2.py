@@ -32,18 +32,56 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
                                                      11: StokesSymbol("B", "total brightness")})
 
 def gen_fcorona(shape):
-    # TODO - generate actual model fcorona here
+
     fcorona = np.zeros(shape)
 
-    sigma = 1000
+    # Superellipse parameters
+    a = 600  # Horizontal axis radius
+    b = 300  # Vertical axis radius
+
+    tilt_angle_deg = 3  # Tilt angle in degrees
+
+    # Convert tilt angle to radians
+    tilt_angle_rad = np.deg2rad(tilt_angle_deg)
 
     x, y = np.meshgrid(np.arange(shape[1]), np.arange(shape[2]))
     x_center, y_center = shape[1] // 2, shape[2] // 2
-    distance_squared = (x - x_center)**2 + (y - y_center)**2
-    fcorona_profile = np.exp(-distance_squared / (2 * sigma**2))
+
+    # Rotate coordinates (x, y) around the center
+    x_rotated = (x - x_center) * np.cos(tilt_angle_rad) + (y - y_center) * np.sin(tilt_angle_rad) + x_center
+    y_rotated = -(x - x_center) * np.sin(tilt_angle_rad) + (y - y_center) * np.cos(tilt_angle_rad) + y_center
+
+    # Calculate distance from the center normalized by a and b for rotated coordinates
+    distance = np.sqrt(((x_rotated - x_center) / a) ** 2 + ((y_rotated - y_center) / b) ** 2)
+
+    # Define a function for varying n with radius
+    def n_function(r, max_radius, min_n, max_n):
+        # Example of a linear function for n based on radius
+        return min_n + (max_n - min_n) * (r / max_radius)
+
+    # Set parameters for varying n
+    max_radius = np.sqrt((shape[1] / 2) ** 2 + (shape[2] / 2) ** 2)  # Maximum radius from center
+    min_n = 1.54  # Minimum value of n
+    max_n = 1.65  # Maximum value of n
+
+    # Calculate n as a function of distance from the center
+    n = n_function(distance, max_radius, min_n, max_n)
+
+    # Calculate the superellipse equation
+    superellipse = (np.abs((x_rotated - x_center) / a) ** n + np.abs((y_rotated - y_center) / b) ** n) ** (1 / n)
+
+    # Normalize distance to range [0, 1]
+    superellipse = superellipse / (2 ** (1 / n))
+
+    # Apply a Gaussian-like profile to simulate intensity variation
+    max_distance = 1
+    fcorona_profile = np.exp(-superellipse ** 2 / (2 * max_distance ** 2))
+
+    # Normalize profile to [0, 1] and scale to desired magnitude
+    fcorona_profile = fcorona_profile / fcorona_profile.max() * 1e-12
 
     for i in np.arange(fcorona.shape[0]):
-        fcorona[i,:,:] = fcorona_profile[:,:] * 1e-12
+        fcorona[i,:,:] = fcorona_profile[:,:]
 
     return fcorona
 
@@ -53,7 +91,10 @@ def add_fcorona(input_data):
 
     fcorona = gen_fcorona(input_data.data.shape)
 
-    output_data = input_data + fcorona
+    fcorona = fcorona * (input_data.data != 0)
+
+    output_data = input_data.duplicate_with_updates(data=input_data.data + fcorona)
+
     return output_data
 
 
@@ -161,7 +202,7 @@ def generate_l2_all(datadir):
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
-    files_ptm = glob.glob(datadir + '/synthetic_l3/*PTM*.fits')
+    files_ptm = glob.glob(datadir + '/synthetic_l3/PTM/*PTM*.fits')
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
