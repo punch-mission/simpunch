@@ -7,32 +7,25 @@ import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
-import astropy.units as u
 import click
 import numpy as np
-import reproject
-import scipy.ndimage
-from astropy.coordinates import get_sun
+import solpolpy
+from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
-from astropy.nddata import StdDevUncertainty
-from astropy.time import Time
+from astropy.table import QTable
 from astropy.wcs import WCS
-from astropy.wcs.utils import add_stokes_axis_to_wcs
+from ndcube import NDCollection
+from photutils.datasets import make_gaussian_sources_image, make_noise_image
 from punchbowl.data import NormalizedMetadata, PUNCHData
-from sunpy.coordinates import sun
-from sunpy.coordinates.ephemeris import get_earth
-from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping
 from tqdm import tqdm
 
-from ndcube import NDCube, NDCollection
-
-import solpolpy
+from simpunch.stars import filter_for_visible_stars, load_raw_hipparcos_catalog, find_catalog_in_image
 
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
                                                      11: StokesSymbol("B", "total brightness")})
 
-def gen_fcorona(shape):
 
+def gen_fcorona(shape):
     fcorona = np.zeros(shape)
 
     # Superellipse parameters
@@ -81,7 +74,7 @@ def gen_fcorona(shape):
     fcorona_profile = fcorona_profile / fcorona_profile.max() * 1e-12
 
     for i in np.arange(fcorona.shape[0]):
-        fcorona[i,:,:] = fcorona_profile[:,:]
+        fcorona[i, :, :] = fcorona_profile[:, :]
 
     return fcorona
 
@@ -98,19 +91,64 @@ def add_fcorona(input_data):
     return output_data
 
 
-def gen_starfield(shape):
-    # TODO - generate actual starfield here (from existing code)
-    starfield = np.zeros(shape)
-    starfield[:,np.random.randint(0,shape[1], size=100), np.random.randint(0,shape[2], size=100)] = 1e-12
-    return starfield
+def gen_starfield(wcs,
+                  img_shape,
+                  fwhm,
+                  wcs_mode: str = 'all',
+                  mag_set=0,
+                  flux_set=500_000,
+                  noise_mean: float | None = 25.0,
+                  noise_std: float | None = 5.0,
+                  dimmest_magnitude=8):
+    sigma = fwhm / 2.355
+
+    catalog = load_raw_hipparcos_catalog()
+    filtered_catalog = filter_for_visible_stars(catalog,
+                                                dimmest_magnitude=dimmest_magnitude)
+    stars = find_catalog_in_image(filtered_catalog,
+                                  wcs,
+                                  img_shape,
+                                  mode=wcs_mode)
+    star_mags = stars['Vmag']
+
+    sources = QTable()
+    sources['x_mean'] = stars['x_pix']
+    sources['y_mean'] = stars['y_pix']
+    sources['x_stddev'] = np.ones(len(stars)) * sigma
+    sources['y_stddev'] = np.ones(len(stars)) * sigma
+    sources['flux'] = flux_set * np.power(10, -0.4 * (star_mags - mag_set))
+    sources['theta'] = np.zeros(len(stars))
+
+    fake_image = make_gaussian_sources_image(img_shape, sources)
+    if noise_mean is not None and noise_std is not None:  # we only add noise if it's specified
+        fake_image += make_noise_image(img_shape, 'gaussian', mean=noise_mean, stddev=noise_std)
+
+    return fake_image, sources
 
 
 def add_starfield(input_data):
     """Adds synthetic starfield"""
 
-    starfield = gen_starfield(input_data.data.shape)
+    wcs_stellar_input = WCS(input_data.meta, key='A')
 
-    output_data = input_data + starfield
+    shape = input_data.data[0,:,:].shape
+    wcs_stellar = WCS(naxis=2)
+    wcs_stellar.wcs.crpix = shape[1] / 2 - 0.5, shape[0] / 2 - 0.5
+    wcs_stellar.wcs.crval = wcs_stellar_input.wcs.crval[0], wcs_stellar_input.wcs.crval[1]
+    wcs_stellar.wcs.cdelt = wcs_stellar_input.wcs.cdelt[0], wcs_stellar_input.wcs.cdelt[1]
+    wcs_stellar.wcs.ctype = 'RA---ARC', 'DEC--ARC'
+
+    wcs_stellar.wcs.pc = wcs_stellar_input.wcs.pc[0:2,0:2]
+
+    starfield, stars = gen_starfield(wcs_stellar, input_data.data[0,:,:].shape,
+                               fwhm=3, dimmest_magnitude=12, noise_mean=10, noise_std=5)
+
+    starfield_data = np.zeros(input_data.data.shape)
+    for i in range(starfield_data.shape[0]):
+        starfield_data[i, :, :] = starfield * (input_data.data[i, :, :] != 0)
+
+    output_data = input_data.duplicate_with_updates(data=input_data.data + (starfield_data / starfield_data.max() * 1e-10))
+
     return output_data
 
 
@@ -156,11 +194,10 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     # Read in the input data
     # input_pdata = PUNCHData.from_fits(input_file)
     with fits.open(input_file) as hdul:
-        # TODO - remove this scaling once updated L3 data is generated
-        input_data = hdul[1].data / 1e8
+        input_data = hdul[1].data
         input_header = hdul[1].header
 
-    input_pdata = PUNCHData(data = input_data, meta = input_header, wcs = WCS(input_header))
+    input_pdata = PUNCHData(data=input_data, meta=input_header, wcs=WCS(input_header))
 
     # Define the output data product
     product_code = 'PTM'
