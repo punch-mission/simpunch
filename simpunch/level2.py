@@ -86,9 +86,7 @@ def add_fcorona(input_data):
 
     fcorona = fcorona * (input_data.data != 0)
 
-    output_data = input_data.duplicate_with_updates(data=input_data.data + fcorona)
-
-    return output_data
+    return input_data.duplicate_with_updates(data=input_data.data + fcorona)
 
 
 def gen_starfield(wcs,
@@ -147,9 +145,7 @@ def add_starfield(input_data):
     for i in range(starfield_data.shape[0]):
         starfield_data[i, :, :] = starfield * (input_data.data[i, :, :] != 0)
 
-    output_data = input_data.duplicate_with_updates(data=input_data.data + (starfield_data / starfield_data.max() * 1e-10))
-
-    return output_data
+    return input_data.duplicate_with_updates(data=input_data.data + (starfield_data / starfield_data.max() * 1e-10))
 
 
 def remix_polarization(input_data):
@@ -183,9 +179,7 @@ def remix_polarization(input_data):
 
     new_wcs = input_data.wcs.copy()
 
-    output_data = PUNCHData(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
-
-    return output_data
+    return PUNCHData(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
 def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stage):
