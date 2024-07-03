@@ -227,8 +227,8 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
-# @click.command()
-# @click.argument('datadir', type=click.Path(exists=True))
+@click.command()
+@click.argument('datadir', type=click.Path(exists=True))
 def generate_l2_all(datadir):
     """Generate all level 2 synthetic data
      L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM"""
@@ -243,9 +243,6 @@ def generate_l2_all(datadir):
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
-    # TODO - remove after testing
-    files_ptm = files_ptm[0:2]
-
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
     time_start = datetime(2023, 7, 4, 0, 0, 0)
@@ -254,22 +251,17 @@ def generate_l2_all(datadir):
     time_delta = timedelta(minutes=4)
     times_obs = np.arange(len(files_ptm)) * time_delta + time_start
 
-    # TODO - revert after testing
+    pool = ProcessPoolExecutor()
+    futures = []
+    # Run individual generators
     for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
         rotation_stage = i % 8
-        generate_l2_ptm(file_ptm, outdir, time_obs, time_delta, rotation_stage)
+        futures.append(pool.submit(generate_l2_ptm, file_ptm, outdir, time_obs, time_delta, rotation_stage))
 
-    # pool = ProcessPoolExecutor()
-    # futures = []
-    # # Run individual generators
-    # for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
-    #     rotation_stage = i % 8
-    #     futures.append(pool.submit(generate_l2_ptm, file_ptm, outdir, time_obs, time_delta, rotation_stage))
-    #
-    # with tqdm(total=len(futures)) as pbar:
-    #     for _ in as_completed(futures):
-    #         pbar.update(1)
+    with tqdm(total=len(futures)) as pbar:
+        for _ in as_completed(futures):
+            pbar.update(1)
 
 
 if __name__ == "__main__":
-    generate_l2_all('/Users/clowder/data/punch')
+    generate_l2_all()
