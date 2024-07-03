@@ -1,4 +1,5 @@
 import os
+import requests
 
 import astropy.units as u
 import numpy as np
@@ -9,9 +10,13 @@ from numpy.fft import fft2, ifft2, ifftshift
 from regularizepsf import ArrayCorrector
 
 THIS_DIR = os.path.dirname(__file__)
+HIPPARCOS_URL = "https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat"
 
 
-def load_catalog(catalog_path=os.path.join(THIS_DIR, "data/hip_main.dat")):
+def load_catalog(
+        catalog_path: str = os.path.join(THIS_DIR, "data/hip_main.dat"),
+        url: str = HIPPARCOS_URL
+):
     column_names = (
         'Catalog', 'HIP', 'Proxy', 'RAhms', 'DEdms', 'Vmag',
         'VarFlag', 'r_Vmag', 'RAdeg', 'DEdeg', 'AstroRef', 'Plx', 'pmRA',
@@ -26,19 +31,29 @@ def load_catalog(catalog_path=os.path.join(THIS_DIR, "data/hip_main.dat")):
         'dHp', 'e_dHp', 'Survey', 'Chart', 'Notes', 'HD', 'BD', 'CoD',
         'CPD', '(V-I)red', 'SpType', 'r_SpType',
     )
+
+    if not os.path.exists(catalog_path):
+        response = requests.get(url)
+        response.raise_for_status()
+        with open(catalog_path, 'wb') as file:
+            file.write(response.content)
+
     return pd.read_csv(catalog_path, sep="|", names=column_names, usecols=['HIP', 'Vmag', 'RAdeg', 'DEdeg'],
                      na_values=['     ', '       ', '        ', '            '])
 
 
 def load_raw_hipparcos_catalog(
-    catalog_path: str = os.path.join(THIS_DIR, "data/hip_main.dat")
-    ) -> pd.DataFrame:
+        catalog_path: str = os.path.join(THIS_DIR, "data/hip_main.dat"),
+        url: str = HIPPARCOS_URL
+) -> pd.DataFrame:
     """Download hipparcos catalog from website.
 
     Parameters
     ----------
     catalog_path : str
         path to the Hipparcos catalog
+    url : str
+        url to the Hipparcos catalog for retrieval
 
     Returns
     -------
@@ -125,6 +140,13 @@ def load_raw_hipparcos_catalog(
         "SpType",
         "r_SpType",
     )
+
+    if not os.path.exists(catalog_path):
+        response = requests.get(url)
+        response.raise_for_status()
+        with open(catalog_path, 'wb') as file:
+            file.write(response.content)
+
     df = pd.read_csv(
         catalog_path,
         sep="|",
