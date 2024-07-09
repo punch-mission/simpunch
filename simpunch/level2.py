@@ -145,7 +145,7 @@ def add_starfield(input_data):
     for i in range(starfield_data.shape[0]):
         starfield_data[i, :, :] = starfield * (input_data.data[i, :, :] != 0)
 
-    return input_data.duplicate_with_updates(data=input_data.data + (starfield_data / starfield_data.max() * 1e-10))
+    return input_data.duplicate_with_updates(data=input_data.data + (starfield_data / starfield_data.max() * 5.4e-11))
 
 
 def remix_polarization(input_data):
