@@ -8,7 +8,6 @@ simpunch.level3
    Generates synthetic level 3 data
    PAM - PUNCH Level-3 Polarized Low Noise Mosaic
    PAN - PUNCH Level-3 Polarized Low Noise NFI Image
-
    PTM - PUNCH Level-3 Polarized Mosaic
    PNN - PUNCH Level-3 Polarized NFI Image
 
@@ -19,9 +18,12 @@ Functions
 
 .. autoapisummary::
 
+   simpunch.level3.extract_crota_from_wcs
+   simpunch.level3.compute_celestial_from_helio
    simpunch.level3.get_sun_ra_dec
    simpunch.level3.define_mask
    simpunch.level3.define_trefoil_mask
+   simpunch.level3.generate_uncertainty
    simpunch.level3.assemble_punchdata
    simpunch.level3.update_spacecraft_location
    simpunch.level3.generate_l3_ptm
@@ -34,6 +36,13 @@ Functions
 Module Contents
 ---------------
 
+.. py:function:: extract_crota_from_wcs(wcs)
+
+.. py:function:: compute_celestial_from_helio(pdata: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+
+   Updates secondary celestial WCS for level 3 data products, using coordinate transformation
+
+
 .. py:function:: get_sun_ra_dec(dt: datetime.datetime)
 
 .. py:function:: define_mask(shape=(4096, 4096), distance_value=0.68)
@@ -45,6 +54,8 @@ Module Contents
 
    Define a mask to describe the FOV for trefoil mosaic PUNCH data products
 
+
+.. py:function:: generate_uncertainty(pdata: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
 
 .. py:function:: assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None)
 

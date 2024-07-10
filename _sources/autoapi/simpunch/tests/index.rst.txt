@@ -12,5 +12,6 @@ Submodules
 
    /autoapi/simpunch/tests/test_noise/index
    /autoapi/simpunch/tests/test_stars/index
+   /autoapi/simpunch/tests/test_wcs/index
 
 

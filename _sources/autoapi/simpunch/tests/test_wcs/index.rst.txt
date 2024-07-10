@@ -1,0 +1,19 @@
+simpunch.tests.test_wcs
+=======================
+
+.. py:module:: simpunch.tests.test_wcs
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.tests.test_wcs.test_helio_celestial_wcs
+
+
+Module Contents
+---------------
+
+.. py:function:: test_helio_celestial_wcs()
+
