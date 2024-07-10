@@ -1,39 +1,15 @@
-import os
-from datetime import datetime
-
-import astropy
 import astropy.units as u
 import numpy as np
-import pytest
-from astropy.coordinates import GCRS, ICRS, EarthLocation, SkyCoord, get_sun
+from astropy.coordinates import GCRS, EarthLocation, SkyCoord
 from astropy.io import fits
-from astropy.nddata import StdDevUncertainty
 from astropy.time import Time
 from astropy.wcs import WCS
-from ndcube import NDCube
-from numpy.linalg import inv
-from pytest import fixture
-from sunpy import sun
 from sunpy.coordinates import frames
-
-from punchbowl.data import (
-    History,
-    HistoryEntry,
-    MetaField,
-    NormalizedMetadata,
-    PUNCHData,
-    calculate_helio_wcs_from_celestial,
-    load_spacecraft_def,
-    load_trefoil_wcs,
-)
 
 
 def test_helio_celestial_wcs():
-    filename = '/Users/clowder/data/punch/synthetic_L3_testing/PUNCH_L3_PAM_20240620000000.fits'
 
-    with fits.open(filename) as hdul:
-        data = hdul[1].data
-        header = hdul[1].header
+    header = fits.Header.fromtextfile("simpunch/tests/example_header.txt")
 
     wcs_helio = WCS(header)
     wcs_celestial = WCS(header, key='A')

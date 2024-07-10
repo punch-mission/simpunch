@@ -312,7 +312,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     uncert = StdDevUncertainty(np.zeros(reprojected_data.shape))
     uncert.array[reprojected_data == 0] = 1
 
-    meta = NormalizedMetadata.load_template('PAN', '3')
+    meta = NormalizedMetadata.load_template('PNN', '3')
     tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
     tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
     tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
