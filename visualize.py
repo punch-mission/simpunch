@@ -110,9 +110,9 @@ def plot(directory, glob_pattern, mode="keynote", vmin=0, vmax=5E-9):
 
 
 if __name__ == "__main__":
-    # plot("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3/products/L3/PAN/",
-    #      "*_PAN_*.fits", vmin=0, vmax=0.001)
-    plot("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3/products/L3/PAM/",
-         "*_PAM_*.fits")
-    plot("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3/products/L3/PTM/",
-         "*_PTM_*.fits")
+    plot("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/",
+         "*_PTM_*.fits", vmin=0, vmax=8E-17)
+    plot("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/",
+         "*_PAN_*.fits", vmin=0, vmax=5E-15)
+    plot("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/",
+         "*_PAM_*.fits", vmin=0, vmax=8E-17)
