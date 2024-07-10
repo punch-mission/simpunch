@@ -1,0 +1,69 @@
+simpunch.level2
+===============
+
+.. py:module:: simpunch.level2
+
+.. autoapi-nested-parse::
+
+   Generates synthetic level 2 data
+   PTM - PUNCH Level-2 Polarized (MZP) Mosaic
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   simpunch.level2.PUNCH_STOKES_MAPPING
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.level2.gen_fcorona
+   simpunch.level2.add_fcorona
+   simpunch.level2.gen_starfield
+   simpunch.level2.add_starfield
+   simpunch.level2.remix_polarization
+   simpunch.level2.generate_l2_ptm
+   simpunch.level2.generate_l2_all
+
+
+Module Contents
+---------------
+
+.. py:data:: PUNCH_STOKES_MAPPING
+
+.. py:function:: gen_fcorona(shape)
+
+.. py:function:: add_fcorona(input_data)
+
+   Adds synthetic f-corona model
+
+
+.. py:function:: gen_starfield(wcs, img_shape, fwhm, wcs_mode: str = 'all', mag_set=0, flux_set=500000, noise_mean: float | None = 25.0, noise_std: float | None = 5.0, dimmest_magnitude=8)
+
+.. py:function:: add_starfield(input_data)
+
+   Adds synthetic starfield
+
+
+.. py:function:: remix_polarization(input_data)
+
+   Remix polarization from (B, pB) to (M,Z,P) using solpolpy
+
+
+.. py:function:: generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stage)
+
+   Generates level 2 PTM synthetic data
+
+
+.. py:function:: generate_l2_all(datadir)
+
+   Generate all level 2 synthetic data
+   L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM
+
+

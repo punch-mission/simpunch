@@ -20,6 +20,7 @@ Submodules
    :maxdepth: 1
 
    /autoapi/simpunch/level0/index
+   /autoapi/simpunch/level2/index
    /autoapi/simpunch/level3/index
    /autoapi/simpunch/noise/index
    /autoapi/simpunch/stars/index

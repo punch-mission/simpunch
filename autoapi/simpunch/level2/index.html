@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="../../../_static/favicon.ico" rel="icon" type="image/x-icon">
-    <title>simpunch.tests &#8212; simpunch 0.0.1 documentation</title>
+    <title>simpunch.level2 &#8212; simpunch 0.0.1 documentation</title>
   
   
   
@@ -39,11 +39,11 @@
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/tests/index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/level2/index';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="simpunch.tests.test_noise" href="test_noise/index.html" />
-    <link rel="prev" title="simpunch" href="../index.html" />
+    <link rel="next" title="simpunch.level3" href="../level3/index.html" />
+    <link rel="prev" title="simpunch.level0" href="../level0/index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -302,13 +302,13 @@ document.write(`
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">simpunch</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
-<li class="toctree-l2 current active has-children"><a class="current reference internal" href="#">simpunch.tests</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="test_noise/index.html">simpunch.tests.test_noise</a></li>
-<li class="toctree-l3"><a class="reference internal" href="test_stars/index.html">simpunch.tests.test_stars</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tests/index.html">simpunch.tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tests/test_noise/index.html">simpunch.tests.test_noise</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tests/test_stars/index.html">simpunch.tests.test_stars</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="../level0/index.html">simpunch.level0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../level2/index.html">simpunch.level2</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">simpunch.level2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level3/index.html">simpunch.level3</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../noise/index.html">simpunch.noise</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../stars/index.html">simpunch.stars</a></li>
@@ -357,7 +357,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../index.html" class="nav-link">simpunch</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">simpunch.tests</li>
+    <li class="breadcrumb-item active" aria-current="page">simpunch.level2</li>
   </ul>
 </nav>
 </div>
@@ -374,16 +374,98 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-simpunch.tests">
-<span id="simpunch-tests"></span><h1>simpunch.tests<a class="headerlink" href="#module-simpunch.tests" title="Link to this heading">#</a></h1>
-<section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="test_noise/index.html">simpunch.tests.test_noise</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test_stars/index.html">simpunch.tests.test_stars</a></li>
-</ul>
+  <section id="module-simpunch.level2">
+<span id="simpunch-level2"></span><h1>simpunch.level2<a class="headerlink" href="#module-simpunch.level2" title="Link to this heading">#</a></h1>
+<p>Generates synthetic level 2 data
+PTM - PUNCH Level-2 Polarized (MZP) Mosaic</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level2.PUNCH_STOKES_MAPPING" title="simpunch.level2.PUNCH_STOKES_MAPPING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PUNCH_STOKES_MAPPING</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
 </div>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level2.gen_fcorona" title="simpunch.level2.gen_fcorona"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gen_fcorona</span></code></a>(shape)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level2.add_fcorona" title="simpunch.level2.add_fcorona"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_fcorona</span></code></a>(input_data)</p></td>
+<td><p>Adds synthetic f-corona model</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level2.gen_starfield" title="simpunch.level2.gen_starfield"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gen_starfield</span></code></a>(wcs, img_shape, fwhm[, wcs_mode, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level2.add_starfield" title="simpunch.level2.add_starfield"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_starfield</span></code></a>(input_data)</p></td>
+<td><p>Adds synthetic starfield</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level2.remix_polarization" title="simpunch.level2.remix_polarization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remix_polarization</span></code></a>(input_data)</p></td>
+<td><p>Remix polarization from (B, pB) to (M,Z,P) using solpolpy</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level2.generate_l2_ptm" title="simpunch.level2.generate_l2_ptm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l2_ptm</span></code></a>(input_file, path_output, time_obs, ...)</p></td>
+<td><p>Generates level 2 PTM synthetic data</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level2.generate_l2_all" title="simpunch.level2.generate_l2_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l2_all</span></code></a>(datadir)</p></td>
+<td><p>Generate all level 2 synthetic data</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="simpunch.level2.PUNCH_STOKES_MAPPING">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">PUNCH_STOKES_MAPPING</span></span><a class="headerlink" href="#simpunch.level2.PUNCH_STOKES_MAPPING" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level2.gen_fcorona">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">gen_fcorona</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.gen_fcorona" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level2.add_fcorona">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">add_fcorona</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.add_fcorona" title="Link to this definition">#</a></dt>
+<dd><p>Adds synthetic f-corona model</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level2.gen_starfield">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">gen_starfield</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fwhm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mag_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">25.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimmest_magnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.gen_starfield" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level2.add_starfield">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">add_starfield</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.add_starfield" title="Link to this definition">#</a></dt>
+<dd><p>Adds synthetic starfield</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level2.remix_polarization">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">remix_polarization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.remix_polarization" title="Link to this definition">#</a></dt>
+<dd><p>Remix polarization from (B, pB) to (M,Z,P) using solpolpy</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level2.generate_l2_ptm">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">generate_l2_ptm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.generate_l2_ptm" title="Link to this definition">#</a></dt>
+<dd><p>Generates level 2 PTM synthetic data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level2.generate_l2_all">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">generate_l2_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.generate_l2_all" title="Link to this definition">#</a></dt>
+<dd><p>Generate all level 2 synthetic data
+L2_PTM &lt;- f-corona subtraction &lt;- starfield subtraction &lt;- remix polarization &lt;- L3_PTM</p>
+</dd></dl>
+
 </section>
 </section>
 
@@ -398,20 +480,20 @@ document.write(`
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../index.html"
+       href="../level0/index.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">simpunch</p>
+        <p class="prev-next-title">simpunch.level0</p>
       </div>
     </a>
     <a class="right-next"
-       href="test_noise/index.html"
+       href="../level3/index.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">simpunch.tests.test_noise</p>
+        <p class="prev-next-title">simpunch.level3</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -433,7 +515,19 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#attributes">Attributes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.PUNCH_STOKES_MAPPING"><code class="docutils literal notranslate"><span class="pre">PUNCH_STOKES_MAPPING</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.gen_fcorona"><code class="docutils literal notranslate"><span class="pre">gen_fcorona()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.add_fcorona"><code class="docutils literal notranslate"><span class="pre">add_fcorona()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.gen_starfield"><code class="docutils literal notranslate"><span class="pre">gen_starfield()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.add_starfield"><code class="docutils literal notranslate"><span class="pre">add_starfield()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.remix_polarization"><code class="docutils literal notranslate"><span class="pre">remix_polarization()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.generate_l2_ptm"><code class="docutils literal notranslate"><span class="pre">generate_l2_ptm()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.generate_l2_all"><code class="docutils literal notranslate"><span class="pre">generate_l2_all()</span></code></a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 
@@ -441,7 +535,7 @@ document.write(`
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/punch-mission/simpunch/edit/main/docs/source/autoapi/simpunch/tests/index.rst">
+    <a href="https://github.com/punch-mission/simpunch/edit/main/docs/source/autoapi/simpunch/level2/index.rst">
       <i class="fa-solid fa-pencil"></i>
       
       
