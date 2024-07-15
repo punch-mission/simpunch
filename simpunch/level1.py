@@ -42,7 +42,9 @@ def remix_polarization(input_data):
                                     ("Z", input_data[1, :, :]),
                                     ("P", input_data[1, :, :])], aligned_axes='all')
 
-    resolved_data_collection = solpolpy.resolve(data_collection, "npol", imax_effect=False)
+    # TODO - Sort out polarization angles, but for now make this MZP
+    # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
+    resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=False)
 
     # Repack data
     data_list = []
@@ -127,7 +129,7 @@ def generate_l1_all(datadir):
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
-    time_start = datetime(2023, 7, 4, 0, 0, 0)
+    time_start = datetime(2024, 6, 20, 0, 0, 0)
 
     # Generate a corresponding set of observation times for polarized trefoil / NFI data
     time_delta = timedelta(minutes=4)

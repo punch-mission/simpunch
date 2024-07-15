@@ -239,7 +239,7 @@ def generate_l2_all(datadir):
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
-    time_start = datetime(2023, 7, 4, 0, 0, 0)
+    time_start = datetime(2024, 6, 20, 0, 0, 0)
 
     # Generate a corresponding set of observation times for polarized trefoil / NFI data
     time_delta = timedelta(minutes=4)
