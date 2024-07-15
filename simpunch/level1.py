@@ -11,14 +11,10 @@ import numpy as np
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
-from astropy.table import QTable
 from astropy.wcs import WCS
 from ndcube import NDCollection
-from photutils.datasets import make_gaussian_sources_image, make_noise_image
 from punchbowl.data import NormalizedMetadata, PUNCHData
 from tqdm import tqdm
-
-from simpunch.stars import filter_for_visible_stars, load_raw_hipparcos_catalog, find_catalog_in_image
 
 # TODO - mapping for MZP needed?
 
