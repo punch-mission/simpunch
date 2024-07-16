@@ -3,15 +3,15 @@ Generates synthetic level 1 data
 """
 import glob
 import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
-import click
 import numpy as np
+import reproject
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
 from astropy.wcs import WCS
+from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCollection
 from punchbowl.data import NormalizedMetadata, PUNCHData
 from tqdm import tqdm
@@ -22,10 +22,42 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
                                                      11: StokesSymbol("B", "total brightness")})
 
 
-def deproject(input_data):
+def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
+
+    # TODO - NFI rotation?
+    if spacecraft_id == '4':
+        out_wcs_shape = [2048, 2048]
+        out_wcs = WCS(naxis=2)
+        out_wcs.wcs.crpix = out_wcs_shape[1] / 2 - 0.5, out_wcs_shape[0] / 2 - 0.5
+        out_wcs.wcs.crval = 0, 0
+        out_wcs.wcs.cdelt = 0.01, 0.01
+        out_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
+
+    return out_wcs
+
+
+def deproject(input_data, output_wcs):
     """Data deprojection"""
 
-    return input_data
+    input_wcs = WCS(input_data.meta)
+
+    output_header = output_wcs.to_header()
+    output_header['HGLN_OBS'] = input_data.meta['HGLN_OBS']
+    output_header['HGLT_OBS'] = input_data.meta['HGLT_OBS']
+    output_header['DSUN_OBS'] = input_data.meta['DSUN_OBS']
+    output_wcs = WCS(output_header)
+
+    reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
+
+    for i in np.arange(3):
+        reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :], input_wcs[i]), output_wcs,
+                                                                 (2048, 2048),
+                                                                 roundtrip_coords=False, return_footprint=False,
+                                                                 kernel='Gaussian', boundary_mode='ignore')
+
+    output_wcs = add_stokes_axis_to_wcs(output_wcs, 2)
+
+    return PUNCHData(data=reprojected_data, wcs=output_wcs, meta=input_data.meta)
 
 
 def mark_quality(input_data):
@@ -38,9 +70,9 @@ def remix_polarization(input_data):
     """Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy"""
 
     # Unpack data into a NDCollection object
-    data_collection = NDCollection([("M", input_data[0, :, :]),
-                                    ("Z", input_data[1, :, :]),
-                                    ("P", input_data[1, :, :])], aligned_axes='all')
+    data_collection = NDCollection([("Bm", input_data[0, :, :]),
+                                    ("Bz", input_data[1, :, :]),
+                                    ("Bp", input_data[2, :, :])], aligned_axes='all')
 
     # TODO - Sort out polarization angles, but for now make this MZP
     # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
@@ -72,8 +104,7 @@ def remix_polarization(input_data):
     return PUNCHData(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
-# TODO - Think about whether the three polarizers should be bundled together, or separate functions
-def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage):
+def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id):
     """Generates level 1 polarized synthetic data"""
 
     # Read in the input data
@@ -84,10 +115,10 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
     input_pdata = PUNCHData(data=input_data, meta=input_header, wcs=WCS(input_header))
 
     # Define the output data product
-    product_code = 'PM?'
+    product_code = 'PM' + spacecraft_id
     product_level = '1'
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
-    output_wcs = input_pdata.wcs
+    output_wcs = WCS(output_meta.to_fits_header())
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header()
@@ -96,7 +127,8 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
             output_meta[key].value = input_pdata.meta[key]
 
     # Deproject to spacecraft frame
-    output_data = deproject(input_pdata)
+    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
+    output_data = deproject(input_pdata, output_wcs)
 
     # Quality marking
     output_data = mark_quality(output_data)
@@ -111,21 +143,23 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
     output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
-@click.command()
-@click.argument('datadir', type=click.Path(exists=True))
+# @click.command()
+# @click.argument('datadir', type=click.Path(exists=True))
 def generate_l1_all(datadir):
     """Generate all level 1 synthetic data
      L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, '/synthetic_L1/')
+    outdir = os.path.join(datadir, 'synthetic_L1/')
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
     files_ptm = glob.glob(datadir + '/synthetic_L2/*PTM*.fits')
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
+
+    files_ptm = files_ptm[0:2]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -135,16 +169,23 @@ def generate_l1_all(datadir):
     time_delta = timedelta(minutes=4)
     times_obs = np.arange(len(files_ptm)) * time_delta + time_start
 
-    pool = ProcessPoolExecutor()
-    futures = []
-    # Run individual generators
     for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
         rotation_stage = i % 8
-        futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage))
+        # generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '1')
+        # generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '2')
+        # generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '3')
+        generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '4')
 
-    with tqdm(total=len(futures)) as pbar:
-        for _ in as_completed(futures):
-            pbar.update(1)
+    # pool = ProcessPoolExecutor()
+    # futures = []
+    # # Run individual generators
+    # for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
+    #     rotation_stage = i % 8
+    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage))
+    #
+    # with tqdm(total=len(futures)) as pbar:
+    #     for _ in as_completed(futures):
+    #         pbar.update(1)
 
 
 if __name__ == "__main__":
