@@ -5,6 +5,7 @@ import glob
 import os
 from datetime import datetime, timedelta
 
+import astropy.units as u
 import numpy as np
 import reproject
 import solpolpy
@@ -16,21 +17,40 @@ from ndcube import NDCollection
 from punchbowl.data import NormalizedMetadata, PUNCHData
 from tqdm import tqdm
 
-# TODO - mapping for MZP needed?
-
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
                                                      11: StokesSymbol("B", "total brightness")})
 
 
 def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
+    angle_step = 30
 
-    # TODO - NFI rotation?
+    if spacecraft_id in ['1', '2', '3']:
+
+        if spacecraft_id == '1':
+            angle_wfi = (30 + angle_step * rotation_stage) % 360
+        elif spacecraft_id == '2':
+            angle_wfi = (150 + angle_step * rotation_stage) % 360
+        elif spacecraft_id == '3':
+            angle_wfi = (270 + angle_step * rotation_stage) % 360
+
+        out_wcs_shape = [2048, 2048]
+        out_wcs = WCS(naxis=2)
+
+        out_wcs.wcs.crpix = out_wcs_shape[1]/2 - 0.5, out_wcs_shape[0]/2 - 0.5
+        out_wcs.wcs.crval = (24.75 * np.sin(angle_wfi * u.deg) + (0.5 * np.sin(angle_wfi * u.deg)),
+                             24.75 * np.cos(angle_wfi * u.deg) - (0.5 * np.cos(angle_wfi * u.deg)))
+        out_wcs.wcs.cdelt = 0.02, 0.02
+        out_wcs.wcs.lonpole = angle_wfi
+        out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+
     if spacecraft_id == '4':
+        angle_nfi1 = (0 + angle_step * rotation_stage) % 360
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
         out_wcs.wcs.crpix = out_wcs_shape[1] / 2 - 0.5, out_wcs_shape[0] / 2 - 0.5
         out_wcs.wcs.crval = 0, 0
         out_wcs.wcs.cdelt = 0.01, 0.01
+        out_wcs.wcs.lonpole = angle_nfi1
         out_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
 
     return out_wcs
@@ -136,6 +156,7 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
     # Polarization remixing
     output_data = remix_polarization(output_data)
 
+    # TODO - Something in the construction of the data object is adding a nan value...
     # Package into a PUNCHdata object
     output_pdata = PUNCHData(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
 
