@@ -36,7 +36,7 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
 
-        out_wcs.wcs.crpix = out_wcs_shape[1]/2 - 0.5, out_wcs_shape[0]/2 - 0.5
+        out_wcs.wcs.crpix = out_wcs_shape[1] / 2 - 0.5, out_wcs_shape[0] / 2 - 0.5
         out_wcs.wcs.crval = (24.75 * np.sin(angle_wfi * u.deg) + (0.5 * np.sin(angle_wfi * u.deg)),
                              24.75 * np.cos(angle_wfi * u.deg) - (0.5 * np.cos(angle_wfi * u.deg)))
         out_wcs.wcs.cdelt = 0.02, 0.02
@@ -69,11 +69,15 @@ def deproject(input_data, output_wcs):
 
     reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
 
+    # TODO - Adaptive reprojection?
     for i in np.arange(3):
-        reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :], input_wcs[i]), output_wcs,
-                                                                 (2048, 2048),
-                                                                 roundtrip_coords=False, return_footprint=False,
-                                                                 kernel='Gaussian', boundary_mode='ignore')
+        reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :], input_wcs[i]), output_wcs,
+                                                               (2048, 2048),
+                                                               roundtrip_coords=False, return_footprint=False)
+        # reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :], input_wcs[i]), output_wcs,
+        #                                                          (2048, 2048),
+        #                                                          roundtrip_coords=False, return_footprint=False,
+        #                                                          kernel='Gaussian', boundary_mode='ignore')
 
     output_wcs = add_stokes_axis_to_wcs(output_wcs, 2)
 
@@ -192,9 +196,9 @@ def generate_l1_all(datadir):
 
     for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
         rotation_stage = i % 8
-        # generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '1')
-        # generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '2')
-        # generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '3')
+        generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '1')
+        generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '2')
+        generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '3')
         generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '4')
 
     # pool = ProcessPoolExecutor()
