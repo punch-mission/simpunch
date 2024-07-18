@@ -9,12 +9,15 @@ import astropy.units as u
 import numpy as np
 import reproject
 import solpolpy
+from astropy.coordinates import SkyCoord
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
+from astropy.time import Time
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCollection
 from punchbowl.data import NormalizedMetadata, PUNCHData
+from sunpy.coordinates import frames
 from tqdm import tqdm
 
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
@@ -69,17 +72,26 @@ def deproject(input_data, output_wcs):
 
     reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
 
-    # TODO - Adaptive reprojection?
-    for i in np.arange(3):
-        reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :], input_wcs[i]), output_wcs,
-                                                               (2048, 2048),
-                                                               roundtrip_coords=False, return_footprint=False)
-        # reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :], input_wcs[i]), output_wcs,
-        #                                                          (2048, 2048),
-        #                                                          roundtrip_coords=False, return_footprint=False,
-        #                                                          kernel='Gaussian', boundary_mode='ignore')
+    time_current = Time(datetime.utcnow())
+    skycoord_origin = SkyCoord(0 * u.deg, 0 * u.deg,
+                               frame=frames.Helioprojective,
+                               obstime=time_current,
+                               observer='earth')
+
+    with frames.Helioprojective.assume_spherical_screen(skycoord_origin.observer):
+        # TODO - Adaptive reprojection?
+        for i in np.arange(3):
+            reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :], input_wcs[i]), output_wcs,
+                                                                   (2048, 2048),
+                                                                   roundtrip_coords=False, return_footprint=False)
+            # reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :], input_wcs[i]), output_wcs,
+            #                                                          (2048, 2048),
+            #                                                          roundtrip_coords=False, return_footprint=False,
+            #                                                          kernel='Gaussian', boundary_mode='ignore')
 
     output_wcs = add_stokes_axis_to_wcs(output_wcs, 2)
+
+    reprojected_data[np.isnan(reprojected_data)] = 0
 
     return PUNCHData(data=reprojected_data, wcs=output_wcs, meta=input_data.meta)
 
@@ -160,10 +172,10 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
     # Polarization remixing
     output_data = remix_polarization(output_data)
 
-    # TODO - Something in the construction of the data object is adding a nan value...
     # Package into a PUNCHdata object
     output_pdata = PUNCHData(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
 
+    # TODO - Completely fill out metadata?
     # Write out
     output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
@@ -184,7 +196,7 @@ def generate_l1_all(datadir):
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
-    files_ptm = files_ptm[0:2]
+    files_ptm = files_ptm[0:10]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
