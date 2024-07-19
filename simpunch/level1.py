@@ -159,7 +159,7 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header()
     for key in output_header.keys():
-        if (key in input_header) and output_header[key] == ('' or None) and (key != 'COMMENT') and (key != 'HISTORY'):
+        if (key in input_header) and (output_header[key] in ['', None]) and (key != 'COMMENT') and (key != 'HISTORY'):
             output_meta[key].value = input_pdata.meta[key]
 
     # Deproject to spacecraft frame
