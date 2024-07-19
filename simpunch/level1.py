@@ -9,7 +9,7 @@ import astropy.units as u
 import numpy as np
 import reproject
 import solpolpy
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, EarthLocation
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
 from astropy.time import Time
@@ -17,7 +17,7 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCollection
 from punchbowl.data import NormalizedMetadata, PUNCHData
-from sunpy.coordinates import frames
+from sunpy.coordinates import frames, sun
 from tqdm import tqdm
 
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
@@ -172,10 +172,27 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
     # Polarization remixing
     output_data = remix_polarization(output_data)
 
+    # Write out positional data assuming Earth-center in the absence of orbital data
+    output_meta['GEOD_LAT'] = 0.
+    output_meta['GEOD_LON'] = 0.
+    output_meta['GEOD_ALT'] = 0.
+
+    earth_center = EarthLocation(lat=0 * u.deg, lon=0 * u.deg, height=0 * u.km)
+    earth_coord = SkyCoord(0 * u.deg, 0 * u.deg, frame=frames.HeliographicStonyhurst,
+                           obstime=Time(output_meta['DATE-OBS'].value), location=earth_center, observer='earth')
+
+    output_meta['CRLN_OBS'] = earth_coord.heliographic_carrington.lon.value
+    output_meta['CRLT_OBS'] = earth_coord.heliographic_carrington.lat.value
+
+    output_meta['HEEX_OBS'] = earth_coord.heliocentricearthecliptic.cartesian.x.to(u.m).value
+    output_meta['HEEY_OBS'] = earth_coord.heliocentricearthecliptic.cartesian.y.to(u.m).value
+    output_meta['HEEZ_OBS'] = earth_coord.heliocentricearthecliptic.cartesian.z.to(u.m).value
+
+    output_meta['CAR_ROT'] = sun.carrington_rotation_number(time_obs)
+
     # Package into a PUNCHdata object
     output_pdata = PUNCHData(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
 
-    # TODO - Completely fill out metadata?
     # Write out
     output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
