@@ -72,7 +72,7 @@ def deproject(input_data, output_wcs):
 
     reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
 
-    time_current = Time(datetime.utcnow())
+    time_current = Time(input_data.meta['DATE-OBS'])
     skycoord_origin = SkyCoord(0 * u.deg, 0 * u.deg,
                                frame=frames.Helioprojective,
                                obstime=time_current,
@@ -123,10 +123,11 @@ def remix_polarization(input_data):
         wcs_list.append(resolved_data_collection[key].wcs)
         uncertainty_list.append(resolved_data_collection[key].uncertainty)
 
-    # Remove alpha channel
-    data_list.pop()
-    wcs_list.pop()
-    uncertainty_list.pop()
+    # Remove alpha channel if present
+    if 'alpha' in resolved_data_collection.keys():
+        data_list.pop()
+        wcs_list.pop()
+        uncertainty_list.pop()
 
     # Repack into a PUNCHData object
     new_data = np.stack(data_list, axis=0)
@@ -154,12 +155,11 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
     product_code = 'PM' + spacecraft_id
     product_level = '1'
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
-    output_wcs = WCS(output_meta.to_fits_header())
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header()
     for key in output_header.keys():
-        if (key in input_header) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
+        if (key in input_header) and output_header[key] == ('' or None) and (key != 'COMMENT') and (key != 'HISTORY'):
             output_meta[key].value = input_pdata.meta[key]
 
     # Deproject to spacecraft frame
@@ -196,7 +196,7 @@ def generate_l1_all(datadir):
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
-    files_ptm = files_ptm[0:10]
+    files_ptm = files_ptm[0:2]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
