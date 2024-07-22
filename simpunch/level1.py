@@ -112,7 +112,8 @@ def remix_polarization(input_data):
 
     # TODO - Sort out polarization angles, but for now make this MZP
     # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
-    resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=False)
+    resolved_data_collection = solpolpy.resolve(data_collection, 'npol',
+                                                out_angles=[-60, 0, 60]*u.deg, imax_effect=False)
 
     # Repack data
     data_list = []
