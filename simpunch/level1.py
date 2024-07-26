@@ -30,11 +30,11 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
     if spacecraft_id in ['1', '2', '3']:
 
         if spacecraft_id == '1':
-            angle_wfi = (30 + angle_step * rotation_stage) % 360
+            angle_wfi = (0 + angle_step * rotation_stage) % 360
         elif spacecraft_id == '2':
-            angle_wfi = (150 + angle_step * rotation_stage) % 360
+            angle_wfi = (120 + angle_step * rotation_stage) % 360
         elif spacecraft_id == '3':
-            angle_wfi = (270 + angle_step * rotation_stage) % 360
+            angle_wfi = (240 + angle_step * rotation_stage) % 360
 
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
@@ -112,8 +112,9 @@ def remix_polarization(input_data):
 
     # TODO - Sort out polarization angles, but for now make this MZP
     # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
-    resolved_data_collection = solpolpy.resolve(data_collection, 'npol',
-                                                out_angles=[-60, 0, 60]*u.deg, imax_effect=False)
+    # resolved_data_collection = solpolpy.resolve(data_collection, 'npol',
+    #                                             out_angles=[-60, 0, 60]*u.deg, imax_effect=False)
+    resolved_data_collection = solpolpy.resolve(data_collection, 'MZP', imax_effect=False)
 
     # Repack data
     data_list = []
@@ -214,7 +215,7 @@ def generate_l1_all(datadir):
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
-    files_ptm = files_ptm[0:2]
+    files_ptm = files_ptm[0:5]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -225,7 +226,7 @@ def generate_l1_all(datadir):
     times_obs = np.arange(len(files_ptm)) * time_delta + time_start
 
     for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
-        rotation_stage = i % 8
+        rotation_stage = int((i % 16) / 2)
         generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '1')
         generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '2')
         generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '3')
