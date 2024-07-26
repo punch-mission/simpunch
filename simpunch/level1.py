@@ -110,11 +110,14 @@ def remix_polarization(input_data):
                                     ("Bz", input_data[1, :, :]),
                                     ("Bp", input_data[2, :, :])], aligned_axes='all')
 
-    # TODO - Sort out polarization angles, but for now make this MZP
+    data_collection['Bm'].meta['POLAR'] = -60.
+    data_collection['Bz'].meta['POLAR'] = 0.
+    data_collection['Bp'].meta['POLAR'] = 60.
+
     # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
-    # resolved_data_collection = solpolpy.resolve(data_collection, 'npol',
-    #                                             out_angles=[-60, 0, 60]*u.deg, imax_effect=False)
-    resolved_data_collection = solpolpy.resolve(data_collection, 'MZP', imax_effect=False)
+    # TODO - Perhaps an issue here with angles with units of degrees being passed into metadata
+    resolved_data_collection = solpolpy.resolve(data_collection, 'npol',
+                                                out_angles=[-60, 0, 60]*u.deg, imax_effect=False)
 
     # Repack data
     data_list = []
@@ -192,6 +195,8 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
 
     output_meta['CAR_ROT'] = sun.carrington_rotation_number(time_obs)
 
+    # TODO - Set output meta POLAR keyword here?
+
     # Package into a PUNCHdata object
     output_pdata = PUNCHData(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
 
@@ -236,8 +241,11 @@ def generate_l1_all(datadir):
     # futures = []
     # # Run individual generators
     # for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
-    #     rotation_stage = i % 8
-    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage))
+    #     rotation_stage = int((i % 16) / 2)
+    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage, '1'))
+    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage, '2'))
+    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage, '3'))
+    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage, '4'))
     #
     # with tqdm(total=len(futures)) as pbar:
     #     for _ in as_completed(futures):
