@@ -14,12 +14,13 @@ from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
 from astropy.table import QTable
 from astropy.wcs import WCS
-from ndcube import NDCollection
+from ndcube import NDCollection, NDCube
 from photutils.datasets import make_gaussian_sources_image, make_noise_image
-from punchbowl.data import NormalizedMetadata, PUNCHData
+from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from tqdm import tqdm
 
-from simpunch.stars import filter_for_visible_stars, load_raw_hipparcos_catalog, find_catalog_in_image
+from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
+                            load_raw_hipparcos_catalog)
 
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
                                                      11: StokesSymbol("B", "total brightness")})
@@ -86,7 +87,8 @@ def add_fcorona(input_data):
 
     fcorona = fcorona * (input_data.data != 0)
 
-    return input_data.duplicate_with_updates(data=input_data.data + fcorona)
+    input_data.data[...] = input_data.data[...] + fcorona
+    return  input_data
 
 
 def gen_starfield(wcs,
@@ -145,7 +147,9 @@ def add_starfield(input_data):
     for i in range(starfield_data.shape[0]):
         starfield_data[i, :, :] = starfield * (input_data.data[i, :, :] != 0)
 
-    return input_data.duplicate_with_updates(data=input_data.data + (starfield_data / starfield_data.max() * 5.4e-11))
+    input_data.data[...] = input_data.data[...] + (starfield_data / starfield_data.max() * 5.4e-11)
+
+    return input_data
 
 
 def remix_polarization(input_data):
@@ -179,7 +183,7 @@ def remix_polarization(input_data):
 
     new_wcs = input_data.wcs.copy()
 
-    return PUNCHData(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
+    return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
 def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stage):
@@ -191,7 +195,7 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
         input_data = hdul[1].data
         input_header = hdul[1].header
 
-    input_pdata = PUNCHData(data=input_data, meta=input_header, wcs=WCS(input_header))
+    input_pdata = NDCube(data=input_data, meta=input_header, wcs=WCS(input_header))
 
     # Define the output data product
     product_code = 'PTM'
@@ -215,10 +219,10 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     output_data = add_fcorona(output_data)
 
     # Package into a PUNCHdata object
-    output_pdata = PUNCHData(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
+    output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
 
     # Write out
-    output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(output_pdata, path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 @click.command()
