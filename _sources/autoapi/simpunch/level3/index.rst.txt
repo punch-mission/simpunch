@@ -38,7 +38,7 @@ Module Contents
 
 .. py:function:: extract_crota_from_wcs(wcs)
 
-.. py:function:: compute_celestial_from_helio(pdata: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+.. py:function:: compute_celestial_from_helio(pdata: ndcube.NDCube) -> ndcube.NDCube
 
    Updates secondary celestial WCS for level 3 data products, using coordinate transformation
 
@@ -55,7 +55,7 @@ Module Contents
    Define a mask to describe the FOV for trefoil mosaic PUNCH data products
 
 
-.. py:function:: generate_uncertainty(pdata: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+.. py:function:: generate_uncertainty(pdata: ndcube.NDCube) -> ndcube.NDCube
 
 .. py:function:: assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None)
 
