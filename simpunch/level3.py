@@ -22,7 +22,8 @@ from astropy.nddata import StdDevUncertainty
 from astropy.time import Time
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
-from punchbowl.data import NormalizedMetadata, PUNCHData
+from ndcube import NDCube
+from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from sunpy.coordinates import frames, sun
 from sunpy.coordinates.ephemeris import get_earth
 from sunpy.coordinates.sun import _sun_north_angle_to_z
@@ -34,7 +35,7 @@ def extract_crota_from_wcs(wcs):
     return np.arctan2(wcs.wcs.pc[1, 0], wcs.wcs.pc[0, 0]) * u.rad
 
 
-def compute_celestial_from_helio(pdata: PUNCHData) -> PUNCHData:
+def compute_celestial_from_helio(pdata: NDCube) -> NDCube:
     """Updates secondary celestial WCS for level 3 data products, using coordinate transformation"""
 
     wcs_helio = pdata.wcs.copy()
@@ -127,7 +128,7 @@ def define_trefoil_mask(rotation_stage=0):
     return np.load(os.path.join(dir_path, 'data/trefoil_mask.npz'))['trefoil_mask'][rotation_stage,:,:]
 
 
-def generate_uncertainty(pdata: PUNCHData) -> PUNCHData:
+def generate_uncertainty(pdata: NDCube) -> NDCube:
 
     # Input data is scaled to MSB
     # Convert to photons
@@ -168,9 +169,9 @@ def generate_uncertainty(pdata: PUNCHData) -> PUNCHData:
     # photon_noise = generate_noise_photon(photon_array)
     photon_noise = np.sqrt(photon_array)
 
-    uncertainty = photon_noise / photon_noise.max()
+    uncertainty = photon_noise  # / photon_noise.max()
 
-    uncertainty[pdata.data == 0] = 1
+    uncertainty[pdata.data == 0] = np.inf
 
     pdata.uncertainty.array = uncertainty
 
@@ -200,7 +201,7 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
     uncertainty = StdDevUncertainty(np.zeros(datacube.shape))
     uncertainty.array[datacube == 0] = 1
     meta = NormalizedMetadata.load_template(product_code, product_level)
-    return PUNCHData(data=datacube, wcs=wcs, meta=meta, uncertainty=uncertainty)
+    return NDCube(data=datacube, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
 
 def update_spacecraft_location(input_data, time_obs):
@@ -273,7 +274,7 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = compute_celestial_from_helio(pdata)
     pdata = generate_uncertainty(pdata)
-    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(pdata, path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -321,7 +322,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     meta['DATE-END'] = tstring_end
     meta['DATE-AVG'] = tstring_avg
     nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 2)
-    outdata = PUNCHData(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
+    outdata = NDCube(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
 
     # Update required metadata
     tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
@@ -337,7 +338,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata = update_spacecraft_location(outdata, time_obs)
     outdata = compute_celestial_from_helio(outdata)
     outdata = generate_uncertainty(outdata)
-    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(outdata, path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -371,7 +372,7 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = compute_celestial_from_helio(pdata)
     pdata = generate_uncertainty(pdata)
-    pdata.write(path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(pdata,  path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -420,7 +421,7 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     meta['DATE-AVG'] = tstring_avg
     meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
     nfi1_wcs = add_stokes_axis_to_wcs(nfi1_wcs, 2)
-    outdata = PUNCHData(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
+    outdata = NDCube(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
 
     # Update required metadata
     tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
@@ -436,7 +437,7 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata = update_spacecraft_location(outdata, time_obs)
     outdata = compute_celestial_from_helio(outdata)
     outdata = generate_uncertainty(outdata)
-    outdata.write(path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(outdata, path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
 
 
 @click.command()
