@@ -16,7 +16,8 @@ from astropy.table import QTable
 from astropy.wcs import WCS
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_gaussian_sources_image, make_noise_image
-from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
+from punchbowl.data import (NormalizedMetadata, get_base_file_name,
+                            write_ndcube_to_fits)
 from tqdm import tqdm
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
@@ -222,7 +223,8 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
 
     # Write out
-    write_ndcube_to_fits(output_pdata, path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits',
+                         skip_wcs_conversion=True)
 
 
 @click.command()
