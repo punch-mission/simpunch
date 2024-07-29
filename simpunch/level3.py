@@ -11,7 +11,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy.units as u
-import click
 import numpy as np
 import reproject
 import scipy.ndimage
@@ -24,6 +23,7 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
 from ndcube import NDCube
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
+from punchbowl.data.io import get_base_file_name
 from sunpy.coordinates import frames, sun
 from sunpy.coordinates.ephemeris import get_earth
 from sunpy.coordinates.sun import _sun_north_angle_to_z
@@ -274,7 +274,7 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = compute_celestial_from_helio(pdata)
     pdata = generate_uncertainty(pdata)
-    write_ndcube_to_fits(pdata, path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -338,7 +338,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata = update_spacecraft_location(outdata, time_obs)
     outdata = compute_celestial_from_helio(outdata)
     outdata = generate_uncertainty(outdata)
-    write_ndcube_to_fits(outdata, path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -372,7 +372,7 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = compute_celestial_from_helio(pdata)
     pdata = generate_uncertainty(pdata)
-    write_ndcube_to_fits(pdata,  path_output + pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(pdata,  path_output + get_base_file_name(pdata) + '.fits', skip_wcs_conversion=True)
 
 
 def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -437,18 +437,18 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata = update_spacecraft_location(outdata, time_obs)
     outdata = compute_celestial_from_helio(outdata)
     outdata = generate_uncertainty(outdata)
-    write_ndcube_to_fits(outdata, path_output + outdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits', skip_wcs_conversion=True)
 
 
-@click.command()
-@click.argument('datadir', type=click.Path(exists=True))
-@click.argument('num_repeats', type=int, default=5)
+# @click.command()
+# @click.argument('datadir', type=click.Path(exists=True))
+# @click.argument('num_repeats', type=int, default=5)
 def generate_l3_all(datadir, num_repeats):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_L3_trial/')
+    outdir = os.path.join(datadir, 'synthetic_L3_v2/')
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
@@ -480,6 +480,7 @@ def generate_l3_all(datadir, num_repeats):
     futures = []
     # Run individual generators
     for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
+        generate_l3_ptm(file_tb, file_pb, outdir, time_obs, time_delta, rotation_indices[i % 8])
         futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta,
                                    rotation_indices[i % 8]))
         futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
