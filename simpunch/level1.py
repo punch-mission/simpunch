@@ -15,8 +15,9 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs
-from ndcube import NDCollection
-from punchbowl.data import NormalizedMetadata, PUNCHData
+from ndcube import NDCollection, NDCube
+from punchbowl.data import (NormalizedMetadata, get_base_file_name,
+                            write_ndcube_to_fits)
 from sunpy.coordinates import frames, sun
 from tqdm import tqdm
 
@@ -93,7 +94,7 @@ def deproject(input_data, output_wcs):
 
     reprojected_data[np.isnan(reprojected_data)] = 0
 
-    return PUNCHData(data=reprojected_data, wcs=output_wcs, meta=input_data.meta)
+    return NDCube(data=reprojected_data, wcs=output_wcs, meta=input_data.meta)
 
 
 def mark_quality(input_data):
@@ -134,7 +135,7 @@ def remix_polarization(input_data):
         wcs_list.pop()
         uncertainty_list.pop()
 
-    # Repack into a PUNCHData object
+    # Repack into an NDCube object
     new_data = np.stack(data_list, axis=0)
     if uncertainty_list[0] is not None:
         new_uncertainty = np.stack(uncertainty_list, axis=0)
@@ -143,7 +144,7 @@ def remix_polarization(input_data):
 
     new_wcs = input_data.wcs.copy()
 
-    return PUNCHData(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
+    return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
 def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id):
@@ -154,7 +155,7 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
         input_data = hdul[1].data
         input_header = hdul[1].header
 
-    input_pdata = PUNCHData(data=input_data, meta=input_header, wcs=WCS(input_header))
+    input_pdata = NDCube(data=input_data, meta=input_header, wcs=WCS(input_header))
 
     # Define the output data product
     product_code = 'PM' + spacecraft_id
@@ -197,8 +198,8 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
 
     # TODO - Set output meta POLAR keyword here?
 
-    # Package into a PUNCHdata object
-    output_pdata = PUNCHData(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
+    # Package into an NDCube object
+    output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
 
     # Write out
     output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
