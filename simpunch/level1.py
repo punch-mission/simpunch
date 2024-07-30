@@ -60,10 +60,10 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
     return out_wcs
 
 
-def deproject(input_data, output_wcs):
+def deproject(input_data, output_wcs, adaptive_reprojection=False):
     """Data deprojection"""
 
-    input_wcs = WCS(input_data.meta)
+    input_wcs = input_data.wcs
 
     output_header = output_wcs.to_header()
     output_header['HGLN_OBS'] = input_data.meta['HGLN_OBS']
@@ -80,15 +80,17 @@ def deproject(input_data, output_wcs):
                                observer='earth')
 
     with frames.Helioprojective.assume_spherical_screen(skycoord_origin.observer):
-        # TODO - Adaptive reprojection?
         for i in np.arange(3):
-            reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :], input_wcs[i]), output_wcs,
-                                                                   (2048, 2048),
-                                                                   roundtrip_coords=False, return_footprint=False)
-            # reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :], input_wcs[i]), output_wcs,
-            #                                                          (2048, 2048),
-            #                                                          roundtrip_coords=False, return_footprint=False,
-            #                                                          kernel='Gaussian', boundary_mode='ignore')
+            if adaptive_reprojection:
+                reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :], input_wcs[i]),
+                                                                         output_wcs,
+                                                                         (2048, 2048),
+                                                                         roundtrip_coords=False, return_footprint=False,
+                                                                         kernel='Gaussian', boundary_mode='ignore')
+            else:
+                reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :], input_wcs[i]),
+                                                                       output_wcs, (2048, 2048),
+                                                                       roundtrip_coords=False, return_footprint=False)
 
     output_wcs = add_stokes_axis_to_wcs(output_wcs, 2)
 
@@ -155,7 +157,7 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
         input_data = hdul[1].data
         input_header = hdul[1].header
 
-    input_pdata = NDCube(data=input_data, meta=input_header, wcs=WCS(input_header))
+    input_pdata = NDCube(data=input_data, meta=dict(input_header), wcs=WCS(input_header))
 
     # Define the output data product
     product_code = 'PM' + spacecraft_id
@@ -177,6 +179,8 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
 
     # Polarization remixing
     output_data = remix_polarization(output_data)
+
+    # TODO - Split these out and write MZP separately to file
 
     # Write out positional data assuming Earth-center in the absence of orbital data
     output_meta['GEOD_LAT'] = 0.
@@ -202,7 +206,8 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
     output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
 
     # Write out
-    output_pdata.write(path_output + output_pdata.filename_base + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits',
+                         skip_wcs_conversion=True)
 
 
 # @click.command()
