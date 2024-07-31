@@ -118,7 +118,6 @@ def remix_polarization(input_data):
     data_collection['Bp'].meta['POLAR'] = 60.
 
     # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
-    # TODO - Perhaps an issue here with angles with units of degrees being passed into metadata
     resolved_data_collection = solpolpy.resolve(data_collection, 'npol',
                                                 out_angles=[-60, 0, 60]*u.deg, imax_effect=False)
 
@@ -149,7 +148,7 @@ def remix_polarization(input_data):
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
-def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id):
+def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id):
     """Generates level 1 polarized synthetic data"""
 
     # Read in the input data
@@ -180,8 +179,6 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
     # Polarization remixing
     output_data = remix_polarization(output_data)
 
-    # TODO - Split these out and write MZP separately to file
-
     # Write out positional data assuming Earth-center in the absence of orbital data
     output_meta['GEOD_LAT'] = 0.
     output_meta['GEOD_LON'] = 0.
@@ -200,13 +197,26 @@ def generate_l1_pm(input_file, path_output, time_obs, time_delta, rotation_stage
 
     output_meta['CAR_ROT'] = sun.carrington_rotation_number(time_obs)
 
-    # TODO - Set output meta POLAR keyword here?
+    # Package into NDCube objects
+    output_mdata = NDCube(data=output_data.data[0, :, :].astype(np.float32), wcs=output_wcs, meta=output_meta)
+    output_zdata = NDCube(data=output_data.data[1, :, :].astype(np.float32), wcs=output_wcs, meta=output_meta)
+    output_pdata = NDCube(data=output_data.data[2, :, :].astype(np.float32), wcs=output_wcs, meta=output_meta)
 
-    # Package into an NDCube object
-    output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
+    output_mdata.meta['TYPECODE'] = 'PM'
+    output_zdata.meta['TYPECODE'] = 'PZ'
+    output_pdata.meta['TYPECODE'] = 'PP'
+
+    output_mdata.meta['POLAR'] = -60
+    output_zdata.meta['POLAR'] = 0
+    output_pdata.meta['POLAR'] = 60
 
     # Write out
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits',
+    version_number = 0
+    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + str(version_number) + '.fits',
+                         skip_wcs_conversion=True)
+    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + str(version_number) + '.fits',
+                         skip_wcs_conversion=True)
+    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + str(version_number) + '.fits',
                          skip_wcs_conversion=True)
 
 
@@ -238,10 +248,10 @@ def generate_l1_all(datadir):
 
     for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
         rotation_stage = int((i % 16) / 2)
-        generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '1')
-        generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '2')
-        generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '3')
-        generate_l1_pm(file_ptm, outdir, time_obs, time_delta, rotation_stage, '4')
+        generate_l1_pmzp(file_ptm, outdir, time_obs, time_delta, rotation_stage, '1')
+        generate_l1_pmzp(file_ptm, outdir, time_obs, time_delta, rotation_stage, '2')
+        generate_l1_pmzp(file_ptm, outdir, time_obs, time_delta, rotation_stage, '3')
+        generate_l1_pmzp(file_ptm, outdir, time_obs, time_delta, rotation_stage, '4')
 
     # pool = ProcessPoolExecutor()
     # futures = []
