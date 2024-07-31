@@ -1,6 +1,7 @@
 """
 Generates synthetic level 1 data
 """
+import copy
 import glob
 import os
 from datetime import datetime, timedelta
@@ -13,7 +14,7 @@ from astropy.coordinates import SkyCoord, EarthLocation
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
 from astropy.time import Time
-from astropy.wcs import WCS
+from astropy.wcs import WCS, Sip
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCollection, NDCube
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
@@ -148,6 +149,22 @@ def remix_polarization(input_data):
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
+def add_distortion(input_data):
+    sip_obj = Sip(np.array([[0, 0], [0, 0]]),
+                  np.array([[0, 0], [0, 0]]),
+                  None, None,
+                  input_data.wcs.wcs.crpix)
+
+    input_data.wcs.sip = sip_obj
+
+    input_data.meta['CTYPE1'] = input_data.meta['CTYPE1'].value + '-SIP'
+    input_data.meta['CTYPE2'] = input_data.meta['CTYPE2'].value + '-SIP'
+
+    input_data.wcs.wcs.ctype = [input_data.meta['CTYPE1'].value, input_data.meta['CTYPE2'].value]
+
+    return input_data
+
+
 def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id):
     """Generates level 1 polarized synthetic data"""
 
@@ -197,10 +214,18 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     output_meta['CAR_ROT'] = sun.carrington_rotation_number(time_obs)
 
+    output_mmeta = copy.deepcopy(output_meta)
+    output_zmeta = copy.deepcopy(output_meta)
+    output_pmeta = copy.deepcopy(output_meta)
+
+    output_mwcs = copy.deepcopy(output_wcs)
+    output_zwcs = copy.deepcopy(output_wcs)
+    output_pwcs = copy.deepcopy(output_wcs)
+
     # Package into NDCube objects
-    output_mdata = NDCube(data=output_data.data[0, :, :].astype(np.float32), wcs=output_wcs, meta=output_meta)
-    output_zdata = NDCube(data=output_data.data[1, :, :].astype(np.float32), wcs=output_wcs, meta=output_meta)
-    output_pdata = NDCube(data=output_data.data[2, :, :].astype(np.float32), wcs=output_wcs, meta=output_meta)
+    output_mdata = NDCube(data=output_data.data[0, :, :].astype(np.float32), wcs=output_mwcs, meta=output_mmeta)
+    output_zdata = NDCube(data=output_data.data[1, :, :].astype(np.float32), wcs=output_zwcs, meta=output_zmeta)
+    output_pdata = NDCube(data=output_data.data[2, :, :].astype(np.float32), wcs=output_pwcs, meta=output_pmeta)
 
     output_mdata.meta['TYPECODE'] = 'PM'
     output_zdata.meta['TYPECODE'] = 'PZ'
@@ -209,6 +234,12 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_mdata.meta['POLAR'] = -60
     output_zdata.meta['POLAR'] = 0
     output_pdata.meta['POLAR'] = 60
+
+    # Add distortion
+    output_mdata = add_distortion(output_mdata)
+    output_zdata = add_distortion(output_zdata)
+    output_pdata = add_distortion(output_pdata)
+
 
     # Write out
     version_number = 0
