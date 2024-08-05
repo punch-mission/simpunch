@@ -14,7 +14,7 @@ from astropy.coordinates import SkyCoord, EarthLocation
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
 from astropy.time import Time
-from astropy.wcs import WCS, Sip
+from astropy.wcs import WCS, DistortionLookupTable
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCollection, NDCube
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
@@ -150,17 +150,19 @@ def remix_polarization(input_data):
 
 
 def add_distortion(input_data):
-    sip_obj = Sip(np.array([[0, 0], [0, 0]]),
-                  np.array([[0, 0], [0, 0]]),
-                  None, None,
-                  input_data.wcs.wcs.crpix)
+    x_arr = DistortionLookupTable(np.zeros(input_data.data.shape, dtype=np.float32),
+                                  input_data.wcs.wcs.crpix,
+                                  input_data.wcs.wcs.crval,
+                                  input_data.wcs.wcs.cdelt
+                                  )
+    y_arr = DistortionLookupTable(np.zeros(input_data.data.shape, dtype=np.float32),
+                                  input_data.wcs.wcs.crpix,
+                                  input_data.wcs.wcs.crval,
+                                  input_data.wcs.wcs.cdelt
+                                  )
 
-    input_data.wcs.sip = sip_obj
-
-    input_data.meta['CTYPE1'] = input_data.meta['CTYPE1'].value + '-SIP'
-    input_data.meta['CTYPE2'] = input_data.meta['CTYPE2'].value + '-SIP'
-
-    input_data.wcs.wcs.ctype = [input_data.meta['CTYPE1'].value, input_data.meta['CTYPE2'].value]
+    input_data.wcs.cpdis1 = x_arr
+    input_data.wcs.cpdis2 = y_arr
 
     return input_data
 
