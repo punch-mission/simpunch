@@ -7,6 +7,7 @@ import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
+import click
 import numpy as np
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
@@ -226,8 +227,8 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
                          skip_wcs_conversion=True)
 
 
-# @click.command()
-# @click.argument('datadir', type=click.Path(exists=True))
+@click.command()
+@click.argument('datadir', type=click.Path(exists=True))
 def generate_l2_all(datadir):
     """Generate all level 2 synthetic data
      L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM"""
@@ -263,4 +264,4 @@ def generate_l2_all(datadir):
 
 
 if __name__ == "__main__":
-    generate_l2_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")
+    generate_l2_all()
