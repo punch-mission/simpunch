@@ -8,7 +8,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy.units as u
-import click
 import numpy as np
 import reproject
 import solpolpy
@@ -114,13 +113,14 @@ def remix_polarization(input_data):
     """Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy"""
 
     # Unpack data into a NDCollection object
-    data_collection = NDCollection([("Bm", input_data[0, :, :]),
-                                    ("Bz", input_data[1, :, :]),
-                                    ("Bp", input_data[2, :, :])], aligned_axes='all')
+    w = WCS(naxis=2)
+    data_collection = NDCollection([("M", NDCube(data=input_data.data[0], wcs=w, meta={})),
+                                     ("Z", NDCube(data=input_data.data[1], wcs=w, meta={})),
+                                      ("P", NDCube(data=input_data.data[2], wcs=w, meta={}))])
 
-    data_collection['Bm'].meta['POLAR'] = -60.
-    data_collection['Bz'].meta['POLAR'] = 0.
-    data_collection['Bp'].meta['POLAR'] = 60.
+    data_collection['M'].meta['POLAR'] = -60. * u.degree
+    data_collection['Z'].meta['POLAR'] = 0. * u.degree
+    data_collection['P'].meta['POLAR'] = 60. * u.degree
 
     # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
     resolved_data_collection = solpolpy.resolve(data_collection, 'npol',
@@ -246,7 +246,7 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_pdata = add_distortion(output_pdata)
 
     # Write out
-    version_number = 0
+    version_number = 1
     write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + str(version_number) + '.fits',
                          skip_wcs_conversion=True)
     write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + str(version_number) + '.fits',
@@ -255,19 +255,20 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
                          skip_wcs_conversion=True)
 
 
-@click.command()
-@click.argument('datadir', type=click.Path(exists=True))
+# @click.command()
+# @click.argument('datadir', type=click.Path(exists=True))
 def generate_l1_all(datadir):
     """Generate all level 1 synthetic data
      L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_L1/')
+    outdir = os.path.join(datadir, 'synthetic_l1/')
+    os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
-    files_ptm = glob.glob(datadir + '/synthetic_L2/*PTM*.fits')
+    files_ptm = glob.glob(datadir + '/synthetic_l2/*PTM*.fits')
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
@@ -297,4 +298,4 @@ def generate_l1_all(datadir):
 
 
 if __name__ == "__main__":
-    generate_l1_all()
+    generate_l1_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")
