@@ -8,6 +8,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy.units as u
+import click
 import numpy as np
 import reproject
 import solpolpy
@@ -254,8 +255,8 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
                          skip_wcs_conversion=True)
 
 
-# @click.command()
-# @click.argument('datadir', type=click.Path(exists=True))
+@click.command()
+@click.argument('datadir', type=click.Path(exists=True))
 def generate_l1_all(datadir):
     """Generate all level 1 synthetic data
      L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM"""
@@ -296,4 +297,4 @@ def generate_l1_all(datadir):
 
 
 if __name__ == "__main__":
-    generate_l1_all('/Users/clowder/data/punch')
+    generate_l1_all()
