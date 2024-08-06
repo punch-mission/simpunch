@@ -4,14 +4,15 @@ Generates synthetic level 1 data
 import copy
 import glob
 import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy.units as u
 import numpy as np
 import reproject
 import solpolpy
-from astropy.coordinates import SkyCoord, EarthLocation
-from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
+from astropy.coordinates import (EarthLocation, SkyCoord, StokesSymbol,
+                                 custom_stokes_symbol_mapping)
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS, DistortionLookupTable
@@ -30,7 +31,6 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
     angle_step = 30
 
     if spacecraft_id in ['1', '2', '3']:
-
         if spacecraft_id == '1':
             angle_wfi = (0 + angle_step * rotation_stage) % 360
         elif spacecraft_id == '2':
@@ -48,7 +48,7 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
         out_wcs.wcs.lonpole = angle_wfi
         out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
 
-    if spacecraft_id == '4':
+    elif spacecraft_id == '4':
         angle_nfi1 = (0 + angle_step * rotation_stage) % 360
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
@@ -57,6 +57,9 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
         out_wcs.wcs.cdelt = 0.01, 0.01
         out_wcs.wcs.lonpole = angle_nfi1
         out_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
+
+    else:
+        raise ValueError("Invalid spacecraft_id.")
 
     return out_wcs
 
@@ -150,17 +153,16 @@ def remix_polarization(input_data):
 
 
 def add_distortion(input_data):
-    x_arr = DistortionLookupTable(np.zeros(input_data.data.shape, dtype=np.float32),
+    x_arr = DistortionLookupTable(np.zeros_like(input_data.data),
                                   input_data.wcs.wcs.crpix,
                                   input_data.wcs.wcs.crval,
                                   input_data.wcs.wcs.cdelt
                                   )
-    y_arr = DistortionLookupTable(np.zeros(input_data.data.shape, dtype=np.float32),
+    y_arr = DistortionLookupTable(np.zeros_like(input_data.data),
                                   input_data.wcs.wcs.crpix,
                                   input_data.wcs.wcs.crval,
                                   input_data.wcs.wcs.cdelt
                                   )
-
     input_data.wcs.cpdis1 = x_arr
     input_data.wcs.cpdis2 = y_arr
 
@@ -242,7 +244,6 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_zdata = add_distortion(output_zdata)
     output_pdata = add_distortion(output_pdata)
 
-
     # Write out
     version_number = 0
     write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + str(version_number) + '.fits',
@@ -279,26 +280,19 @@ def generate_l1_all(datadir):
     time_delta = timedelta(minutes=4)
     times_obs = np.arange(len(files_ptm)) * time_delta + time_start
 
+    pool = ProcessPoolExecutor()
+    futures = []
+    # Run individual generators
     for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
         rotation_stage = int((i % 16) / 2)
-        generate_l1_pmzp(file_ptm, outdir, time_obs, time_delta, rotation_stage, '1')
-        generate_l1_pmzp(file_ptm, outdir, time_obs, time_delta, rotation_stage, '2')
-        generate_l1_pmzp(file_ptm, outdir, time_obs, time_delta, rotation_stage, '3')
-        generate_l1_pmzp(file_ptm, outdir, time_obs, time_delta, rotation_stage, '4')
+        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '1'))
+        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '2'))
+        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '3'))
+        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '4'))
 
-    # pool = ProcessPoolExecutor()
-    # futures = []
-    # # Run individual generators
-    # for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
-    #     rotation_stage = int((i % 16) / 2)
-    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage, '1'))
-    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage, '2'))
-    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage, '3'))
-    #     futures.append(pool.submit(generate_l1_pm, file_ptm, outdir, time_obs, time_delta, rotation_stage, '4'))
-    #
-    # with tqdm(total=len(futures)) as pbar:
-    #     for _ in as_completed(futures):
-    #         pbar.update(1)
+    with tqdm(total=len(futures)) as pbar:
+        for _ in as_completed(futures):
+            pbar.update(1)
 
 
 if __name__ == "__main__":
