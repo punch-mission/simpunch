@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="../../../_static/favicon.ico" rel="icon" type="image/x-icon">
-    <title>simpunch.stars &#8212; simpunch 0.0.1 documentation</title>
+    <title>simpunch.level1 &#8212; simpunch 0.0.1 documentation</title>
   
   
   
@@ -39,10 +39,11 @@
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/stars/index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/level1/index';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="prev" title="simpunch.noise" href="../noise/index.html" />
+    <link rel="next" title="simpunch.level2" href="../level2/index.html" />
+    <link rel="prev" title="simpunch.level0" href="../level0/index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -308,11 +309,11 @@ document.write(`
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="../level0/index.html">simpunch.level0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../level1/index.html">simpunch.level1</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">simpunch.level1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level2/index.html">simpunch.level2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level3/index.html">simpunch.level3</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../noise/index.html">simpunch.noise</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">simpunch.stars</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stars/index.html">simpunch.stars</a></li>
 </ul>
 </details></li>
 </ul>
@@ -358,7 +359,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../index.html" class="nav-link">simpunch</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">simpunch.stars</li>
+    <li class="breadcrumb-item active" aria-current="page">simpunch.level1</li>
   </ul>
 </nav>
 </div>
@@ -375,16 +376,14 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-simpunch.stars">
-<span id="simpunch-stars"></span><h1>simpunch.stars<a class="headerlink" href="#module-simpunch.stars" title="Link to this heading">#</a></h1>
+  <section id="module-simpunch.level1">
+<span id="simpunch-level1"></span><h1>simpunch.level1<a class="headerlink" href="#module-simpunch.level1" title="Link to this heading">#</a></h1>
+<p>Generates synthetic level 1 data</p>
 <section id="attributes">
 <h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.THIS_DIR" title="simpunch.stars.THIS_DIR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">THIS_DIR</span></code></a></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.stars.HIPPARCOS_URL" title="simpunch.stars.HIPPARCOS_URL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HIPPARCOS_URL</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.PUNCH_STOKES_MAPPING" title="simpunch.level1.PUNCH_STOKES_MAPPING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PUNCH_STOKES_MAPPING</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -395,20 +394,26 @@ document.write(`
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.load_catalog" title="simpunch.stars.load_catalog"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_catalog</span></code></a>([catalog_path, url])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.generate_spacecraft_wcs" title="simpunch.level1.generate_spacecraft_wcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_spacecraft_wcs</span></code></a>(→ astropy.wcs.WCS)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.stars.load_raw_hipparcos_catalog" title="simpunch.stars.load_raw_hipparcos_catalog"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_raw_hipparcos_catalog</span></code></a>(, url)</p></td>
-<td><p>Download hipparcos catalog from website.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.deproject" title="simpunch.level1.deproject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deproject</span></code></a>(input_data, output_wcs[, adaptive_reprojection])</p></td>
+<td><p>Data deprojection</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.filter_for_visible_stars" title="simpunch.stars.filter_for_visible_stars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_for_visible_stars</span></code></a>(→ pandas.DataFrame)</p></td>
-<td><p>Filters to only include stars brighter than a given magnitude</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.mark_quality" title="simpunch.level1.mark_quality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mark_quality</span></code></a>(input_data)</p></td>
+<td><p>Data quality marking</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.stars.find_catalog_in_image" title="simpunch.stars.find_catalog_in_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_catalog_in_image</span></code></a>(, mode)</p></td>
-<td><p>Using the provided WCS converts the RA/DEC catalog into pixel coordinates</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.remix_polarization" title="simpunch.level1.remix_polarization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remix_polarization</span></code></a>(input_data)</p></td>
+<td><p>Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.make_fake_stars_for_wfi" title="simpunch.stars.make_fake_stars_for_wfi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_fake_stars_for_wfi</span></code></a>(my_wcs, array_corrector_path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.add_distortion" title="simpunch.level1.add_distortion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_distortion</span></code></a>(input_data)</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_pmzp" title="simpunch.level1.generate_l1_pmzp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_pmzp</span></code></a>(input_file, path_output, time_obs, ...)</p></td>
+<td><p>Generates level 1 polarized synthetic data</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_all" title="simpunch.level1.generate_l1_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_all</span></code></a>(datadir)</p></td>
+<td><p>Generate all level 1 synthetic data</p></td>
 </tr>
 </tbody>
 </table>
@@ -417,89 +422,50 @@ document.write(`
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
 <dl class="py data">
-<dt class="sig sig-object py" id="simpunch.stars.THIS_DIR">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">THIS_DIR</span></span><a class="headerlink" href="#simpunch.stars.THIS_DIR" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="simpunch.stars.HIPPARCOS_URL">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">HIPPARCOS_URL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat'</span></em><a class="headerlink" href="#simpunch.stars.HIPPARCOS_URL" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="simpunch.level1.PUNCH_STOKES_MAPPING">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">PUNCH_STOKES_MAPPING</span></span><a class="headerlink" href="#simpunch.level1.PUNCH_STOKES_MAPPING" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.stars.load_catalog">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">load_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">os.path.join(THIS_DIR,</span> <span class="pre">'data/hip_main.dat')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">HIPPARCOS_URL</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.stars.load_catalog" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="simpunch.level1.generate_spacecraft_wcs">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_spacecraft_wcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">astropy.wcs.WCS</span></span></span><a class="headerlink" href="#simpunch.level1.generate_spacecraft_wcs" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.stars.load_raw_hipparcos_catalog">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">load_raw_hipparcos_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">os.path.join(THIS_DIR,</span> <span class="pre">'data/hip_main.dat')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">HIPPARCOS_URL</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#simpunch.stars.load_raw_hipparcos_catalog" title="Link to this definition">#</a></dt>
-<dd><p>Download hipparcos catalog from website.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>catalog_path</strong> (<em>str</em>) – path to the Hipparcos catalog</p></li>
-<li><p><strong>url</strong> (<em>str</em>) – url to the Hipparcos catalog for retrieval</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>loaded catalog with selected columns</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="simpunch.level1.deproject">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">deproject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive_reprojection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.deproject" title="Link to this definition">#</a></dt>
+<dd><p>Data deprojection</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.stars.filter_for_visible_stars">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">filter_for_visible_stars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimmest_magnitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#simpunch.stars.filter_for_visible_stars" title="Link to this definition">#</a></dt>
-<dd><p>Filters to only include stars brighter than a given magnitude</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>catalog</strong> (<em>pd.DataFrame</em>) – a catalog data frame</p></li>
-<li><p><strong>dimmest_magnitude</strong> (<em>float</em>) – the dimmest magnitude to keep</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a catalog with stars dimmer than the <cite>dimmest_magnitude</cite> removed</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="simpunch.level1.mark_quality">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">mark_quality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.mark_quality" title="Link to this definition">#</a></dt>
+<dd><p>Data quality marking</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.stars.find_catalog_in_image">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">find_catalog_in_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.wcs.WCS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'all'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#simpunch.stars.find_catalog_in_image" title="Link to this definition">#</a></dt>
-<dd><p>Using the provided WCS converts the RA/DEC catalog into pixel coordinates</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>catalog</strong> (<em>pd.DataFrame</em>) – a catalog dataframe</p></li>
-<li><p><strong>wcs</strong> (<em>WCS</em>) – the world coordinate system of a given image</p></li>
-<li><p><strong>image_shape</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>)</em>) – the shape of the image array associated with the WCS,
-used to only consider stars with coordinates in image</p></li>
-<li><p><strong>mode</strong> (<em>str</em>) – either “all” or “wcs”,
-see
-&lt;<a class="reference external" href="https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html#astropy.coordinates.SkyCoord.to_pixel">https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html#astropy.coordinates.SkyCoord.to_pixel</a>&gt;</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>pixel coordinates of stars in catalog that are present in the image</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="simpunch.level1.remix_polarization">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">remix_polarization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.remix_polarization" title="Link to this definition">#</a></dt>
+<dd><p>Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.stars.make_fake_stars_for_wfi">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">make_fake_stars_for_wfi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">my_wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_corrector_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_mag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.44</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_flux</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(400,</span> <span class="pre">400)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.stars.make_fake_stars_for_wfi" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="simpunch.level1.add_distortion">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">add_distortion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.add_distortion" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level1.generate_l1_pmzp">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_pmzp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.generate_l1_pmzp" title="Link to this definition">#</a></dt>
+<dd><p>Generates level 1 polarized synthetic data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level1.generate_l1_all">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.generate_l1_all" title="Link to this definition">#</a></dt>
+<dd><p>Generate all level 1 synthetic data
+L1 &lt;- polarization deprojection &lt;- quality marking &lt;- deproject to spacecraft FOV &lt;- L2_PTM</p>
+</dd></dl>
 
 </section>
 </section>
@@ -515,13 +481,22 @@ see
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../noise/index.html"
+       href="../level0/index.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">simpunch.noise</p>
+        <p class="prev-next-title">simpunch.level0</p>
       </div>
+    </a>
+    <a class="right-next"
+       href="../level2/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">simpunch.level2</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>
@@ -544,13 +519,14 @@ see
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#attributes">Attributes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.THIS_DIR"><code class="docutils literal notranslate"><span class="pre">THIS_DIR</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.HIPPARCOS_URL"><code class="docutils literal notranslate"><span class="pre">HIPPARCOS_URL</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.load_catalog"><code class="docutils literal notranslate"><span class="pre">load_catalog()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.load_raw_hipparcos_catalog"><code class="docutils literal notranslate"><span class="pre">load_raw_hipparcos_catalog()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.filter_for_visible_stars"><code class="docutils literal notranslate"><span class="pre">filter_for_visible_stars()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.find_catalog_in_image"><code class="docutils literal notranslate"><span class="pre">find_catalog_in_image()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.make_fake_stars_for_wfi"><code class="docutils literal notranslate"><span class="pre">make_fake_stars_for_wfi()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.PUNCH_STOKES_MAPPING"><code class="docutils literal notranslate"><span class="pre">PUNCH_STOKES_MAPPING</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.generate_spacecraft_wcs"><code class="docutils literal notranslate"><span class="pre">generate_spacecraft_wcs()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.deproject"><code class="docutils literal notranslate"><span class="pre">deproject()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.mark_quality"><code class="docutils literal notranslate"><span class="pre">mark_quality()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.remix_polarization"><code class="docutils literal notranslate"><span class="pre">remix_polarization()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.add_distortion"><code class="docutils literal notranslate"><span class="pre">add_distortion()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.generate_l1_pmzp"><code class="docutils literal notranslate"><span class="pre">generate_l1_pmzp()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.generate_l1_all"><code class="docutils literal notranslate"><span class="pre">generate_l1_all()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -560,7 +536,7 @@ see
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/punch-mission/simpunch/edit/main/docs/source/autoapi/simpunch/stars/index.rst">
+    <a href="https://github.com/punch-mission/simpunch/edit/main/docs/source/autoapi/simpunch/level1/index.rst">
       <i class="fa-solid fa-pencil"></i>
       
       

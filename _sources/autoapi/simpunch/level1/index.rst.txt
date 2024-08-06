@@ -1,0 +1,68 @@
+simpunch.level1
+===============
+
+.. py:module:: simpunch.level1
+
+.. autoapi-nested-parse::
+
+   Generates synthetic level 1 data
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   simpunch.level1.PUNCH_STOKES_MAPPING
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.level1.generate_spacecraft_wcs
+   simpunch.level1.deproject
+   simpunch.level1.mark_quality
+   simpunch.level1.remix_polarization
+   simpunch.level1.add_distortion
+   simpunch.level1.generate_l1_pmzp
+   simpunch.level1.generate_l1_all
+
+
+Module Contents
+---------------
+
+.. py:data:: PUNCH_STOKES_MAPPING
+
+.. py:function:: generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> astropy.wcs.WCS
+
+.. py:function:: deproject(input_data, output_wcs, adaptive_reprojection=False)
+
+   Data deprojection
+
+
+.. py:function:: mark_quality(input_data)
+
+   Data quality marking
+
+
+.. py:function:: remix_polarization(input_data)
+
+   Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy
+
+
+.. py:function:: add_distortion(input_data)
+
+.. py:function:: generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id)
+
+   Generates level 1 polarized synthetic data
+
+
+.. py:function:: generate_l1_all(datadir)
+
+   Generate all level 1 synthetic data
+   L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM
+
+
