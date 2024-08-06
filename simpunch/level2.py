@@ -7,17 +7,18 @@ import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
+import astropy
 import click
 import numpy as np
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
-from astropy.io import fits
 from astropy.table import QTable
 from astropy.wcs import WCS
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_gaussian_sources_image, make_noise_image
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
-                            write_ndcube_to_fits)
+                            load_ndcube_from_fits, write_ndcube_to_fits)
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from tqdm import tqdm
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
@@ -130,7 +131,9 @@ def gen_starfield(wcs,
 def add_starfield(input_data):
     """Adds synthetic starfield"""
 
-    wcs_stellar_input = WCS(input_data.meta, key='A')
+    wcs_stellar_input = calculate_celestial_wcs_from_helio(input_data.wcs,
+                                                           astropy.time.Time(input_data.meta['DATE-OBS'].value),
+                                                           input_data.data.shape)
 
     shape = input_data.data[0,:,:].shape
     wcs_stellar = WCS(naxis=2)
@@ -157,7 +160,10 @@ def remix_polarization(input_data):
     """Remix polarization from (B, pB) to (M,Z,P) using solpolpy"""
 
     # Unpack data into a NDCollection object
-    data_collection = NDCollection([("B", input_data[0, :, :]), ("pB", input_data[1, :, :])], aligned_axes='all')
+    data_collection = NDCollection(
+        [("B", NDCube(data=input_data.data[0], wcs=input_data.wcs)),
+         ("pB", NDCube(data=input_data.data[1], wcs=input_data.wcs))],
+        aligned_axes='all')
 
     resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=False)
 
@@ -191,12 +197,7 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     """Generates level 2 PTM synthetic data"""
 
     # Read in the input data
-    # input_pdata = PUNCHData.from_fits(input_file)
-    with fits.open(input_file) as hdul:
-        input_data = hdul[1].data
-        input_header = hdul[1].header
-
-    input_pdata = NDCube(data=input_data, meta=input_header, wcs=WCS(input_header))
+    input_pdata = load_ndcube_from_fits(input_file)
 
     # Define the output data product
     product_code = 'PTM'
@@ -207,16 +208,11 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header()
     for key in output_header.keys():
-        if (key in input_header) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
-            output_meta[key].value = input_pdata.meta[key]
+        if (key in input_pdata.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
+            output_meta[key].value = input_pdata.meta[key].value
 
-    # Remix polarization
     output_data = remix_polarization(input_pdata)
-
-    # Add starfield
     output_data = add_starfield(output_data)
-
-    # Add f-corona
     output_data = add_fcorona(output_data)
 
     # Package into a PUNCHdata object
@@ -236,6 +232,7 @@ def generate_l2_all(datadir):
     # Set file output path
     print(f"Running from {datadir}")
     outdir = os.path.join(datadir, 'synthetic_l2/')
+    os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
