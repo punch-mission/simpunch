@@ -239,7 +239,7 @@ def generate_l2_all(datadir):
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
-    files_ptm = glob.glob(datadir + '/synthetic_l3/PTM/*PTM*.fits')
+    files_ptm = glob.glob(datadir + '/synthetic_l3/*PTM*.fits')
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
@@ -261,7 +261,3 @@ def generate_l2_all(datadir):
     with tqdm(total=len(futures)) as pbar:
         for _ in as_completed(futures):
             pbar.update(1)
-
-
-if __name__ == "__main__":
-    generate_l2_all()
