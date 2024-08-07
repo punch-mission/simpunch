@@ -20,15 +20,39 @@ def certainty_estimate(input_data):
     return input_data
 
 
-def photometric_uncalibration(input_data):
+def photometric_uncalibration(input_data,
+                              gain: float = 4.3,
+                              bitrate_signal: int = 16):
+
+    # Input data should be in calibrated units of MSB
+    # First establish a conversion rate backwards to photons
+    photons_per_MSB = 9.736531166539638e+38
+
+    photon_data = input_data.data * photons_per_MSB
+
+    # Now using the gain convert to DN
+    dn_data = photon_data / gain
+
+    # Clip / scale the data at the signal bitrate
+    dn_data = np.interp(dn_data,
+        (np.min(dn_data), np.max(dn_data)),
+        (0, 2**(bitrate_signal-1) - 1),
+    )
+    # dn_data = np.clip(dn_data, 0, 2**bitrate_signal-1)
+
+    dn_data = dn_data.astype(int)
+
+    input_data.data[:,:] = dn_data
+
     return input_data
 
 
-def spiking(input_data):
+def spiking(input_data, spike_scaling=2**16):
     spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1], np.random.randint(0,20))
     spike_index2d = np.unravel_index(spike_index, input_data.data.shape)
 
-    spike_values = np.random.normal(input_data.data.max() * 0.9, input_data.data.max() * 0.1, len(spike_index))
+    # spike_values = np.random.normal(input_data.data.max() * spike_scaling, input_data.data.max() * 0.1, len(spike_index))
+    spike_values = spike_scaling
 
     input_data.data[spike_index2d] = spike_values
 
@@ -40,6 +64,20 @@ def streaking(input_data):
 
 
 def uncorrect_vignetting_LFF(input_data):
+    if input_data.meta['OBSCODE'].value == 4:
+        width, height = 2048, 2048
+        sigma_x, sigma_y = width / 1, height / 1
+        x, y = np.meshgrid(np.linspace(0, width - 1, width), np.linspace(0, height - 1, height))
+        vignetting_function = np.exp(-(((x - width // 2) ** 2) / (2 * sigma_x ** 2) + ((y - height // 2) ** 2) / (2 * sigma_y ** 2)))
+        vignetting_function /= np.max(vignetting_function)
+
+        input_data.data[:,:] *= vignetting_function
+    else:
+        with fits.open('data/sample_vignetting.fits') as hdul:
+            vignetting_function = hdul[1].data
+
+        input_data.data[:,:] *= vignetting_function
+
     return input_data
 
 
@@ -66,7 +104,7 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     with fits.open(input_file) as hdul:
         input_data_array = hdul[1].data
         input_header = hdul[1].header
-        input_wcs = WCS(input_header).dropaxis(2)
+        input_wcs = WCS(input_header, fobj=hdul)
 
     input_data = NDCube(data=input_data_array, meta=dict(input_header), wcs=input_wcs)
 
@@ -74,48 +112,42 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     product_code = input_data.meta['TYPECODE'] + spacecraft_id
     product_level = '0'
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    output_meta['DATE-OBS'] = str(time_obs)
 
     # Synchronize overlapping metadata keys
-    output_header = output_meta.to_fits_header()
+    output_header = output_meta.to_fits_header(wcs=input_wcs)
     for key in output_header.keys():
         if (key in input_header) and (output_header[key] in ['', None]) and (key != 'COMMENT') and (key != 'HISTORY'):
             output_meta[key].value = input_data.meta[key]
 
     input_data = NDCube(data=input_data, meta=output_meta, wcs=input_wcs)
 
-    # Starfield misalignment
     output_data = starfield_misalignment(input_data)
 
-    # Uncorrect PSF
     output_data = uncorrect_psf(output_data)
 
-    # Add stray light
     output_data = add_stray_light(output_data)
 
-    # Add deficient pixels
     output_data = add_deficient_pixels(output_data)
 
-    # Uncorrect vignetting and LFF
     output_data = uncorrect_vignetting_LFF(output_data)
 
-    # Add streaks
     output_data = streaking(output_data)
 
-    # Add spikes
-    output_data = spiking(output_data)
-
-    # Uncalibrate photometry
     output_data = photometric_uncalibration(output_data)
 
-    # Estimate certainty
+    output_data = spiking(output_data)
+
     output_data = certainty_estimate(output_data)
 
     # TODO - Sync up any final header data here
 
+    # Check that output data is of the right DN datatype
+    output_data.data[:,:] = output_data.data[:,:].astype(int)
+
     # Write out
     output_data.meta['FILEVRSN'] = '0'
-    write_ndcube_to_fits(output_data, path_output + get_base_file_name(output_data) + '.fits',
-                         skip_wcs_conversion=True)
+    write_ndcube_to_fits(output_data, path_output + get_base_file_name(output_data) + '.fits')
 
 
 # @click.command()
