@@ -11,6 +11,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy.units as u
+import click
 import numpy as np
 import reproject
 import scipy.ndimage
@@ -440,15 +441,15 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits', skip_wcs_conversion=True)
 
 
-# @click.command()
-# @click.argument('datadir', type=click.Path(exists=True))
-# @click.argument('num_repeats', type=int, default=5)
+@click.command()
+@click.argument('datadir', type=click.Path(exists=True))
+@click.argument('num_repeats', type=int, default=5)
 def generate_l3_all(datadir, num_repeats):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_L3_v2/')
+    outdir = os.path.join(datadir, 'synthetic_l3/')
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
@@ -493,7 +494,3 @@ def generate_l3_all(datadir, num_repeats):
             pbar.update(1)
 
     pool.shutdown()
-
-
-if __name__ == '__main__':
-    generate_l3_all('/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/', 1)

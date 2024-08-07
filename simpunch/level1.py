@@ -48,6 +48,7 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
         out_wcs.wcs.cdelt = 0.02, 0.02
         out_wcs.wcs.lonpole = angle_wfi
         out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+        out_wcs.wcs.cunit = "deg", "deg"
 
     elif spacecraft_id == '4':
         angle_nfi1 = (0 + angle_step * rotation_stage) % 360
@@ -58,7 +59,7 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
         out_wcs.wcs.cdelt = 0.01, 0.01
         out_wcs.wcs.lonpole = angle_nfi1
         out_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
-
+        out_wcs.wcs.cunit = "deg", "deg"
     else:
         raise ValueError("Invalid spacecraft_id.")
 
@@ -114,13 +115,14 @@ def remix_polarization(input_data):
     """Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy"""
 
     # Unpack data into a NDCollection object
-    data_collection = NDCollection([("Bm", input_data[0, :, :]),
-                                    ("Bz", input_data[1, :, :]),
-                                    ("Bp", input_data[2, :, :])], aligned_axes='all')
+    w = WCS(naxis=2)
+    data_collection = NDCollection([("M", NDCube(data=input_data.data[0], wcs=w, meta={})),
+                                     ("Z", NDCube(data=input_data.data[1], wcs=w, meta={})),
+                                      ("P", NDCube(data=input_data.data[2], wcs=w, meta={}))])
 
-    data_collection['Bm'].meta['POLAR'] = -60.
-    data_collection['Bz'].meta['POLAR'] = 0.
-    data_collection['Bp'].meta['POLAR'] = 60.
+    data_collection['M'].meta['POLAR'] = -60. * u.degree
+    data_collection['Z'].meta['POLAR'] = 0. * u.degree
+    data_collection['P'].meta['POLAR'] = 60. * u.degree
 
     # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
     resolved_data_collection = solpolpy.resolve(data_collection, 'npol',
@@ -153,19 +155,26 @@ def remix_polarization(input_data):
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
-def add_distortion(input_data):
-    x_arr = DistortionLookupTable(np.zeros_like(input_data.data),
-                                  input_data.wcs.wcs.crpix,
-                                  input_data.wcs.wcs.crval,
-                                  input_data.wcs.wcs.cdelt
-                                  )
-    y_arr = DistortionLookupTable(np.zeros_like(input_data.data),
-                                  input_data.wcs.wcs.crpix,
-                                  input_data.wcs.wcs.crval,
-                                  input_data.wcs.wcs.cdelt
-                                  )
-    input_data.wcs.cpdis1 = x_arr
-    input_data.wcs.cpdis2 = y_arr
+def add_distortion(input_data, num_bins: int = 100):
+    # make an initial empty distortion model
+    r = np.linspace(0, input_data.data.shape[0], num_bins + 1)
+    c = np.linspace(0, input_data.data.shape[1], num_bins + 1)
+    r = (r[1:] + r[:-1]) / 2
+    c = (c[1:] + c[:-1]) / 2
+
+    err_px, err_py = r, c
+    err_x = np.zeros((num_bins, num_bins))
+    err_y = np.zeros((num_bins, num_bins))
+
+    cpdis1 = DistortionLookupTable(
+        -err_x.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0]))
+    )
+    cpdis2 = DistortionLookupTable(
+        -err_y.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0]))
+    )
+
+    input_data.wcs.cpdis1 = cpdis1
+    input_data.wcs.cpdis2 = cpdis2
 
     return input_data
 
@@ -184,15 +193,16 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     product_code = 'PM' + spacecraft_id
     product_level = '1'
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    output_meta['DATE-OBS'] = str(time_obs)
+    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
 
     # Synchronize overlapping metadata keys
-    output_header = output_meta.to_fits_header()
+    output_header = output_meta.to_fits_header(wcs=output_wcs)
     for key in output_header.keys():
         if (key in input_header) and (output_header[key] in ['', None]) and (key != 'COMMENT') and (key != 'HISTORY'):
             output_meta[key].value = input_pdata.meta[key]
 
     # Deproject to spacecraft frame
-    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
     output_data = deproject(input_pdata, output_wcs)
 
     # Quality marking
@@ -246,13 +256,10 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_pdata = add_distortion(output_pdata)
 
     # Write out
-    version_number = 0
-    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + str(version_number) + '.fits',
-                         skip_wcs_conversion=True)
-    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + str(version_number) + '.fits',
-                         skip_wcs_conversion=True)
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + str(version_number) + '.fits',
-                         skip_wcs_conversion=True)
+    version_number = 1
+    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + str(version_number) + '.fits')
+    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + str(version_number) + '.fits')
+    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + str(version_number) + '.fits')
 
 
 @click.command()
@@ -263,11 +270,12 @@ def generate_l1_all(datadir):
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_L1/')
+    outdir = os.path.join(datadir, 'synthetic_l1/')
+    os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
-    files_ptm = glob.glob(datadir + '/synthetic_L2/*PTM*.fits')
+    files_ptm = glob.glob(datadir + '/synthetic_l2/*PTM*.fits')
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
@@ -294,7 +302,3 @@ def generate_l1_all(datadir):
     with tqdm(total=len(futures)) as pbar:
         for _ in as_completed(futures):
             pbar.update(1)
-
-
-if __name__ == "__main__":
-    generate_l1_all()

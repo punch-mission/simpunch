@@ -41,6 +41,9 @@ docs = ["sphinx", "sphinx-autoapi", "sphinx-automodapi", "pydata-sphinx-theme", 
 
 [project.scripts]
 generate_l3 = "simpunch.level3:generate_l3_all"
+generate_l2 = "simpunch.level2:generate_l2_all"
+generate_l1 = "simpunch.level1:generate_l1_all"
+
 
 [project.urls]
 #Homepage = "https://example.com"
