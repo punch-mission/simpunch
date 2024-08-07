@@ -1,30 +1,19 @@
 """
 Generates synthetic level 0 data
 """
-import copy
 import glob
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
-import astropy.units as u
 import click
 import numpy as np
-import reproject
-import solpolpy
-from astropy.coordinates import (EarthLocation, SkyCoord, StokesSymbol,
-                                 custom_stokes_symbol_mapping)
 from astropy.io import fits
-from astropy.time import Time
-from astropy.wcs import WCS, DistortionLookupTable
-from astropy.wcs.utils import add_stokes_axis_to_wcs
-from ndcube import NDCollection, NDCube
+from astropy.wcs import WCS
+from ndcube import NDCube
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             write_ndcube_to_fits)
-from sunpy.coordinates import frames, sun
 from tqdm import tqdm
-
-from simpunch.stars import make_fake_stars_for_wfi
 
 
 def certainty_estimate(input_data):
@@ -36,6 +25,13 @@ def photometric_uncalibration(input_data):
 
 
 def spiking(input_data):
+    spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1], np.random.randint(0,20))
+    spike_index2d = np.unravel_index(spike_index, input_data.data.shape)
+
+    spike_values = np.random.normal(input_data.data.max() * 0.9, input_data.data.max() * 0.1, len(spike_index))
+
+    input_data.data[spike_index2d] = spike_values
+
     return input_data
 
 
@@ -63,20 +59,19 @@ def starfield_misalignment(input_data):
     return input_data
 
 
-# TODO - add input to split this by polarization state
 def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id):
     """Generates level 0 polarized synthetic data"""
 
     # Read in the input data
     with fits.open(input_file) as hdul:
-        input_data = hdul[1].data
+        input_data_array = hdul[1].data
         input_header = hdul[1].header
+        input_wcs = WCS(input_header).dropaxis(2)
 
-    input_pdata = NDCube(data=input_data, meta=dict(input_header), wcs=WCS(input_header))
+    input_data = NDCube(data=input_data_array, meta=dict(input_header), wcs=input_wcs)
 
-    # TODO - check product code
     # Define the output data product
-    product_code = 'PM' + spacecraft_id
+    product_code = input_data.meta['TYPECODE'] + spacecraft_id
     product_level = '0'
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
 
@@ -84,10 +79,11 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_header = output_meta.to_fits_header()
     for key in output_header.keys():
         if (key in input_header) and (output_header[key] in ['', None]) and (key != 'COMMENT') and (key != 'HISTORY'):
-            output_meta[key].value = input_pdata.meta[key]
+            output_meta[key].value = input_data.meta[key]
 
+    input_data = NDCube(data=input_data, meta=output_meta, wcs=input_wcs)
 
-    # Starfield misaligbment
+    # Starfield misalignment
     output_data = starfield_misalignment(input_data)
 
     # Uncorrect PSF
@@ -117,13 +113,13 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     # TODO - Sync up any final header data here
 
     # Write out
-    version_number = 0
-    write_ndcube_to_fits(output_data, path_output + get_base_file_name(output_data) + str(version_number) + '.fits',
+    output_data.meta['FILEVRSN'] = '0'
+    write_ndcube_to_fits(output_data, path_output + get_base_file_name(output_data) + '.fits',
                          skip_wcs_conversion=True)
 
 
-@click.command()
-@click.argument('datadir', type=click.Path(exists=True))
+# @click.command()
+# @click.argument('datadir', type=click.Path(exists=True))
 def generate_l0_all(datadir):
     """Generate all level 0 synthetic data"""
 
@@ -137,7 +133,7 @@ def generate_l0_all(datadir):
     print(f"Generating based on {len(files_l1)} files.")
     files_l1.sort()
 
-    files_ptm = files_l1[0:5]
+    files_l1 = files_l1[0:2]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -145,39 +141,26 @@ def generate_l0_all(datadir):
 
     # Generate a corresponding set of observation times for polarized trefoil / NFI data
     time_delta = timedelta(minutes=4)
-    times_obs = np.arange(len(files_ptm)) * time_delta + time_start
+    times_obs = np.arange(len(files_l1)) * time_delta + time_start
 
-    pool = ProcessPoolExecutor()
-    futures = []
-    # Run individual generators
-    for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
+    for i, (file_l1, time_obs) in tqdm(enumerate(zip(files_l1, times_obs)), total=len(files_l1)):
         rotation_stage = int((i % 16) / 2)
-        futures.append(pool.submit(generate_l0_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '1'))
-        futures.append(pool.submit(generate_l0_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '2'))
-        futures.append(pool.submit(generate_l0_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '3'))
-        futures.append(pool.submit(generate_l0_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '4'))
+        generate_l0_pmzp(file_l1, outdir, time_obs, time_delta, rotation_stage, '1')
 
-    with tqdm(total=len(futures)) as pbar:
-        for _ in as_completed(futures):
-            pbar.update(1)
-
-
-def make_fake_level0(path_to_input, array_corrector_path, path_to_save):
-    with fits.open(path_to_input) as hdul:
-        test_header = hdul[0].header
-    test_wcs = WCS(test_header)
-
-    fake_star_data = make_fake_stars_for_wfi(test_wcs, array_corrector_path)
-
-    my_data = PUNCHData(data=fake_star_data, wcs=test_wcs, uncertainty=np.zeros_like(fake_star_data))
-    my_data.write(path_to_save)
-
-
-# if __name__ == "__main__":
-#     make_fake_level0("/Users/jhughes/Nextcloud/23103_PUNCH_Data/SOC_Data/PUNCH_WFI_EM_Starfield_campaign2_night2_phase3/calibrated/campaign2_night2_phase3_calibrated_000.new",
-#                      "/Users/jhughes/Desktop/projects/PUNCH/psf_paper/paper-variable-point-spread-functions/scripts/punch_array_corrector.h5",
-#                      "../fake_data.fits")
+    # pool = ProcessPoolExecutor()
+    # futures = []
+    # # Run individual generators
+    # for i, (file_l1, time_obs) in tqdm(enumerate(zip(files_l1, times_obs)), total=len(files_l1)):
+    #     rotation_stage = int((i % 16) / 2)
+    #     futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, '1'))
+    #     futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, '2'))
+    #     futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, '3'))
+    #     futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, '4'))
+    #
+    # with tqdm(total=len(futures)) as pbar:
+    #     for _ in as_completed(futures):
+    #         pbar.update(1)
 
 
 if __name__ == "__main__":
-    generate_l0_all()
+    generate_l0_all('/Users/clowder/data/punch')
