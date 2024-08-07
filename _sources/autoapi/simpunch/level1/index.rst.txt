@@ -53,7 +53,7 @@ Module Contents
    Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy
 
 
-.. py:function:: add_distortion(input_data)
+.. py:function:: add_distortion(input_data, num_bins: int = 100)
 
 .. py:function:: generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id)
 
