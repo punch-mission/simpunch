@@ -10,6 +10,7 @@ import click
 import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
+import astropy.units as u
 from ndcube import NDCube
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             write_ndcube_to_fits)
@@ -47,7 +48,7 @@ def photometric_uncalibration(input_data,
     return input_data
 
 
-def spiking(input_data, spike_scaling=2**16):
+def spiking(input_data, spike_scaling=2**16-1):
     spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1], np.random.randint(0,20))
     spike_index2d = np.unravel_index(spike_index, input_data.data.shape)
 
@@ -59,11 +60,31 @@ def spiking(input_data, spike_scaling=2**16):
     return input_data
 
 
-def streaking(input_data):
+def streak_correction_matrix(
+    n: int, exposure_time: float, readout_line_time: float, reset_line_time: float,
+) -> np.ndarray:
+
+    lower = np.tril(np.ones((n, n)) * readout_line_time, -1)
+    upper = np.triu(np.ones((n, n)) * reset_line_time, 1)
+    diagonal = np.diagflat(np.ones(n) * exposure_time)
+
+    return lower + upper + diagonal
+
+
+def streaking(input_data,
+              exposure_time: float = 49 * 1000,
+              readout_line_time: float = 163/2148,
+              reset_line_time: float = 163/2148):
+
+    streak_matrix = streak_correction_matrix(input_data.data.shape[0],
+                                             exposure_time, readout_line_time, reset_line_time)
+
+    input_data.data[:, :] = streak_matrix @ input_data.data[:, :]
+
     return input_data
 
 
-def uncorrect_vignetting_LFF(input_data):
+def uncorrect_vignetting_lff(input_data):
     if input_data.meta['OBSCODE'].value == 4:
         width, height = 2048, 2048
         sigma_x, sigma_y = width / 1, height / 1
@@ -93,7 +114,18 @@ def uncorrect_psf(input_data):
     return input_data
 
 
-def starfield_misalignment(input_data):
+def starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1):
+    cr_offsets = np.random.normal(0, cr_offset_scale, 2)
+    input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
+
+    pc_offset = np.random.normal(0, pc_offset_scale, 1)[0] * u.deg
+    rotation_matrix = np.array([
+        [np.cos(pc_offset), -np.sin(pc_offset)],
+        [np.sin(pc_offset), np.cos(pc_offset)]
+    ])
+
+    input_data.wcs.wcs.pc = np.dot(input_data.wcs.wcs.pc, rotation_matrix)
+
     return input_data
 
 
@@ -130,7 +162,7 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     output_data = add_deficient_pixels(output_data)
 
-    output_data = uncorrect_vignetting_LFF(output_data)
+    output_data = uncorrect_vignetting_lff(output_data)
 
     output_data = streaking(output_data)
 
