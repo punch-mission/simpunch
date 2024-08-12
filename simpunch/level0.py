@@ -10,6 +10,8 @@ import click
 import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
+from astropy.wcs.utils import proj_plane_pixel_area, proj_plane_pixel_scales
+import astropy.constants as const
 import astropy.units as u
 from ndcube import NDCube
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
@@ -27,23 +29,39 @@ def photometric_uncalibration(input_data,
 
     # Input data should be in calibrated units of MSB
     # First establish a conversion rate backwards to photons
-    photons_per_MSB = 9.736531166539638e+38
 
-    photon_data = input_data.data * photons_per_MSB
+    msb_def = 2.0090000E7 * u.W / u.m**2 / u.sr
+
+    # Constants
+    wavelength = 530 * u.nm  # Wavelength in nanometers
+    exposure_time = 49 * u.s  # Exposure in seconds
+
+    # Calculate energy of a single photon
+    energy_per_photon = (const.h * const.c / wavelength).to(u.J) / u.photon
+
+    # Get the pixel scaling
+    pixel_scale = (proj_plane_pixel_area(input_data.wcs) * u.deg**2).to(u.sr) / u.pixel
+    # pixel_scale = (abs(input_data.wcs.pixel_scale_matrix[0, 0]) * u.deg**2).to(u.sr) / u.pixel
+
+    # The instrument aperture is 22mm, however the effective area is a bit smaller due to losses and quantum efficiency
+    aperture = 49.57 * u.mm**2
+
+    # Calculate the photon count per pixel
+    photons_per_pixel = (msb_def / energy_per_photon * aperture * pixel_scale * exposure_time).decompose()
+
+    # Convert the input data to a photon count
+    photon_data = input_data.data * photons_per_pixel.value
 
     # Now using the gain convert to DN
     dn_data = photon_data / gain
 
+    # TODO - Perhaps the stars at night are a bit too bright. Check the scaling earlier in the pipeline.
     # Clip / scale the data at the signal bitrate
-    dn_data = np.interp(dn_data,
-        (np.min(dn_data), np.max(dn_data)),
-        (0, 2**(bitrate_signal-1) - 1),
-    )
-    # dn_data = np.clip(dn_data, 0, 2**bitrate_signal-1)
+    dn_data = np.clip(dn_data, 0, 2**bitrate_signal-1)
 
     dn_data = dn_data.astype(int)
 
-    input_data.data[:,:] = dn_data
+    input_data.data[:, :] = dn_data
 
     return input_data
 
@@ -79,7 +97,7 @@ def streaking(input_data,
     streak_matrix = streak_correction_matrix(input_data.data.shape[0],
                                              exposure_time, readout_line_time, reset_line_time)
 
-    input_data.data[:, :] = streak_matrix @ input_data.data[:, :]
+    input_data.data[:, :] = streak_matrix @ input_data.data[:, :] / exposure_time
 
     return input_data
 
@@ -154,10 +172,12 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     input_data = NDCube(data=input_data, meta=output_meta, wcs=input_wcs)
 
+    # TODO - fold into reprojection?
     output_data = starfield_misalignment(input_data)
 
     output_data = uncorrect_psf(output_data)
 
+    # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise. Skip for now.
     output_data = add_stray_light(output_data)
 
     output_data = add_deficient_pixels(output_data)
@@ -167,7 +187,9 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_data = streaking(output_data)
 
     output_data = photometric_uncalibration(output_data)
+    # Take whole photon per pixel to seed a poisson distribution to get
 
+    # TODO - Take model from proba to use for poisson distribution to draw spikes
     output_data = spiking(output_data)
 
     output_data = certainty_estimate(output_data)
@@ -175,7 +197,8 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     # TODO - Sync up any final header data here
 
     # Check that output data is of the right DN datatype
-    output_data.data[:,:] = output_data.data[:,:].astype(int)
+    # TODO - also check this in the output data w/r/t BITPIX
+    output_data.data[:,:] = output_data.data[:, :].astype(int)
 
     # Write out
     output_data.meta['FILEVRSN'] = '0'
