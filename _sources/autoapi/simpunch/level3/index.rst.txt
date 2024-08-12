@@ -18,14 +18,13 @@ Functions
 
 .. autoapisummary::
 
+   simpunch.level3.update_wcs_with_helio
    simpunch.level3.extract_crota_from_wcs
-   simpunch.level3.compute_celestial_from_helio
    simpunch.level3.get_sun_ra_dec
    simpunch.level3.define_mask
    simpunch.level3.define_trefoil_mask
    simpunch.level3.generate_uncertainty
    simpunch.level3.assemble_punchdata
-   simpunch.level3.update_spacecraft_location
    simpunch.level3.generate_l3_ptm
    simpunch.level3.generate_l3_pnn
    simpunch.level3.generate_l3_pam
@@ -36,12 +35,9 @@ Functions
 Module Contents
 ---------------
 
+.. py:function:: update_wcs_with_helio(cube: ndcube.NDCube) -> ndcube.NDCube
+
 .. py:function:: extract_crota_from_wcs(wcs)
-
-.. py:function:: compute_celestial_from_helio(pdata: ndcube.NDCube) -> ndcube.NDCube
-
-   Updates secondary celestial WCS for level 3 data products, using coordinate transformation
-
 
 .. py:function:: get_sun_ra_dec(dt: datetime.datetime)
 
@@ -61,8 +57,6 @@ Module Contents
 
    Assemble a punchdata object with correct metadata
 
-
-.. py:function:: update_spacecraft_location(input_data, time_obs)
 
 .. py:function:: generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage)
 
@@ -84,7 +78,7 @@ Module Contents
    Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image
 
 
-.. py:function:: generate_l3_all(datadir, num_repeats)
+.. py:function:: generate_l3_all(datadir, num_repeats=1)
 
    Generate all level 3 synthetic data
 

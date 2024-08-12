@@ -1,0 +1,19 @@
+simpunch.util
+=============
+
+.. py:module:: simpunch.util
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.util.update_spacecraft_location
+
+
+Module Contents
+---------------
+
+.. py:function:: update_spacecraft_location(input_data, time_obs)
+

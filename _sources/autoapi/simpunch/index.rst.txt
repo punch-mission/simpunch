@@ -25,5 +25,6 @@ Submodules
    /autoapi/simpunch/level3/index
    /autoapi/simpunch/noise/index
    /autoapi/simpunch/stars/index
+   /autoapi/simpunch/util/index
 
 
