@@ -196,9 +196,9 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     # TODO - Sync up any final header data here
 
-    # Check that output data is of the right DN datatype
+    # Set output dtype
     # TODO - also check this in the output data w/r/t BITPIX
-    output_data.data[:,:] = output_data.data[:, :].astype(int)
+    write_data = NDCube(data=output_data.data[:, :].astype(np.int32), meta=output_data.meta, wcs=output_data.wcs)
 
     # Write out
     output_data.meta['FILEVRSN'] = '0'
