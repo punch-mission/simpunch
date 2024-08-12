@@ -8,21 +8,22 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy.units as u
-import click
 import numpy as np
 import reproject
 import solpolpy
 from astropy.coordinates import (EarthLocation, SkyCoord, StokesSymbol,
                                  custom_stokes_symbol_mapping)
-from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS, DistortionLookupTable
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCollection, NDCube
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
-                            write_ndcube_to_fits)
+                            load_ndcube_from_fits, write_ndcube_to_fits)
+from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from sunpy.coordinates import frames, sun
 from tqdm import tqdm
+
+from simpunch.util import update_spacecraft_location
 
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
                                                      11: StokesSymbol("B", "total brightness")})
@@ -68,18 +69,19 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
 
 def deproject(input_data, output_wcs, adaptive_reprojection=False):
     """Data deprojection"""
-
-    input_wcs = input_data.wcs
+    input_wcs, _ = calculate_helio_wcs_from_celestial(input_data.wcs,
+                                                      input_data.meta.astropy_time,
+                                                      input_data.data.shape)
 
     output_header = output_wcs.to_header()
-    output_header['HGLN_OBS'] = input_data.meta['HGLN_OBS']
-    output_header['HGLT_OBS'] = input_data.meta['HGLT_OBS']
-    output_header['DSUN_OBS'] = input_data.meta['DSUN_OBS']
+    output_header['HGLN_OBS'] = input_data.meta['HGLN_OBS'].value
+    output_header['HGLT_OBS'] = input_data.meta['HGLT_OBS'].value
+    output_header['DSUN_OBS'] = input_data.meta['DSUN_OBS'].value
     output_wcs = WCS(output_header)
 
     reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
 
-    time_current = Time(input_data.meta['DATE-OBS'])
+    time_current = input_data.meta.astropy_time
     skycoord_origin = SkyCoord(0 * u.deg, 0 * u.deg,
                                frame=frames.Helioprojective,
                                obstime=time_current,
@@ -88,13 +90,15 @@ def deproject(input_data, output_wcs, adaptive_reprojection=False):
     with frames.Helioprojective.assume_spherical_screen(skycoord_origin.observer):
         for i in np.arange(3):
             if adaptive_reprojection:
-                reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :], input_wcs[i]),
+                reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :],
+                                                                          input_wcs.dropaxis(2)),
                                                                          output_wcs,
                                                                          (2048, 2048),
                                                                          roundtrip_coords=False, return_footprint=False,
                                                                          kernel='Gaussian', boundary_mode='ignore')
             else:
-                reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :], input_wcs[i]),
+                reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :],
+                                                                        input_wcs.dropaxis(2)),
                                                                        output_wcs, (2048, 2048),
                                                                        roundtrip_coords=False, return_footprint=False)
 
@@ -183,24 +187,26 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     """Generates level 1 polarized synthetic data"""
 
     # Read in the input data
-    with fits.open(input_file) as hdul:
-        input_data = hdul[1].data
-        input_header = hdul[1].header
-
-    input_pdata = NDCube(data=input_data, meta=dict(input_header), wcs=WCS(input_header))
+    # with fits.open(input_file) as hdul:
+    #     input_data = hdul[1].data
+    #     input_header = hdul[1].header
+    #
+    # input_pdata = NDCube(data=input_data, meta=dict( input_header), wcs=WCS(input_header))
+    #
+    input_pdata = load_ndcube_from_fits(input_file)
 
     # Define the output data product
     product_code = 'PM' + spacecraft_id
     product_level = '1'
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
-    output_meta['DATE-OBS'] = str(time_obs)
+    output_meta['DATE-OBS'] = input_pdata.meta['DATE-OBS'].value
     output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
 
     # Synchronize overlapping metadata keys
-    output_header = output_meta.to_fits_header(wcs=output_wcs)
+    output_header = output_meta.to_fits_header(output_wcs)
     for key in output_header.keys():
-        if (key in input_header) and (output_header[key] in ['', None]) and (key != 'COMMENT') and (key != 'HISTORY'):
-            output_meta[key].value = input_pdata.meta[key]
+        if (key in input_pdata.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
+            output_meta[key].value = input_pdata.meta[key].value
 
     # Deproject to spacecraft frame
     output_data = deproject(input_pdata, output_wcs)
@@ -255,15 +261,16 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_zdata = add_distortion(output_zdata)
     output_pdata = add_distortion(output_pdata)
 
+    output_pdata = update_spacecraft_location(output_pdata, output_pdata.meta.astropy_time)
+    output_mdata = update_spacecraft_location(output_mdata, output_mdata.meta.astropy_time)
+    output_zdata = update_spacecraft_location(output_zdata, output_zdata.meta.astropy_time)
+
     # Write out
-    version_number = 1
-    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + str(version_number) + '.fits')
-    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + str(version_number) + '.fits')
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + str(version_number) + '.fits')
+    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + '.fits')
+    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + '.fits')
+    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
 
 
-@click.command()
-@click.argument('datadir', type=click.Path(exists=True))
 def generate_l1_all(datadir):
     """Generate all level 1 synthetic data
      L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM"""
@@ -300,5 +307,10 @@ def generate_l1_all(datadir):
         futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '4'))
 
     with tqdm(total=len(futures)) as pbar:
-        for _ in as_completed(futures):
+        for future in as_completed(futures):
+            future.result()
             pbar.update(1)
+
+
+if __name__ == '__main__':
+    generate_l1_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")

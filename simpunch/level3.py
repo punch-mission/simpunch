@@ -11,12 +11,11 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy.units as u
-import click
 import numpy as np
 import reproject
 import scipy.ndimage
 from astropy.constants import R_sun
-from astropy.coordinates import GCRS, EarthLocation, SkyCoord, get_sun
+from astropy.coordinates import get_sun
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.time import Time
@@ -25,87 +24,19 @@ from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
 from ndcube import NDCube
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import get_base_file_name
-from sunpy.coordinates import frames, sun
-from sunpy.coordinates.ephemeris import get_earth
-from sunpy.coordinates.sun import _sun_north_angle_to_z
-from sunpy.map import make_fitswcs_header
+from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from tqdm import tqdm
+
+from simpunch.util import update_spacecraft_location
+
+
+def update_wcs_with_helio(cube: NDCube) -> NDCube:
+    new_wcs, _ = calculate_helio_wcs_from_celestial(cube.wcs, cube.meta.astropy_time, cube.data.shape)
+    return NDCube(data=cube.data, wcs=new_wcs, uncertainty=cube.uncertainty, meta=cube.meta, unit=cube.unit)
 
 
 def extract_crota_from_wcs(wcs):
     return np.arctan2(wcs.wcs.pc[1, 0], wcs.wcs.pc[0, 0]) * u.rad
-
-
-def compute_celestial_from_helio(pdata: NDCube) -> NDCube:
-    """Updates secondary celestial WCS for level 3 data products, using coordinate transformation"""
-
-    wcs_helio = pdata.wcs.copy()
-    date_obs = Time(pdata.meta['DATE-OBS'].value)
-    data_shape = pdata.data.shape
-
-    is_3d = len(data_shape) == 3
-
-    # we're at the center of the Earth
-    test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
-    test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
-
-    reference_coord = SkyCoord(
-        wcs_helio.wcs.crval[0] * u.Unit(wcs_helio.wcs.cunit[0]),
-        wcs_helio.wcs.crval[1] * u.Unit(wcs_helio.wcs.cunit[1]),
-        frame="gcrs",
-        obstime=date_obs,
-        obsgeoloc=test_gcrs.cartesian,
-        obsgeovel=test_gcrs.velocity.to_cartesian(),
-        distance=test_gcrs.hcrs.distance,
-    )
-
-    reference_coord_arcsec = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
-
-    cdelt1 = (np.abs(wcs_helio.wcs.cdelt[0]) * u.deg).to(u.arcsec)
-    cdelt2 = (np.abs(wcs_helio.wcs.cdelt[1]) * u.deg).to(u.arcsec)
-
-    geocentric = GCRS(obstime=date_obs)
-    p_angle = _sun_north_angle_to_z(geocentric)
-
-    crota = extract_crota_from_wcs(wcs_helio)
-
-    new_header = make_fitswcs_header(
-        data_shape[1:] if is_3d else data_shape,
-        reference_coord_arcsec,
-        reference_pixel=u.Quantity(
-            [wcs_helio.wcs.crpix[0] - 1, wcs_helio.wcs.crpix[1] - 1] * u.pixel
-        ),
-        scale=u.Quantity([cdelt1, cdelt2] * u.arcsec / u.pix),
-        rotation_angle=-p_angle - crota,
-        observatory="PUNCH",
-        projection_code=wcs_helio.wcs.ctype[0][-3:]
-    )
-
-    wcs_celestial = WCS(new_header)
-    wcs_celestial.wcs.ctype = "RA---ARC", "DEC--ARC"
-    sun_location = get_sun_ra_dec(pdata.meta['DATE-OBS'].value)
-    wcs_celestial.wcs.crval = sun_location[0], sun_location[1]
-    wcs_celestial.wcs.cdelt = wcs_celestial.wcs.cdelt * (-1, 1)
-
-    if is_3d:
-        wcs_celestial = add_stokes_axis_to_wcs(wcs_celestial, 2)
-        wcs_celestial.array_shape = pdata.data.shape[0], pdata.data.shape[1], pdata.data.shape[2]
-
-    pdata.meta['CRVAL1A'] = sun_location[0]
-    pdata.meta['CRVAL2A'] = sun_location[1]
-
-    celestial_pc = wcs_celestial.wcs.pc
-    pdata.meta['PC1_1A'] = celestial_pc[0,0]
-    pdata.meta['PC1_2A'] = celestial_pc[1,0]
-    pdata.meta['PC1_3A'] = celestial_pc[2,0]
-    pdata.meta['PC2_1A'] = celestial_pc[0,1]
-    pdata.meta['PC2_2A'] = celestial_pc[1,1]
-    pdata.meta['PC2_3A'] = celestial_pc[2,1]
-    pdata.meta['PC3_1A'] = celestial_pc[0,2]
-    pdata.meta['PC3_2A'] = celestial_pc[1,2]
-    pdata.meta['PC3_3A'] = celestial_pc[2,2]
-
-    return pdata
 
 
 def get_sun_ra_dec(dt: datetime):
@@ -205,43 +136,7 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
     return NDCube(data=datacube, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
 
-def update_spacecraft_location(input_data, time_obs):
-    input_data.meta['GEOD_LAT'] = 0.
-    input_data.meta['GEOD_LON'] = 0.
-    input_data.meta['GEOD_ALT'] = 0.
 
-    coord = get_earth(time_obs)
-    coord.observer = 'earth'
-
-    # S/C Heliographic Stonyhurst
-    input_data.meta['HGLN_OBS'] = coord.heliographic_stonyhurst.lon.value
-    input_data.meta['HGLT_OBS'] = coord.heliographic_stonyhurst.lat.value
-
-    # S/C Heliographic Carrington
-    input_data.meta['CRLN_OBS'] = coord.heliographic_carrington.lon.value
-    input_data.meta['CRLT_OBS'] = coord.heliographic_carrington.lat.value
-
-    input_data.meta['DSUN_OBS'] = sun.earth_distance(time_obs).to(u.m).value
-
-    # S/C Heliocentric Earth Ecliptic
-    input_data.meta['HEEX_OBS'] = coord.heliocentricearthecliptic.cartesian.x.to(u.m).value
-    input_data.meta['HEEY_OBS'] = coord.heliocentricearthecliptic.cartesian.y.to(u.m).value
-    input_data.meta['HEEZ_OBS'] = coord.heliocentricearthecliptic.cartesian.z.to(u.m).value
-
-    # S/C Heliocentric Inertial
-    input_data.meta['HCIX_OBS'] = coord.heliocentricinertial.cartesian.x.to(u.m).value
-    input_data.meta['HCIY_OBS'] = coord.heliocentricinertial.cartesian.y.to(u.m).value
-    input_data.meta['HCIZ_OBS'] = coord.heliocentricinertial.cartesian.z.to(u.m).value
-
-    # S/C Heliocentric Earth Equatorial
-    input_data.meta['HEQX_OBS'] = (coord.heliographic_stonyhurst.cartesian.x.value * u.AU).to(u.m).value
-    input_data.meta['HEQY_OBS'] = (coord.heliographic_stonyhurst.cartesian.y.value * u.AU).to(u.m).value
-    input_data.meta['HEQZ_OBS'] = (coord.heliographic_stonyhurst.cartesian.z.value * u.AU).to(u.m).value
-
-    input_data.meta['SOLAR_EP'] = sun.P(time_obs).value
-    input_data.meta['CAR_ROT'] = float(sun.carrington_rotation_number(time_obs))
-
-    return input_data
 
 
 def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage):
@@ -273,9 +168,9 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     pdata = update_spacecraft_location(pdata, time_obs)
-    pdata = compute_celestial_from_helio(pdata)
+    pdata = update_wcs_with_helio(pdata)
     pdata = generate_uncertainty(pdata)
-    write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + '.fits')
 
 
 def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -337,9 +232,9 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     outdata = update_spacecraft_location(outdata, time_obs)
-    outdata = compute_celestial_from_helio(outdata)
+    outdata = update_wcs_with_helio(outdata)
     outdata = generate_uncertainty(outdata)
-    write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits')
 
 
 def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -371,9 +266,9 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     pdata = update_spacecraft_location(pdata, time_obs)
-    pdata = compute_celestial_from_helio(pdata)
+    pdata = update_wcs_with_helio(pdata)
     pdata = generate_uncertainty(pdata)
-    write_ndcube_to_fits(pdata,  path_output + get_base_file_name(pdata) + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(pdata,  path_output + get_base_file_name(pdata) + '.fits')
 
 
 def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
@@ -436,15 +331,12 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     outdata = update_spacecraft_location(outdata, time_obs)
-    outdata = compute_celestial_from_helio(outdata)
+    outdata = update_wcs_with_helio(outdata)
     outdata = generate_uncertainty(outdata)
-    write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits', skip_wcs_conversion=True)
+    write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits')
 
 
-@click.command()
-@click.argument('datadir', type=click.Path(exists=True))
-@click.argument('num_repeats', type=int, default=5)
-def generate_l3_all(datadir, num_repeats):
+def generate_l3_all(datadir, num_repeats=1):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
@@ -490,7 +382,12 @@ def generate_l3_all(datadir, num_repeats):
             futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
 
     with tqdm(total=len(futures)) as pbar:
-        for _ in as_completed(futures):
+        for future in as_completed(futures):
+            future.result()
             pbar.update(1)
 
     pool.shutdown()
+
+
+if __name__ == '__main__':
+    generate_l3_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")
