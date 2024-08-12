@@ -8,7 +8,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy
-import click
 import numpy as np
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
@@ -23,6 +22,7 @@ from tqdm import tqdm
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
+from simpunch.util import update_spacecraft_location
 
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
                                                      11: StokesSymbol("B", "total brightness")})
@@ -203,10 +203,11 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
     product_code = 'PTM'
     product_level = '2'
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    output_meta['DATE-OBS'] = input_pdata.meta['DATE-OBS'].value
     output_wcs = input_pdata.wcs
 
     # Synchronize overlapping metadata keys
-    output_header = output_meta.to_fits_header()
+    output_header = output_meta.to_fits_header(output_wcs)
     for key in output_header.keys():
         if (key in input_pdata.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
             output_meta[key].value = input_pdata.meta[key].value
@@ -217,14 +218,12 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
 
     # Package into a PUNCHdata object
     output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
+    output_pdata = update_spacecraft_location(output_pdata, time_obs)
 
     # Write out
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits',
-                         skip_wcs_conversion=True)
+    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
 
 
-@click.command()
-@click.argument('datadir', type=click.Path(exists=True))
 def generate_l2_all(datadir):
     """Generate all level 2 synthetic data
      L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM"""
@@ -256,5 +255,10 @@ def generate_l2_all(datadir):
         futures.append(pool.submit(generate_l2_ptm, file_ptm, outdir, time_obs, time_delta, rotation_stage))
 
     with tqdm(total=len(futures)) as pbar:
-        for _ in as_completed(futures):
+        for future in as_completed(futures):
+            future.result()
             pbar.update(1)
+
+
+if __name__ == '__main__':
+    generate_l2_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")
