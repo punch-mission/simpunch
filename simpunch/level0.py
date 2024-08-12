@@ -202,7 +202,7 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     # Write out
     output_data.meta['FILEVRSN'] = '0'
-    write_ndcube_to_fits(output_data, path_output + get_base_file_name(output_data) + '.fits')
+    write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
 
 
 # @click.command()
