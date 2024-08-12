@@ -3,17 +3,61 @@ simpunch.level0
 
 .. py:module:: simpunch.level0
 
+.. autoapi-nested-parse::
+
+   Generates synthetic level 0 data
+
+
 
 Functions
 ---------
 
 .. autoapisummary::
 
-   simpunch.level0.make_fake_level0
+   simpunch.level0.certainty_estimate
+   simpunch.level0.photometric_uncalibration
+   simpunch.level0.spiking
+   simpunch.level0.streak_correction_matrix
+   simpunch.level0.streaking
+   simpunch.level0.uncorrect_vignetting_lff
+   simpunch.level0.add_deficient_pixels
+   simpunch.level0.add_stray_light
+   simpunch.level0.uncorrect_psf
+   simpunch.level0.starfield_misalignment
+   simpunch.level0.generate_l0_pmzp
+   simpunch.level0.generate_l0_all
 
 
 Module Contents
 ---------------
 
-.. py:function:: make_fake_level0(path_to_input, array_corrector_path, path_to_save)
+.. py:function:: certainty_estimate(input_data)
+
+.. py:function:: photometric_uncalibration(input_data, gain: float = 4.3, bitrate_signal: int = 16)
+
+.. py:function:: spiking(input_data, spike_scaling=2**16 - 1)
+
+.. py:function:: streak_correction_matrix(n: int, exposure_time: float, readout_line_time: float, reset_line_time: float) -> numpy.ndarray
+
+.. py:function:: streaking(input_data, exposure_time: float = 49 * 1000, readout_line_time: float = 163 / 2148, reset_line_time: float = 163 / 2148)
+
+.. py:function:: uncorrect_vignetting_lff(input_data)
+
+.. py:function:: add_deficient_pixels(input_data)
+
+.. py:function:: add_stray_light(input_data)
+
+.. py:function:: uncorrect_psf(input_data)
+
+.. py:function:: starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1)
+
+.. py:function:: generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id)
+
+   Generates level 0 polarized synthetic data
+
+
+.. py:function:: generate_l0_all(datadir)
+
+   Generate all level 0 synthetic data
+
 
