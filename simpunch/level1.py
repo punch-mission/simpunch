@@ -11,16 +11,13 @@ import astropy.units as u
 import numpy as np
 import reproject
 import solpolpy
-from astropy.coordinates import (EarthLocation, SkyCoord, StokesSymbol,
+from astropy.coordinates import (SkyCoord, StokesSymbol,
                                  custom_stokes_symbol_mapping)
-from astropy.time import Time
 from astropy.wcs import WCS, DistortionLookupTable
-from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCollection, NDCube
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
-from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
-from sunpy.coordinates import frames, sun
+from sunpy.coordinates import frames
 from tqdm import tqdm
 
 from simpunch.util import update_spacecraft_location
@@ -50,7 +47,6 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
         out_wcs.wcs.lonpole = angle_wfi
         out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
         out_wcs.wcs.cunit = "deg", "deg"
-
     elif spacecraft_id == '4':
         angle_nfi1 = (0 + angle_step * rotation_stage) % 360
         out_wcs_shape = [2048, 2048]
@@ -69,15 +65,16 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
 
 def deproject(input_data, output_wcs, adaptive_reprojection=False):
     """Data deprojection"""
-    input_wcs, _ = calculate_helio_wcs_from_celestial(input_data.wcs,
-                                                      input_data.meta.astropy_time,
-                                                      input_data.data.shape)
+    input_wcs = input_data.wcs.copy()
+    # input_wcs = calculate_celestial_wcs_from_helio(input_wcs, input_data.meta.astropy_time, input_data.data.shape)
 
-    output_header = output_wcs.to_header()
+    output_header = output_wcs.copy().to_header()
     output_header['HGLN_OBS'] = input_data.meta['HGLN_OBS'].value
     output_header['HGLT_OBS'] = input_data.meta['HGLT_OBS'].value
     output_header['DSUN_OBS'] = input_data.meta['DSUN_OBS'].value
     output_wcs = WCS(output_header)
+    # output_wcs = calculate_celestial_wcs_from_helio(output_wcs_helio,
+    # input_data.meta.astropy_time, input_data.data.shape).dropaxis(2)
 
     reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
 
@@ -102,11 +99,11 @@ def deproject(input_data, output_wcs, adaptive_reprojection=False):
                                                                        output_wcs, (2048, 2048),
                                                                        roundtrip_coords=False, return_footprint=False)
 
-    output_wcs = add_stokes_axis_to_wcs(output_wcs, 2)
+    # output_wcs = add_stokes_axis_to_wcs(output_wcs, 2)
 
     reprojected_data[np.isnan(reprojected_data)] = 0
 
-    return NDCube(data=reprojected_data, wcs=output_wcs, meta=input_data.meta)
+    return NDCube(data=reprojected_data, wcs=output_wcs, meta=input_data.meta), output_wcs
 
 
 def mark_quality(input_data):
@@ -186,13 +183,13 @@ def add_distortion(input_data, num_bins: int = 100):
 def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id):
     """Generates level 1 polarized synthetic data"""
 
-    # Read in the input data
     # with fits.open(input_file) as hdul:
     #     input_data = hdul[1].data
     #     input_header = hdul[1].header
+    # input_pdata = load_ndcube_from_fits(input_file)
     #
-    # input_pdata = NDCube(data=input_data, meta=dict( input_header), wcs=WCS(input_header))
-    #
+    # input_pdata = NDCube(data=input_data, meta=input_pdata.meta, wcs=WCS(input_header))
+
     input_pdata = load_ndcube_from_fits(input_file)
 
     # Define the output data product
@@ -203,13 +200,13 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
 
     # Synchronize overlapping metadata keys
-    output_header = output_meta.to_fits_header(output_wcs)
-    for key in output_header.keys():
-        if (key in input_pdata.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
-            output_meta[key].value = input_pdata.meta[key].value
+    # output_header = output_meta.to_fits_header(output_wcs)
+    # for key in output_header.keys():
+    #     if (key in input_pdata.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
+    #         output_meta[key].value = input_pdata.meta[key].value
 
     # Deproject to spacecraft frame
-    output_data = deproject(input_pdata, output_wcs)
+    output_data, output_wcs = deproject(input_pdata, output_wcs)
 
     # Quality marking
     output_data = mark_quality(output_data)
@@ -217,23 +214,23 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     # Polarization remixing
     output_data = remix_polarization(output_data)
 
-    # Write out positional data assuming Earth-center in the absence of orbital data
-    output_meta['GEOD_LAT'] = 0.
-    output_meta['GEOD_LON'] = 0.
-    output_meta['GEOD_ALT'] = 0.
-
-    earth_center = EarthLocation(lat=0 * u.deg, lon=0 * u.deg, height=0 * u.km)
-    earth_coord = SkyCoord(0 * u.deg, 0 * u.deg, frame=frames.HeliographicStonyhurst,
-                           obstime=Time(output_meta['DATE-OBS'].value), location=earth_center, observer='earth')
-
-    output_meta['CRLN_OBS'] = earth_coord.heliographic_carrington.lon.value
-    output_meta['CRLT_OBS'] = earth_coord.heliographic_carrington.lat.value
-
-    output_meta['HEEX_OBS'] = earth_coord.heliocentricearthecliptic.cartesian.x.to(u.m).value
-    output_meta['HEEY_OBS'] = earth_coord.heliocentricearthecliptic.cartesian.y.to(u.m).value
-    output_meta['HEEZ_OBS'] = earth_coord.heliocentricearthecliptic.cartesian.z.to(u.m).value
-
-    output_meta['CAR_ROT'] = sun.carrington_rotation_number(time_obs)
+    # # Write out positional data assuming Earth-center in the absence of orbital data
+    # output_meta['GEOD_LAT'] = 0.
+    # output_meta['GEOD_LON'] = 0.
+    # output_meta['GEOD_ALT'] = 0.
+    #
+    # earth_center = EarthLocation(lat=0 * u.deg, lon=0 * u.deg, height=0 * u.km)
+    # earth_coord = SkyCoord(0 * u.deg, 0 * u.deg, frame=frames.HeliographicStonyhurst,
+    #                        obstime=Time(output_meta['DATE-OBS'].value), location=earth_center, observer='earth')
+    #
+    # output_meta['CRLN_OBS'] = earth_coord.heliographic_carrington.lon.value
+    # output_meta['CRLT_OBS'] = earth_coord.heliographic_carrington.lat.value
+    #
+    # output_meta['HEEX_OBS'] = earth_coord.heliocentricearthecliptic.cartesian.x.to(u.m).value
+    # output_meta['HEEY_OBS'] = earth_coord.heliocentricearthecliptic.cartesian.y.to(u.m).value
+    # output_meta['HEEZ_OBS'] = earth_coord.heliocentricearthecliptic.cartesian.z.to(u.m).value
+    #
+    # output_meta['CAR_ROT'] = sun.carrington_rotation_number(time_obs)
 
     output_mmeta = copy.deepcopy(output_meta)
     output_zmeta = copy.deepcopy(output_meta)
@@ -285,8 +282,7 @@ def generate_l1_all(datadir):
     files_ptm = glob.glob(datadir + '/synthetic_l2/*PTM*.fits')
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
-
-    files_ptm = files_ptm[0:5]
+    # files_ptm = files_ptm[:5]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -301,10 +297,16 @@ def generate_l1_all(datadir):
     # Run individual generators
     for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
         rotation_stage = int((i % 16) / 2)
+        print(rotation_stage)
+        # generate_l1_pmzp( file_ptm, outdir, time_obs, time_delta, rotation_stage, '1')
+        # generate_l1_pmzp( file_ptm, outdir, time_obs, time_delta, rotation_stage, '2')
+        # generate_l1_pmzp( file_ptm, outdir, time_obs, time_delta, rotation_stage, '3')
+        # generate_l1_pmzp( file_ptm, outdir, time_obs, time_delta, rotation_stage, '4')
+
         futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '1'))
-        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '2'))
-        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '3'))
-        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '4'))
+        # futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '2'))
+        # futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '3'))
+        # futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '4'))
 
     with tqdm(total=len(futures)) as pbar:
         for future in as_completed(futures):

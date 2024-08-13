@@ -168,7 +168,7 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     pdata = update_spacecraft_location(pdata, time_obs)
-    pdata = update_wcs_with_helio(pdata)
+    # pdata = update_wcs_with_helio(pdata)
     pdata = generate_uncertainty(pdata)
     write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + '.fits')
 
@@ -232,7 +232,7 @@ def generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     outdata = update_spacecraft_location(outdata, time_obs)
-    outdata = update_wcs_with_helio(outdata)
+    # outdata = update_wcs_with_helio(outdata)
     outdata = generate_uncertainty(outdata)
     write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits')
 
@@ -266,7 +266,7 @@ def generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta):
     pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     pdata = update_spacecraft_location(pdata, time_obs)
-    pdata = update_wcs_with_helio(pdata)
+    # pdata = update_wcs_with_helio(pdata)
     pdata = generate_uncertainty(pdata)
     write_ndcube_to_fits(pdata,  path_output + get_base_file_name(pdata) + '.fits')
 
@@ -331,7 +331,7 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
     outdata = update_spacecraft_location(outdata, time_obs)
-    outdata = update_wcs_with_helio(outdata)
+    # outdata = update_wcs_with_helio(outdata)
     outdata = generate_uncertainty(outdata)
     write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits')
 

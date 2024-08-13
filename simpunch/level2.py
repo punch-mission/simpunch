@@ -7,7 +7,6 @@ import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
-import astropy
 import numpy as np
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
@@ -132,7 +131,7 @@ def add_starfield(input_data):
     """Adds synthetic starfield"""
 
     wcs_stellar_input = calculate_celestial_wcs_from_helio(input_data.wcs,
-                                                           astropy.time.Time(input_data.meta['DATE-OBS'].value),
+                                                           input_data.meta.astropy_time,
                                                            input_data.data.shape)
 
     shape = input_data.data[0,:,:].shape
