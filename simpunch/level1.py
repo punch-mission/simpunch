@@ -26,35 +26,63 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
                                                      11: StokesSymbol("B", "total brightness")})
 
 
+def calculate_pc_matrix(crota: float, cdelt: (float, float)) -> np.ndarray:
+    """Calculate a PC matrix given CROTA and CDELT
+
+    Parameters
+    ----------
+    crota : float
+        rotation angle from the WCS
+    cdelt : float
+        pixel size from the WCS
+
+    Returns
+    -------
+    np.ndarray
+        PC matrix
+    """
+    return np.array(
+        [
+            [np.cos(crota), np.sin(crota) * (cdelt[1] / cdelt[0])],
+            [-np.sin(crota) * (cdelt[0] / cdelt[1]), np.cos(crota)],
+        ]
+    )
+
+
 def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
     angle_step = 30
 
     if spacecraft_id in ['1', '2', '3']:
         if spacecraft_id == '1':
-            angle_wfi = (0 + angle_step * rotation_stage) % 360
+            angle_wfi = (0 + angle_step * rotation_stage) % 360 * u.deg
         elif spacecraft_id == '2':
-            angle_wfi = (120 + angle_step * rotation_stage) % 360
+            angle_wfi = (120 + angle_step * rotation_stage) % 360 * u.deg
         elif spacecraft_id == '3':
-            angle_wfi = (240 + angle_step * rotation_stage) % 360
+            angle_wfi = (240 + angle_step * rotation_stage) % 360 * u.deg
 
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
 
         out_wcs.wcs.crpix = out_wcs_shape[1] / 2 - 0.5, out_wcs_shape[0] / 2 - 0.5
-        out_wcs.wcs.crval = (24.75 * np.sin(angle_wfi * u.deg) + (0.5 * np.sin(angle_wfi * u.deg)),
-                             24.75 * np.cos(angle_wfi * u.deg) - (0.5 * np.cos(angle_wfi * u.deg)))
+        out_wcs.wcs.crval = (24.75 * np.sin(angle_wfi) + (0.5 * np.sin(angle_wfi)),
+                             24.75 * np.cos(angle_wfi) - (0.5 * np.cos(angle_wfi)))
         out_wcs.wcs.cdelt = 0.02, 0.02
-        out_wcs.wcs.lonpole = angle_wfi
+
+        out_wcs.wcs.pc = calculate_pc_matrix(angle_wfi, out_wcs.wcs.cdelt)
+
         out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
         out_wcs.wcs.cunit = "deg", "deg"
+
     elif spacecraft_id == '4':
-        angle_nfi1 = (0 + angle_step * rotation_stage) % 360
+        angle_nfi = (0 + angle_step * rotation_stage) % 360 * u.deg
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
         out_wcs.wcs.crpix = out_wcs_shape[1] / 2 - 0.5, out_wcs_shape[0] / 2 - 0.5
         out_wcs.wcs.crval = 0, 0
         out_wcs.wcs.cdelt = 0.01, 0.01
-        out_wcs.wcs.lonpole = angle_nfi1
+
+        out_wcs.wcs.pc = calculate_pc_matrix(angle_nfi, out_wcs.wcs.cdelt)
+
         out_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
         out_wcs.wcs.cunit = "deg", "deg"
     else:
