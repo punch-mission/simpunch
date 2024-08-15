@@ -64,19 +64,20 @@ def photometric_uncalibration(input_data,
 
     input_data.data[:, :] = dn_data
 
-    return input_data
+    return input_data, photon_data
 
 
 def spiking(input_data, spike_scaling=2**16-1):
-    spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1], np.random.randint(0,20))
+    spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1],
+                                   np.random.randint(40*49-1000, 40*49+1000))
     spike_index2d = np.unravel_index(spike_index, input_data.data.shape)
 
-    # spike_values = np.random.normal(input_data.data.max() * spike_scaling,
-    # input_data.data.max() * 0.1, len(spike_index))
-    spike_values = spike_scaling
+    spike_values = np.random.normal(input_data.data.max() * spike_scaling,
+                                    input_data.data.max() * 0.1,
+                                    len(spike_index))
+    # spike_values = spike_scaling
 
     input_data.data[spike_index2d] = spike_values
-
     return input_data
 
 
@@ -112,13 +113,11 @@ def uncorrect_vignetting_lff(input_data):
         vignetting_function = np.exp(-(((x - width // 2) ** 2) / (2 * sigma_x ** 2)
                                        + ((y - height // 2) ** 2) / (2 * sigma_y ** 2)))
         vignetting_function /= np.max(vignetting_function)
-
-        input_data.data[:,:] *= vignetting_function
     else:
         with fits.open('data/sample_vignetting.fits') as hdul:
             vignetting_function = hdul[1].data
 
-        input_data.data[:,:] *= vignetting_function
+    input_data.data[:, :] *= np.flipud(vignetting_function)
 
     return input_data
 
@@ -145,7 +144,8 @@ def starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_s
         [np.sin(pc_offset), np.cos(pc_offset)]
     ])
 
-    input_data.wcs.wcs.pc = np.dot(input_data.wcs.wcs.pc, rotation_matrix)
+    # TODO: check new pc matrix
+    input_data.wcs.wcs.pc = np.matmul(input_data.wcs.wcs.pc, rotation_matrix)
 
     return input_data
 
@@ -189,10 +189,11 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     output_data = streaking(output_data)
 
-    output_data = photometric_uncalibration(output_data)
-    # Take whole photon per pixel to seed a poisson distribution to get
+    output_data, photon_counts = photometric_uncalibration(output_data)
 
-    # TODO - Take model from proba to use for poisson distribution to draw spikes
+    # TODO: do in a cleaner way
+    output_data.data[...] += np.random.poisson(lam=photon_counts, size=output_data.data.shape)
+
     output_data = spiking(output_data)
 
     output_data = certainty_estimate(output_data)
