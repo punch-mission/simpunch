@@ -112,6 +112,7 @@ def generate_uncertainty(pdata: NDCube) -> NDCube:
 
 def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None):
     """Assemble a punchdata object with correct metadata"""
+    mask = None
 
     with fits.open(input_tb) as hdul:
         data_tb = hdul[1].data / 1e8  # the 1e8 comes from the units on FORWARD output
@@ -365,7 +366,7 @@ def generate_l3_all(datadir, num_repeats=1):
     times_obs = np.arange(len(files_tb)) * time_delta + time_start
 
     # Generate a corresponding set of observation times for low-noise mosaic / NFI data
-    time_delta_ln = timedelta(minutes=32)
+    # time_delta_ln = timedelta(minutes=32)
 
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
 
@@ -375,11 +376,11 @@ def generate_l3_all(datadir, num_repeats=1):
     for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
         futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta,
                                    rotation_indices[i % 8]))
-        futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
-
-        if i % 8 == 0:
-            futures.append(pool.submit(generate_l3_pam, file_tb, file_pb, outdir, time_obs, time_delta_ln))
-            futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
+        # futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
+        #
+        # if i % 8 == 0:
+        #     futures.append(pool.submit(generate_l3_pam, file_tb, file_pb, outdir, time_obs, time_delta_ln))
+        #     futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
 
     with tqdm(total=len(futures)) as pbar:
         for future in as_completed(futures):
