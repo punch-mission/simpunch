@@ -6,17 +6,18 @@ import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
-import click
+import astropy.constants as const
+import astropy.units as u
 import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
-from astropy.wcs.utils import proj_plane_pixel_area, proj_plane_pixel_scales
-import astropy.constants as const
-import astropy.units as u
+from astropy.wcs.utils import proj_plane_pixel_area
 from ndcube import NDCube
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             write_ndcube_to_fits)
 from tqdm import tqdm
+
+from simpunch.util import update_spacecraft_location
 
 
 def certainty_estimate(input_data):
@@ -63,18 +64,20 @@ def photometric_uncalibration(input_data,
 
     input_data.data[:, :] = dn_data
 
-    return input_data
+    return input_data, photon_data
 
 
 def spiking(input_data, spike_scaling=2**16-1):
-    spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1], np.random.randint(0,20))
+    spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1],
+                                   np.random.randint(40*49-1000, 40*49+1000))
     spike_index2d = np.unravel_index(spike_index, input_data.data.shape)
 
-    # spike_values = np.random.normal(input_data.data.max() * spike_scaling, input_data.data.max() * 0.1, len(spike_index))
-    spike_values = spike_scaling
+    spike_values = np.random.normal(input_data.data.max() * spike_scaling,
+                                    input_data.data.max() * 0.1,
+                                    len(spike_index))
+    # spike_values = spike_scaling
 
     input_data.data[spike_index2d] = spike_values
-
     return input_data
 
 
@@ -107,15 +110,14 @@ def uncorrect_vignetting_lff(input_data):
         width, height = 2048, 2048
         sigma_x, sigma_y = width / 1, height / 1
         x, y = np.meshgrid(np.linspace(0, width - 1, width), np.linspace(0, height - 1, height))
-        vignetting_function = np.exp(-(((x - width // 2) ** 2) / (2 * sigma_x ** 2) + ((y - height // 2) ** 2) / (2 * sigma_y ** 2)))
+        vignetting_function = np.exp(-(((x - width // 2) ** 2) / (2 * sigma_x ** 2)
+                                       + ((y - height // 2) ** 2) / (2 * sigma_y ** 2)))
         vignetting_function /= np.max(vignetting_function)
-
-        input_data.data[:,:] *= vignetting_function
     else:
         with fits.open('data/sample_vignetting.fits') as hdul:
             vignetting_function = hdul[1].data
 
-        input_data.data[:,:] *= vignetting_function
+    input_data.data[:, :] *= np.flipud(vignetting_function)
 
     return input_data
 
@@ -142,7 +144,8 @@ def starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_s
         [np.sin(pc_offset), np.cos(pc_offset)]
     ])
 
-    input_data.wcs.wcs.pc = np.dot(input_data.wcs.wcs.pc, rotation_matrix)
+    # TODO: check new pc matrix
+    input_data.wcs.wcs.pc = np.matmul(input_data.wcs.wcs.pc, rotation_matrix)
 
     return input_data
 
@@ -159,7 +162,7 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     input_data = NDCube(data=input_data_array, meta=dict(input_header), wcs=input_wcs)
 
     # Define the output data product
-    product_code = input_data.meta['TYPECODE'] + spacecraft_id
+    product_code = input_data.meta['TYPECODE'] + input_data.meta['OBSCODE']
     product_level = '0'
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
     output_meta['DATE-OBS'] = str(time_obs)
@@ -177,7 +180,7 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     output_data = uncorrect_psf(output_data)
 
-    # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise. Skip for now.
+    # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data)
 
     output_data = add_deficient_pixels(output_data)
@@ -186,10 +189,11 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     output_data = streaking(output_data)
 
-    output_data = photometric_uncalibration(output_data)
-    # Take whole photon per pixel to seed a poisson distribution to get
+    output_data, photon_counts = photometric_uncalibration(output_data)
 
-    # TODO - Take model from proba to use for poisson distribution to draw spikes
+    # TODO: do in a cleaner way
+    output_data.data[...] += np.random.poisson(lam=photon_counts, size=output_data.data.shape)
+
     output_data = spiking(output_data)
 
     output_data = certainty_estimate(output_data)
@@ -199,9 +203,10 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     # Set output dtype
     # TODO - also check this in the output data w/r/t BITPIX
     write_data = NDCube(data=output_data.data[:, :].astype(np.int32), meta=output_data.meta, wcs=output_data.wcs)
+    write_data = update_spacecraft_location(write_data, write_data.meta.astropy_time)
 
     # Write out
-    output_data.meta['FILEVRSN'] = '0'
+    output_data.meta['FILEVRSN'] = '1'
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
 
 
@@ -213,14 +218,13 @@ def generate_l0_all(datadir):
     # Set file output path
     print(f"Running from {datadir}")
     outdir = os.path.join(datadir, 'synthetic_l0/')
+    os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
     # Parse list of level 1 model data
     files_l1 = glob.glob(datadir + '/synthetic_l1/*.fits')
     print(f"Generating based on {len(files_l1)} files.")
     files_l1.sort()
-
-    files_l1 = files_l1[0:2]
 
     # Set the overall start time for synthetic data
     # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
@@ -230,24 +234,18 @@ def generate_l0_all(datadir):
     time_delta = timedelta(minutes=4)
     times_obs = np.arange(len(files_l1)) * time_delta + time_start
 
+    pool = ProcessPoolExecutor()
+    futures = []
+    # Run individual generators
     for i, (file_l1, time_obs) in tqdm(enumerate(zip(files_l1, times_obs)), total=len(files_l1)):
         rotation_stage = int((i % 16) / 2)
-        generate_l0_pmzp(file_l1, outdir, time_obs, time_delta, rotation_stage, '1')
+        futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, None))
 
-    # pool = ProcessPoolExecutor()
-    # futures = []
-    # # Run individual generators
-    # for i, (file_l1, time_obs) in tqdm(enumerate(zip(files_l1, times_obs)), total=len(files_l1)):
-    #     rotation_stage = int((i % 16) / 2)
-    #     futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, '1'))
-    #     futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, '2'))
-    #     futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, '3'))
-    #     futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, '4'))
-    #
-    # with tqdm(total=len(futures)) as pbar:
-    #     for _ in as_completed(futures):
-    #         pbar.update(1)
+    with tqdm(total=len(futures)) as pbar:
+        for future in as_completed(futures):
+            future.result()
+            pbar.update(1)
 
 
-if __name__ == "__main__":
-    generate_l0_all('/Users/clowder/data/punch')
+if __name__ == '__main__':
+    generate_l0_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")
