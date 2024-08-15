@@ -22,6 +22,7 @@ Functions
 
 .. autoapisummary::
 
+   simpunch.level1.calculate_pc_matrix
    simpunch.level1.generate_spacecraft_wcs
    simpunch.level1.deproject
    simpunch.level1.mark_quality
@@ -35,6 +36,19 @@ Module Contents
 ---------------
 
 .. py:data:: PUNCH_STOKES_MAPPING
+
+.. py:function:: calculate_pc_matrix(crota: float, cdelt: (float, float)) -> numpy.ndarray
+
+   Calculate a PC matrix given CROTA and CDELT
+
+   :param crota: rotation angle from the WCS
+   :type crota: float
+   :param cdelt: pixel size from the WCS
+   :type cdelt: float
+
+   :returns: PC matrix
+   :rtype: np.ndarray
+
 
 .. py:function:: generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> astropy.wcs.WCS
 
