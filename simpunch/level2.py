@@ -144,7 +144,7 @@ def add_starfield(input_data):
     wcs_stellar.wcs.pc = wcs_stellar_input.wcs.pc[0:2,0:2]
 
     starfield, stars = gen_starfield(wcs_stellar, input_data.data[0,:,:].shape,
-                               fwhm=3, dimmest_magnitude=12, noise_mean=10, noise_std=5)
+                               fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
 
     starfield_data = np.zeros(input_data.data.shape)
     for i in range(starfield_data.shape[0]):
