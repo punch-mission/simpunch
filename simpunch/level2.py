@@ -146,11 +146,13 @@ def add_starfield(input_data):
     starfield, stars = gen_starfield(wcs_stellar, input_data.data[0,:,:].shape,
                                fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
 
+    starfield = starfield / 174037. * 5.4e-11
+
     starfield_data = np.zeros(input_data.data.shape)
     for i in range(starfield_data.shape[0]):
         starfield_data[i, :, :] = starfield * (input_data.data[i, :, :] != 0)
 
-    input_data.data[...] = input_data.data[...] + (starfield_data / starfield_data.max() * 5.4e-11)
+    input_data.data[...] = input_data.data[...] + starfield_data
 
     return input_data
 
