@@ -67,7 +67,7 @@ def photometric_uncalibration(input_data,
     return input_data, photon_data
 
 
-def spiking(input_data, spike_scaling=2**16-1):
+def spiking(input_data, spike_scaling=2**16-5_000):
     spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1],
                                    np.random.randint(40*49-1000, 40*49+1000))
     spike_index2d = np.unravel_index(spike_index, input_data.data.shape)
