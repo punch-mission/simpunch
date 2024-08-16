@@ -35,7 +35,7 @@ Module Contents
 
 .. py:function:: photometric_uncalibration(input_data, gain: float = 4.3, bitrate_signal: int = 16)
 
-.. py:function:: spiking(input_data, spike_scaling=2**16 - 1)
+.. py:function:: spiking(input_data, spike_scaling=2**16 - 5000)
 
 .. py:function:: streak_correction_matrix(n: int, exposure_time: float, readout_line_time: float, reset_line_time: float) -> numpy.ndarray
 
