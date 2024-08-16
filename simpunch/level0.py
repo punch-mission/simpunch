@@ -67,15 +67,15 @@ def photometric_uncalibration(input_data,
     return input_data, photon_data
 
 
-def spiking(input_data, spike_scaling=2**16-1):
+def spiking(input_data, spike_scaling=2**16-5_000):
     spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1],
                                    np.random.randint(40*49-1000, 40*49+1000))
     spike_index2d = np.unravel_index(spike_index, input_data.data.shape)
 
-    spike_values = np.random.normal(input_data.data.max() * spike_scaling,
+    spike_values = np.random.normal(spike_scaling,
                                     input_data.data.max() * 0.1,
                                     len(spike_index))
-    # spike_values = spike_scaling
+    spike_values = np.clip(spike_values, 0, spike_scaling)
 
     input_data.data[spike_index2d] = spike_values
     return input_data
@@ -202,6 +202,7 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     # Set output dtype
     # TODO - also check this in the output data w/r/t BITPIX
+    output_data.data[output_data.data > 2**16-1] = 2**16-1
     write_data = NDCube(data=output_data.data[:, :].astype(np.int32), meta=output_data.meta, wcs=output_data.wcs)
     write_data = update_spacecraft_location(write_data, write_data.meta.astropy_time)
 
