@@ -47,16 +47,16 @@ Module Contents
 
 .. py:function:: add_stray_light(input_data)
 
-.. py:function:: uncorrect_psf(input_data)
+.. py:function:: uncorrect_psf(input_data, psf_model)
 
 .. py:function:: starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1)
 
-.. py:function:: generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id)
+.. py:function:: generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id, psf_model)
 
    Generates level 0 polarized synthetic data
 
 
-.. py:function:: generate_l0_all(datadir)
+.. py:function:: generate_l0_all(datadir, psf_model_path)
 
    Generate all level 0 synthetic data
 
