@@ -15,6 +15,8 @@ from astropy.wcs.utils import proj_plane_pixel_area
 from ndcube import NDCube
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             write_ndcube_to_fits)
+from punchbowl.data.wcs import calculate_pc_matrix, extract_crota_from_wcs
+from regularizepsf import ArrayCorrector
 from tqdm import tqdm
 
 from simpunch.util import update_spacecraft_location
@@ -130,7 +132,8 @@ def add_stray_light(input_data):
     return input_data
 
 
-def uncorrect_psf(input_data):
+def uncorrect_psf(input_data, psf_model):
+    input_data.data[...] = psf_model.correct_image(input_data.data, alpha=1.5, epsilon=0.5)[...]
     return input_data
 
 
@@ -138,19 +141,15 @@ def starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_s
     cr_offsets = np.random.normal(0, cr_offset_scale, 2)
     input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
 
-    pc_offset = np.random.normal(0, pc_offset_scale, 1)[0] * u.deg
-    rotation_matrix = np.array([
-        [np.cos(pc_offset), -np.sin(pc_offset)],
-        [np.sin(pc_offset), np.cos(pc_offset)]
-    ])
-
-    # TODO: check new pc matrix
-    input_data.wcs.wcs.pc = np.matmul(input_data.wcs.wcs.pc, rotation_matrix)
+    pc_offset = np.random.normal(0, pc_offset_scale) * u.deg
+    current_crota = extract_crota_from_wcs(input_data.wcs)
+    new_pc = calculate_pc_matrix(current_crota + pc_offset, input_data.wcs.wcs.cdelt)
+    input_data.wcs.wcs.pc = new_pc
 
     return input_data
 
 
-def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id):
+def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id, psf_model):
     """Generates level 0 polarized synthetic data"""
 
     # Read in the input data
@@ -178,7 +177,7 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     # TODO - fold into reprojection?
     output_data = starfield_misalignment(input_data)
 
-    output_data = uncorrect_psf(output_data)
+    output_data = uncorrect_psf(output_data, psf_model)
 
     # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data)
@@ -192,6 +191,8 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_data, photon_counts = photometric_uncalibration(output_data)
 
     # TODO: do in a cleaner way
+    photon_counts[np.isnan(photon_counts)] = 0
+    photon_counts[photon_counts < 0] = 0
     output_data.data[...] += np.random.poisson(lam=photon_counts, size=output_data.data.shape)
 
     output_data = spiking(output_data)
@@ -210,10 +211,11 @@ def generate_l0_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     output_data.meta['FILEVRSN'] = '1'
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
 
+    print("done")
 
 # @click.command()
 # @click.argument('datadir', type=click.Path(exists=True))
-def generate_l0_all(datadir):
+def generate_l0_all(datadir, psf_model_path):
     """Generate all level 0 synthetic data"""
 
     # Set file output path
@@ -235,12 +237,15 @@ def generate_l0_all(datadir):
     time_delta = timedelta(minutes=4)
     times_obs = np.arange(len(files_l1)) * time_delta + time_start
 
+    psf_model = ArrayCorrector.load(psf_model_path)
+
     pool = ProcessPoolExecutor()
     futures = []
     # Run individual generators
     for i, (file_l1, time_obs) in tqdm(enumerate(zip(files_l1, times_obs)), total=len(files_l1)):
         rotation_stage = int((i % 16) / 2)
-        futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta, rotation_stage, None))
+        futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, time_obs, time_delta,
+                                   rotation_stage, None, psf_model))
 
     with tqdm(total=len(futures)) as pbar:
         for future in as_completed(futures):
@@ -249,4 +254,5 @@ def generate_l0_all(datadir):
 
 
 if __name__ == '__main__':
-    generate_l0_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")
+    generate_l0_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/",
+                    "/Users/jhughes/Desktop/repos/simpunch/synthetic_input_psf.h5")
