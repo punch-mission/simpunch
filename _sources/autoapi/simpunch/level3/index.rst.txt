@@ -78,7 +78,7 @@ Module Contents
    Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image
 
 
-.. py:function:: generate_l3_all(datadir, num_repeats=1)
+.. py:function:: generate_l3_all(datadir, start_time, num_repeats=1)
 
    Generate all level 3 synthetic data
 

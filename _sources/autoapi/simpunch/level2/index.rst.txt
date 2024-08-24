@@ -56,7 +56,7 @@ Module Contents
    Remix polarization from (B, pB) to (M,Z,P) using solpolpy
 
 
-.. py:function:: generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stage)
+.. py:function:: generate_l2_ptm(input_file, path_output)
 
    Generates level 2 PTM synthetic data
 

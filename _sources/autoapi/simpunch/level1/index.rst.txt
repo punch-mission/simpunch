@@ -50,7 +50,7 @@ Module Contents
    :rtype: np.ndarray
 
 
-.. py:function:: generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> astropy.wcs.WCS
+.. py:function:: generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> astropy.wcs.WCS
 
 .. py:function:: deproject(input_data, output_wcs, adaptive_reprojection=False)
 
@@ -69,7 +69,7 @@ Module Contents
 
 .. py:function:: add_distortion(input_data, num_bins: int = 100)
 
-.. py:function:: generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id)
+.. py:function:: generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id)
 
    Generates level 1 polarized synthetic data
 

@@ -384,7 +384,7 @@ document.write(`
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.certainty_estimate" title="simpunch.level0.certainty_estimate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">certainty_estimate</span></code></a>(input_data)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.certainty_estimate" title="simpunch.level0.certainty_estimate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">certainty_estimate</span></code></a>(input_data, noise_level)</p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.photometric_uncalibration" title="simpunch.level0.photometric_uncalibration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">photometric_uncalibration</span></code></a>(input_data[, gain, ...])</p></td>
@@ -399,7 +399,7 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.streaking" title="simpunch.level0.streaking"><code class="xref py py-obj docutils literal notranslate"><span class="pre">streaking</span></code></a>(input_data[, exposure_time, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.uncorrect_vignetting_lff" title="simpunch.level0.uncorrect_vignetting_lff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uncorrect_vignetting_lff</span></code></a>(input_data)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.uncorrect_vignetting_lff" title="simpunch.level0.uncorrect_vignetting_lff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uncorrect_vignetting_lff</span></code></a>(input_data, ...)</p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.add_deficient_pixels" title="simpunch.level0.add_deficient_pixels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_deficient_pixels</span></code></a>(input_data)</p></td>
@@ -414,10 +414,10 @@ document.write(`
 <tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.starfield_misalignment" title="simpunch.level0.starfield_misalignment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">starfield_misalignment</span></code></a>(input_data[, cr_offset_scale, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_pmzp" title="simpunch.level0.generate_l0_pmzp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_pmzp</span></code></a>(input_file, path_output, time_obs, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_pmzp" title="simpunch.level0.generate_l0_pmzp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_pmzp</span></code></a>(input_file, path_output, psf_model, ...)</p></td>
 <td><p>Generates level 0 polarized synthetic data</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_all" title="simpunch.level0.generate_l0_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_all</span></code></a>(datadir, psf_model_path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_all" title="simpunch.level0.generate_l0_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_all</span></code></a>(datadir, psf_model_path, ...)</p></td>
 <td><p>Generate all level 0 synthetic data</p></td>
 </tr>
 </tbody>
@@ -428,12 +428,12 @@ document.write(`
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.certainty_estimate">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">certainty_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.certainty_estimate" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">certainty_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_level</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.certainty_estimate" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.photometric_uncalibration">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">photometric_uncalibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitrate_signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.photometric_uncalibration" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">photometric_uncalibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4.93</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitrate_signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.photometric_uncalibration" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -453,7 +453,7 @@ document.write(`
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.uncorrect_vignetting_lff">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">uncorrect_vignetting_lff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.uncorrect_vignetting_lff" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">uncorrect_vignetting_lff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.uncorrect_vignetting_lff" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -478,13 +478,13 @@ document.write(`
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.generate_l0_pmzp">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_pmzp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.generate_l0_pmzp" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_pmzp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.generate_l0_pmzp" title="Link to this definition">#</a></dt>
 <dd><p>Generates level 0 polarized synthetic data</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.generate_l0_all">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.generate_l0_all" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.generate_l0_all" title="Link to this definition">#</a></dt>
 <dd><p>Generate all level 0 synthetic data</p>
 </dd></dl>
 
