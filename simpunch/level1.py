@@ -18,8 +18,11 @@ from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from tqdm import tqdm
+from prefect import flow
+from sunpy.coordinates import sun
 
 from simpunch.util import update_spacecraft_location
+from simpunch.level2 import add_starfield
 
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
                                                      11: StokesSymbol("B", "total brightness")})
@@ -48,7 +51,7 @@ def calculate_pc_matrix(crota: float, cdelt: (float, float)) -> np.ndarray:
     )
 
 
-def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
+def generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> WCS:
     angle_step = 30
 
     if spacecraft_id in ['1', '2', '3']:
@@ -62,23 +65,22 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
 
-        out_wcs.wcs.crpix = out_wcs_shape[1] / 2 - 0.5, out_wcs_shape[0] / 2 - 0.5
-        out_wcs.wcs.crval = (24.75 * np.sin(angle_wfi) + (0.5 * np.sin(angle_wfi)),
-                             24.75 * np.cos(angle_wfi) - (0.5 * np.cos(angle_wfi)))
-        out_wcs.wcs.cdelt = 0.02, 0.02
+        out_wcs.wcs.crpix = (1024.5, 150.5)
+        out_wcs.wcs.crval = (0.0, 0.0)
+        out_wcs.wcs.cdelt = 88 / 3600 * 0.9, 88 / 3600 * 0.9
 
         out_wcs.wcs.pc = calculate_pc_matrix(angle_wfi, out_wcs.wcs.cdelt)
+        out_wcs.wcs.set_pv([(2, 1, (-sun.earth_distance(time)/sun.constants.radius).decompose().value)])
 
         out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
         out_wcs.wcs.cunit = "deg", "deg"
-
     elif spacecraft_id == '4':
         angle_nfi = (0 + angle_step * rotation_stage) % 360 * u.deg
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
-        out_wcs.wcs.crpix = out_wcs_shape[1] / 2 - 0.5, out_wcs_shape[0] / 2 - 0.5
+        out_wcs.wcs.crpix = out_wcs_shape[1] / 2 + 0.5, out_wcs_shape[0] / 2 + 0.5
         out_wcs.wcs.crval = 0, 0
-        out_wcs.wcs.cdelt = 0.01, 0.01
+        out_wcs.wcs.cdelt = 30 / 3600, 30 / 3600
 
         out_wcs.wcs.pc = calculate_pc_matrix(angle_nfi, out_wcs.wcs.cdelt)
 
@@ -92,31 +94,51 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage) -> WCS:
 
 def deproject(input_data, output_wcs, adaptive_reprojection=False):
     """Data deprojection"""
-    input_wcs = input_data.wcs.copy()
-    input_wcs = calculate_celestial_wcs_from_helio(input_wcs, input_data.meta.astropy_time, input_data.data.shape)
+    # input_wcs = input_data.wcs.copy()
+    # input_header = input_wcs.to_header()
+    # # input_header['HGLN_OBS'] = input_data.meta['HGLN_OBS'].value
+    # # input_header['HGLT_OBS'] = input_data.meta['HGLT_OBS'].value
+    # # input_header['DSUN_OBS'] = input_data.meta['DSUN_OBS'].value
+    # input_wcs = WCS(input_header)
 
-    output_header = output_wcs.copy().to_header()
-    output_header['HGLN_OBS'] = input_data.meta['HGLN_OBS'].value
-    output_header['HGLT_OBS'] = input_data.meta['HGLT_OBS'].value
-    output_header['DSUN_OBS'] = input_data.meta['DSUN_OBS'].value
-    output_wcs_helio = WCS(output_header)
-    output_wcs = calculate_celestial_wcs_from_helio(output_wcs_helio,
+    reconstructed_wcs = WCS(naxis=3)
+    reconstructed_wcs.wcs.ctype = input_data.wcs.wcs.ctype
+    reconstructed_wcs.wcs.cunit = input_data.wcs.wcs.cunit
+    reconstructed_wcs.wcs.cdelt = input_data.wcs.wcs.cdelt
+    reconstructed_wcs.wcs.crpix = input_data.wcs.wcs.crpix
+    reconstructed_wcs.wcs.crval = input_data.wcs.wcs.crval
+    reconstructed_wcs.wcs.pc = input_data.wcs.wcs.pc
+
+    # print(input_wcs)
+    reconstructed_wcs = calculate_celestial_wcs_from_helio(reconstructed_wcs, input_data.meta.astropy_time, input_data.data.shape)
+    reconstructed_wcs = reconstructed_wcs.dropaxis(2)
+    #
+    # output_header = output_wcs.copy().to_header()
+    # output_header['HGLN_OBS'] = input_data.meta['HGLN_OBS'].value
+    # output_header['HGLT_OBS'] = input_data.meta['HGLT_OBS'].value
+    # output_header['DSUN_OBS'] = input_data.meta['DSUN_OBS'].value
+    # output_wcs_helio = WCS(output_header)
+    # output_wcs = output_wcs_helio
+    # print(output_wcs)
+    output_wcs_helio = copy.deepcopy(output_wcs)
+    output_wcs = calculate_celestial_wcs_from_helio(output_wcs,
                                                     input_data.meta.astropy_time,
                                                     input_data.data.shape).dropaxis(2)
+    # output_wcs_helio = output_wcs
 
     reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
 
     for i in np.arange(3):
         if adaptive_reprojection:
             reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :],
-                                                                      input_wcs.dropaxis(2)),
+                                                                      reconstructed_wcs),
                                                                      output_wcs,
                                                                      (2048, 2048),
                                                                      roundtrip_coords=False, return_footprint=False,
                                                                      kernel='Gaussian', boundary_mode='ignore')
         else:
             reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :],
-                                                                    input_wcs.dropaxis(2)),
+                                                                    reconstructed_wcs),
                                                                    output_wcs, (2048, 2048),
                                                                    roundtrip_coords=False, return_footprint=False)
 
@@ -199,7 +221,7 @@ def add_distortion(input_data, num_bins: int = 100):
     return input_data
 
 
-def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_stage, spacecraft_id):
+def generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id):
     """Generates level 1 polarized synthetic data"""
     input_pdata = load_ndcube_from_fits(input_file)
 
@@ -208,7 +230,7 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     product_level = '1'
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
     output_meta['DATE-OBS'] = input_pdata.meta['DATE-OBS'].value
-    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
+    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage, input_pdata.meta.astropy_time)
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(output_wcs)
@@ -221,6 +243,8 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
 
     # Quality marking
     output_data = mark_quality(output_data)
+
+    output_data = add_starfield(output_data)
 
     # Polarization remixing
     output_data = remix_polarization(output_data)
@@ -261,6 +285,7 @@ def generate_l1_pmzp(input_file, path_output, time_obs, time_delta, rotation_sta
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
 
 
+@flow(log_prints=True)
 def generate_l1_all(datadir):
     """Generate all level 1 synthetic data
      L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM"""
@@ -276,25 +301,17 @@ def generate_l1_all(datadir):
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
-    # Set the overall start time for synthetic data
-    # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
-    time_start = datetime(2024, 6, 20, 0, 0, 0)
-
-    # Generate a corresponding set of observation times for polarized trefoil / NFI data
-    time_delta = timedelta(minutes=4)
-    times_obs = np.arange(len(files_ptm)) * time_delta + time_start
-
     pool = ProcessPoolExecutor()
     futures = []
 
     # Run individual generators
-    for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
+    for i, file_ptm in tqdm(enumerate(files_ptm), total=len(files_ptm)):
         rotation_stage = int((i % 16) / 2)
-
-        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '1'))
-        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '2'))
-        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '3'))
-        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, time_obs, time_delta, rotation_stage, '4'))
+        # generate_l1_pmzp(file_ptm, outdir, rotation_stage, '1')
+        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '1'))
+        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '2'))
+        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '3'))
+        futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '4'))
 
     with tqdm(total=len(futures)) as pbar:
         for future in as_completed(futures):
