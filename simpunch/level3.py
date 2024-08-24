@@ -26,6 +26,7 @@ from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import get_base_file_name
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from tqdm import tqdm
+from prefect import flow
 
 from simpunch.util import update_spacecraft_location
 
@@ -112,8 +113,6 @@ def generate_uncertainty(pdata: NDCube) -> NDCube:
 
 def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None):
     """Assemble a punchdata object with correct metadata"""
-    mask = None
-
     with fits.open(input_tb) as hdul:
         data_tb = hdul[1].data / 1e8  # the 1e8 comes from the units on FORWARD output
         if data_tb.shape == (2048, 2048):
@@ -137,9 +136,6 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
     return NDCube(data=datacube, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
 
-
-
-
 def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage):
     """Generate PTM - PUNCH Level-3 Polarized Mosaic"""
     # Define the mosaic WCS (helio)
@@ -153,6 +149,8 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
 
     # Mask data to define the field of view
     mask = define_trefoil_mask(rotation_stage=rotation_stage)
+    mask = define_mask(shape=(4096, 4096), distance_value=0.68)
+    mask = None
 
     # Read data and assemble into PUNCHData object
     pdata = assemble_punchdata(input_tb, input_pb, mosaic_wcs, product_code='PTM', product_level='3', mask=mask)
@@ -337,7 +335,8 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits')
 
 
-def generate_l3_all(datadir, num_repeats=1):
+@flow(log_prints=True)
+def generate_l3_all(datadir, start_time, num_repeats=1):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
@@ -353,17 +352,13 @@ def generate_l3_all(datadir, num_repeats=1):
     files_tb.sort()
     files_pb.sort()
 
-    # Stack and repeat these data for testing - about 25 times to get around 5 days of data
+    # Stack and repeat these data for testing
     files_tb = np.tile(files_tb, num_repeats)
     files_pb = np.tile(files_pb, num_repeats)
 
-    # Set the overall start time for synthetic data
-    # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
-    time_start = datetime(2024, 6, 20, 0, 0, 0)
-
     # Generate a corresponding set of observation times for polarized trefoil / NFI data
     time_delta = timedelta(minutes=4)
-    times_obs = np.arange(len(files_tb)) * time_delta + time_start
+    times_obs = np.arange(len(files_tb)) * time_delta + start_time
 
     # Generate a corresponding set of observation times for low-noise mosaic / NFI data
     # time_delta_ln = timedelta(minutes=32)

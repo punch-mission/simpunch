@@ -18,6 +18,7 @@ from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from tqdm import tqdm
+from prefect import flow
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
@@ -134,23 +135,20 @@ def add_starfield(input_data):
                                                            input_data.meta.astropy_time,
                                                            input_data.data.shape)
 
-    shape = input_data.data[0,:,:].shape
-    wcs_stellar = WCS(naxis=2)
-    wcs_stellar.wcs.crpix = shape[1] / 2 - 0.5, shape[0] / 2 - 0.5
-    wcs_stellar.wcs.crval = wcs_stellar_input.wcs.crval[0], wcs_stellar_input.wcs.crval[1]
-    wcs_stellar.wcs.cdelt = wcs_stellar_input.wcs.cdelt[0], wcs_stellar_input.wcs.cdelt[1]
-    wcs_stellar.wcs.ctype = 'RA---ARC', 'DEC--ARC'
+    # shape = input_data.data[0,:,:].shape
+    # wcs_stellar = WCS(naxis=2)
+    # wcs_stellar.wcs.crpix = shape[1] / 2 + 0.5, shape[0] / 2 + 0.5
+    # wcs_stellar.wcs.crval = wcs_stellar_input.wcs.crval[0], wcs_stellar_input.wcs.crval[1]
+    # wcs_stellar.wcs.cdelt = wcs_stellar_input.wcs.cdelt[0], wcs_stellar_input.wcs.cdelt[1]
+    # wcs_stellar.wcs.ctype = 'RA---ARC', 'DEC--ARC'
+    # wcs_stellar.wcs.pc = wcs_stellar_input.wcs.pc
 
-    wcs_stellar.wcs.pc = wcs_stellar_input.wcs.pc[0:2,0:2]
-
-    starfield, stars = gen_starfield(wcs_stellar, input_data.data[0,:,:].shape,
-                               fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
-
-    starfield = starfield / 174037. * 5.4e-11
+    starfield, stars = gen_starfield(wcs_stellar_input, input_data.data[0, :, :].shape, flux_set=2.0384547E-9,
+                                     fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
 
     starfield_data = np.zeros(input_data.data.shape)
     for i in range(starfield_data.shape[0]):
-        starfield_data[i, :, :] = starfield * (input_data.data[i, :, :] != 0)
+        starfield_data[i, :, :] = starfield * (np.logical_not(np.isclose(input_data.data[i, :, :], 0, atol=1E-18)))
 
     input_data.data[...] = input_data.data[...] + starfield_data
 
@@ -194,7 +192,7 @@ def remix_polarization(input_data):
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
-def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stage):
+def generate_l2_ptm(input_file, path_output):
     """Generates level 2 PTM synthetic data"""
 
     # Read in the input data
@@ -214,17 +212,18 @@ def generate_l2_ptm(input_file, path_output, time_obs, time_delta, rotation_stag
             output_meta[key].value = input_pdata.meta[key].value
 
     output_data = remix_polarization(input_pdata)
-    output_data = add_starfield(output_data)
+    # output_data = add_starfield(output_data)
     output_data = add_fcorona(output_data)
 
     # Package into a PUNCHdata object
     output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
-    output_pdata = update_spacecraft_location(output_pdata, time_obs)
+    output_pdata = update_spacecraft_location(output_pdata, input_pdata.meta.astropy_time)
 
     # Write out
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
 
 
+@flow(log_prints=True)
 def generate_l2_all(datadir):
     """Generate all level 2 synthetic data
      L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM"""
@@ -240,20 +239,11 @@ def generate_l2_all(datadir):
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
-    # Set the overall start time for synthetic data
-    # Note the timing for data products - 32 minutes / low noise ; 8 minutes / clear ; 4 minutes / polarized
-    time_start = datetime(2024, 6, 20, 0, 0, 0)
-
-    # Generate a corresponding set of observation times for polarized trefoil / NFI data
-    time_delta = timedelta(minutes=4)
-    times_obs = np.arange(len(files_ptm)) * time_delta + time_start
-
     pool = ProcessPoolExecutor()
     futures = []
     # Run individual generators
-    for i, (file_ptm, time_obs) in tqdm(enumerate(zip(files_ptm, times_obs)), total=len(files_ptm)):
-        rotation_stage = i % 8
-        futures.append(pool.submit(generate_l2_ptm, file_ptm, outdir, time_obs, time_delta, rotation_stage))
+    for file_ptm in tqdm(files_ptm):
+        futures.append(pool.submit(generate_l2_ptm, file_ptm, outdir))
 
     with tqdm(total=len(futures)) as pbar:
         for future in as_completed(futures):

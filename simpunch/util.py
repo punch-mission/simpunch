@@ -1,6 +1,7 @@
 import astropy.units as u
 from sunpy.coordinates import sun
 from sunpy.coordinates.ephemeris import get_earth
+from punchbowl.data.wcs import get_p_angle
 
 
 def update_spacecraft_location(input_data, time_obs):
@@ -36,7 +37,7 @@ def update_spacecraft_location(input_data, time_obs):
     input_data.meta['HEQY_OBS'] = (coord.heliographic_stonyhurst.cartesian.y.value * u.AU).to(u.m).value
     input_data.meta['HEQZ_OBS'] = (coord.heliographic_stonyhurst.cartesian.z.value * u.AU).to(u.m).value
 
-    input_data.meta['SOLAR_EP'] = sun.P(time_obs).value
+    input_data.meta['SOLAR_EP'] = get_p_angle(time_obs).to(u.deg).value
     input_data.meta['CAR_ROT'] = float(sun.carrington_rotation_number(time_obs))
 
     return input_data
