@@ -5,7 +5,6 @@ import copy
 import glob
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from datetime import datetime, timedelta
 
 import astropy.units as u
 import numpy as np
@@ -14,15 +13,15 @@ import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCollection, NDCube
+from prefect import flow
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
-from tqdm import tqdm
-from prefect import flow
 from sunpy.coordinates import sun
+from tqdm import tqdm
 
-from simpunch.util import update_spacecraft_location
 from simpunch.level2 import add_starfield
+from simpunch.util import update_spacecraft_location
 
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
                                                      11: StokesSymbol("B", "total brightness")})
@@ -65,7 +64,7 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> WCS:
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
 
-        out_wcs.wcs.crpix = (1024.5, 150.5)
+        out_wcs.wcs.crpix = (1024.5, 193.5)
         out_wcs.wcs.crval = (0.0, 0.0)
         out_wcs.wcs.cdelt = 88 / 3600 * 0.9, 88 / 3600 * 0.9
 
@@ -110,7 +109,9 @@ def deproject(input_data, output_wcs, adaptive_reprojection=False):
     reconstructed_wcs.wcs.pc = input_data.wcs.wcs.pc
 
     # print(input_wcs)
-    reconstructed_wcs = calculate_celestial_wcs_from_helio(reconstructed_wcs, input_data.meta.astropy_time, input_data.data.shape)
+    reconstructed_wcs = calculate_celestial_wcs_from_helio(reconstructed_wcs,
+                                                           input_data.meta.astropy_time,
+                                                           input_data.data.shape)
     reconstructed_wcs = reconstructed_wcs.dropaxis(2)
     #
     # output_header = output_wcs.copy().to_header()

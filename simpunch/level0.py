@@ -4,25 +4,20 @@ Generates synthetic level 0 data
 import glob
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from datetime import datetime, timedelta
 from pathlib import Path
 
-import astropy.constants as const
 import astropy.units as u
 import numpy as np
-from astropy.io import fits
-from astropy.wcs import WCS
 from astropy.nddata import StdDevUncertainty
-from astropy.wcs.utils import proj_plane_pixel_area
 from ndcube import NDCube
+from prefect import flow
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
-                            write_ndcube_to_fits, load_ndcube_from_fits)
+                            load_ndcube_from_fits, write_ndcube_to_fits)
+from punchbowl.data.units import msb_to_dn
 from punchbowl.data.wcs import calculate_pc_matrix, extract_crota_from_wcs
 from punchbowl.level1.initial_uncertainty import compute_noise
-from punchbowl.data.units import msb_to_dn
 from regularizepsf import ArrayCorrector
 from tqdm import tqdm
-from prefect import flow
 
 from simpunch.util import update_spacecraft_location
 
@@ -52,7 +47,8 @@ def photometric_uncalibration(input_data,
     # pixel_scale = (proj_plane_pixel_area(input_data.wcs) * u.deg**2).to(u.sr) / u.pixel
     # # pixel_scale = (abs(input_data.wcs.pixel_scale_matrix[0, 0]) * u.deg**2).to(u.sr) / u.pixel
     #
-    # # The instrument aperture is 22mm, however the effective area is a bit smaller due to losses and quantum efficiency
+    # # The instrument aperture is 22mm,
+    # however the effective area is a bit smaller due to losses and quantum efficiency
     # aperture = 49.57 * u.mm**2
     # # aperture = 0.392699082 * u.cm**2
     #
@@ -121,7 +117,7 @@ def uncorrect_vignetting_lff(input_data, wfi_vignetting_model_path, nfi_vignetti
         vignetting_function_path = Path(wfi_vignetting_model_path)
     cube = load_ndcube_from_fits(vignetting_function_path)
 
-    input_data.data[:, :] *= cube.data
+    input_data.data[:, :] *= cube.data[:, :]
 
     return input_data
 
@@ -135,7 +131,7 @@ def add_stray_light(input_data):
 
 
 def uncorrect_psf(input_data, psf_model):
-    input_data.data[...] = psf_model.correct_image(input_data.data, alpha=1.5, epsilon=0.5)[...]
+    input_data.data[...] = psf_model.correct_image(input_data.data, alpha=3.0, epsilon=0.3)[...]
     return input_data
 
 
