@@ -5,20 +5,18 @@ PTM - PUNCH Level-2 Polarized (MZP) Mosaic
 import glob
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from datetime import datetime, timedelta
 
 import numpy as np
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.table import QTable
-from astropy.wcs import WCS
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_gaussian_sources_image, make_noise_image
+from prefect import flow
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from tqdm import tqdm
-from prefect import flow
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
