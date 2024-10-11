@@ -64,7 +64,7 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> WCS:
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
 
-        out_wcs.wcs.crpix = (1024.5, 193.5)
+        out_wcs.wcs.crpix = (1024.5, 150)
         out_wcs.wcs.crval = (0.0, 0.0)
         out_wcs.wcs.cdelt = 88 / 3600 * 0.9, 88 / 3600 * 0.9
 

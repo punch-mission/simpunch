@@ -136,13 +136,14 @@ def uncorrect_psf(input_data, psf_model):
 
 
 def starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1):
-    cr_offsets = np.random.normal(0, cr_offset_scale, 2)
-    input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
+    # TODO - Removed temporarily for getting the pipeline moving
+    #cr_offsets = np.random.normal(0, cr_offset_scale, 2)
+    #input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
 
-    pc_offset = np.random.normal(0, pc_offset_scale) * u.deg
-    current_crota = extract_crota_from_wcs(input_data.wcs)
-    new_pc = calculate_pc_matrix(current_crota + pc_offset, input_data.wcs.wcs.cdelt)
-    input_data.wcs.wcs.pc = new_pc
+    #pc_offset = np.random.normal(0, pc_offset_scale) * u.deg
+    #current_crota = extract_crota_from_wcs(input_data.wcs)
+    #new_pc = calculate_pc_matrix(current_crota + pc_offset, input_data.wcs.wcs.cdelt)
+    #input_data.wcs.wcs.pc = new_pc
 
     return input_data
 
