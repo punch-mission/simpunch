@@ -286,6 +286,50 @@ def generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id):
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
 
 
+def generate_l1_cr(input_file, path_output, rotation_stage, spacecraft_id):
+    """Generates level 1 clear synthetic data"""
+    input_pdata = load_ndcube_from_fits(input_file)
+
+    # Define the output data product
+    product_code = 'CR' + spacecraft_id
+    product_level = '1'
+    output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    output_meta['DATE-OBS'] = input_pdata.meta['DATE-OBS'].value
+    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage, input_pdata.meta.astropy_time)
+
+    # Synchronize overlapping metadata keys
+    output_header = output_meta.to_fits_header(output_wcs)
+    for key in output_header.keys():
+        if (key in input_pdata.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
+            output_meta[key].value = input_pdata.meta[key].value
+
+    # Deproject to spacecraft frame
+    output_data, output_wcs = deproject(input_pdata, output_wcs)
+
+    # Quality marking
+    output_data = mark_quality(output_data)
+
+    output_data = add_starfield(output_data)
+
+    output_cmeta = copy.deepcopy(output_meta)
+    output_cwcs = copy.deepcopy(output_wcs)
+
+    # Package into NDCube objects
+    output_cdata = NDCube(data=output_data.data[:, :].astype(np.float32), wcs=output_cwcs, meta=output_cmeta)
+
+    output_cdata.meta['TYPECODE'] = 'CR'
+
+    output_cdata.meta['POLAR'] = 9999
+
+    # Add distortion
+    output_cdata = add_distortion(output_cdata)
+
+    output_cdata = update_spacecraft_location(output_cdata, output_cdata.meta.astropy_time)
+
+    # Write out
+    write_ndcube_to_fits(output_cdata, path_output + get_base_file_name(output_cdata) + '.fits')
+
+
 @flow(log_prints=True)
 def generate_l1_all(datadir):
     """Generate all level 1 synthetic data
@@ -313,6 +357,11 @@ def generate_l1_all(datadir):
         futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '2'))
         futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '3'))
         futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '4'))
+
+        futures.append(pool.submit(generate_l1_cr, file_ptm, outdir, rotation_stage, '1'))
+        futures.append(pool.submit(generate_l1_cr, file_ptm, outdir, rotation_stage, '2'))
+        futures.append(pool.submit(generate_l1_cr, file_ptm, outdir, rotation_stage, '3'))
+        futures.append(pool.submit(generate_l1_cr, file_ptm, outdir, rotation_stage, '4'))
 
     with tqdm(total=len(futures)) as pbar:
         for future in as_completed(futures):

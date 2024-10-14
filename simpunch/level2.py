@@ -221,6 +221,37 @@ def generate_l2_ptm(input_file, path_output):
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
 
 
+def generate_l2_ctm(input_file, path_output):
+    """Generates level 2 CTM synthetic data"""
+
+    # Read in the input data
+    input_pdata = load_ndcube_from_fits(input_file)
+
+    # Define the output data product
+    product_code = 'CTM'
+    product_level = '2'
+    output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    output_meta['DATE-OBS'] = input_pdata.meta['DATE-OBS'].value
+    output_wcs = input_pdata.wcs
+
+    # Synchronize overlapping metadata keys
+    output_header = output_meta.to_fits_header(output_wcs)
+    for key in output_header.keys():
+        if (key in input_pdata.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
+            output_meta[key].value = input_pdata.meta[key].value
+
+    # output_data = remix_polarization(input_pdata)
+    # output_data = add_starfield(output_data)
+    output_data = add_fcorona(input_pdata)
+
+    # Package into a PUNCHdata object
+    output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
+    output_pdata = update_spacecraft_location(output_pdata, input_pdata.meta.astropy_time)
+
+    # Write out
+    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
+
+
 @flow(log_prints=True)
 def generate_l2_all(datadir):
     """Generate all level 2 synthetic data
@@ -242,6 +273,7 @@ def generate_l2_all(datadir):
     # Run individual generators
     for file_ptm in tqdm(files_ptm):
         futures.append(pool.submit(generate_l2_ptm, file_ptm, outdir))
+        futures.append(pool.submit(generate_l2_ctm, file_ptm, outdir))
 
     with tqdm(total=len(futures)) as pbar:
         for future in as_completed(futures):
