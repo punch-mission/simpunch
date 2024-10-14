@@ -578,8 +578,8 @@ def generate_l3_all(datadir, start_time, num_repeats=1):
     futures = []
     # Run individual generators
     for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
-        futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta,
-                                   rotation_indices[i % 8]))
+        #futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta,
+        #                           rotation_indices[i % 8]))
         futures.append(pool.submit(generate_l3_ctm, file_tb, outdir, time_obs, time_delta,
                                    rotation_indices[i % 8]))
         # futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))

@@ -302,6 +302,7 @@ def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vign
 
     # Parse list of level 1 model data
     files_l1 = glob.glob(datadir + '/synthetic_l1/*.fits')
+    files_cr = glob.glob(datadir + '/synthetic_l1/*CR*.fits')
     print(f"Generating based on {len(files_l1)} files.")
     files_l1.sort()
 
@@ -310,11 +311,13 @@ def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vign
     pool = ProcessPoolExecutor()
     futures = []
     # Run individual generators
-    for file_l1 in tqdm(files_l1, total=len(files_l1)):
-        futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, psf_model,
-                                   wfi_vignetting_model_path, nfi_vignetting_model_path))
-        futures.append(pool.submit(generate_l0_cr, file_l1, outdir, psf_model,
-                                   wfi_vignetting_model_path, nfi_vignetting_model_path))
+    #for file_l1 in tqdm(files_l1, total=len(files_l1)):
+        #futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, psf_model,
+        #                           wfi_vignetting_model_path, nfi_vignetting_model_path))
+
+    for file_cr in tqdm(files_cr, total=len(files_cr)):
+        futures.append(pool.submit(generate_l0_cr, file_cr, outdir, psf_model,
+                                    wfi_vignetting_model_path, nfi_vignetting_model_path))
 
     with tqdm(total=len(futures)) as pbar:
         for future in as_completed(futures):
