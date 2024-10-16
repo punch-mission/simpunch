@@ -25,6 +25,7 @@ Functions
    simpunch.level0.uncorrect_psf
    simpunch.level0.starfield_misalignment
    simpunch.level0.generate_l0_pmzp
+   simpunch.level0.generate_l0_cr
    simpunch.level0.generate_l0_all
 
 
@@ -52,6 +53,11 @@ Module Contents
 .. py:function:: starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1)
 
 .. py:function:: generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path)
+
+   Generates level 0 polarized synthetic data
+
+
+.. py:function:: generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path)
 
    Generates level 0 polarized synthetic data
 

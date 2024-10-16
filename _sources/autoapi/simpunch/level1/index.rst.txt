@@ -25,10 +25,12 @@ Functions
    simpunch.level1.calculate_pc_matrix
    simpunch.level1.generate_spacecraft_wcs
    simpunch.level1.deproject
+   simpunch.level1.deproject_clear
    simpunch.level1.mark_quality
    simpunch.level1.remix_polarization
    simpunch.level1.add_distortion
    simpunch.level1.generate_l1_pmzp
+   simpunch.level1.generate_l1_cr
    simpunch.level1.generate_l1_all
 
 
@@ -57,6 +59,11 @@ Module Contents
    Data deprojection
 
 
+.. py:function:: deproject_clear(input_data, output_wcs, adaptive_reprojection=False)
+
+   Data deprojection
+
+
 .. py:function:: mark_quality(input_data)
 
    Data quality marking
@@ -72,6 +79,11 @@ Module Contents
 .. py:function:: generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id)
 
    Generates level 1 polarized synthetic data
+
+
+.. py:function:: generate_l1_cr(input_file, path_output, rotation_stage, spacecraft_id)
+
+   Generates level 1 clear synthetic data
 
 
 .. py:function:: generate_l1_all(datadir)

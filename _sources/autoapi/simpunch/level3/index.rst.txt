@@ -25,7 +25,9 @@ Functions
    simpunch.level3.define_trefoil_mask
    simpunch.level3.generate_uncertainty
    simpunch.level3.assemble_punchdata
+   simpunch.level3.assemble_punchdata_clear
    simpunch.level3.generate_l3_ptm
+   simpunch.level3.generate_l3_ctm
    simpunch.level3.generate_l3_pnn
    simpunch.level3.generate_l3_pam
    simpunch.level3.generate_l3_pan
@@ -58,9 +60,19 @@ Module Contents
    Assemble a punchdata object with correct metadata
 
 
+.. py:function:: assemble_punchdata_clear(input_tb, wcs, product_code, product_level, mask=None)
+
+   Assemble a punchdata object with correct metadata for a clear data product
+
+
 .. py:function:: generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage)
 
    Generate PTM - PUNCH Level-3 Polarized Mosaic
+
+
+.. py:function:: generate_l3_ctm(input_tb, path_output, time_obs, time_delta, rotation_stage)
+
+   Generate CTM - PUNCH Level-3 Clear Mosaic
 
 
 .. py:function:: generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta)

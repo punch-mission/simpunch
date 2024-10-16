@@ -27,8 +27,10 @@ Functions
    simpunch.level2.add_fcorona
    simpunch.level2.gen_starfield
    simpunch.level2.add_starfield
+   simpunch.level2.add_starfield_clear
    simpunch.level2.remix_polarization
    simpunch.level2.generate_l2_ptm
+   simpunch.level2.generate_l2_ctm
    simpunch.level2.generate_l2_all
 
 
@@ -51,6 +53,11 @@ Module Contents
    Adds synthetic starfield
 
 
+.. py:function:: add_starfield_clear(input_data)
+
+   Adds synthetic starfield
+
+
 .. py:function:: remix_polarization(input_data)
 
    Remix polarization from (B, pB) to (M,Z,P) using solpolpy
@@ -59,6 +66,11 @@ Module Contents
 .. py:function:: generate_l2_ptm(input_file, path_output)
 
    Generates level 2 PTM synthetic data
+
+
+.. py:function:: generate_l2_ctm(input_file, path_output)
+
+   Generates level 2 CTM synthetic data
 
 
 .. py:function:: generate_l2_all(datadir)

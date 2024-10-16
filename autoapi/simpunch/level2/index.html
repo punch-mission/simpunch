@@ -29,7 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
@@ -37,7 +37,7 @@
   <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/level2/index';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -408,11 +408,17 @@ PTM - PUNCH Level-2 Polarized (MZP) Mosaic</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level2.add_starfield" title="simpunch.level2.add_starfield"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_starfield</span></code></a>(input_data)</p></td>
 <td><p>Adds synthetic starfield</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level2.remix_polarization" title="simpunch.level2.remix_polarization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remix_polarization</span></code></a>(input_data)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level2.add_starfield_clear" title="simpunch.level2.add_starfield_clear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_starfield_clear</span></code></a>(input_data)</p></td>
+<td><p>Adds synthetic starfield</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level2.remix_polarization" title="simpunch.level2.remix_polarization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remix_polarization</span></code></a>(input_data)</p></td>
 <td><p>Remix polarization from (B, pB) to (M,Z,P) using solpolpy</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level2.generate_l2_ptm" title="simpunch.level2.generate_l2_ptm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l2_ptm</span></code></a>(input_file, path_output)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level2.generate_l2_ptm" title="simpunch.level2.generate_l2_ptm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l2_ptm</span></code></a>(input_file, path_output)</p></td>
 <td><p>Generates level 2 PTM synthetic data</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level2.generate_l2_ctm" title="simpunch.level2.generate_l2_ctm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l2_ctm</span></code></a>(input_file, path_output)</p></td>
+<td><p>Generates level 2 CTM synthetic data</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level2.generate_l2_all" title="simpunch.level2.generate_l2_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l2_all</span></code></a>(datadir)</p></td>
 <td><p>Generate all level 2 synthetic data</p></td>
@@ -451,6 +457,12 @@ PTM - PUNCH Level-2 Polarized (MZP) Mosaic</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level2.add_starfield_clear">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">add_starfield_clear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.add_starfield_clear" title="Link to this definition">#</a></dt>
+<dd><p>Adds synthetic starfield</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level2.remix_polarization">
 <span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">remix_polarization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.remix_polarization" title="Link to this definition">#</a></dt>
 <dd><p>Remix polarization from (B, pB) to (M,Z,P) using solpolpy</p>
@@ -460,6 +472,12 @@ PTM - PUNCH Level-2 Polarized (MZP) Mosaic</p>
 <dt class="sig sig-object py" id="simpunch.level2.generate_l2_ptm">
 <span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">generate_l2_ptm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.generate_l2_ptm" title="Link to this definition">#</a></dt>
 <dd><p>Generates level 2 PTM synthetic data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level2.generate_l2_ctm">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level2.</span></span><span class="sig-name descname"><span class="pre">generate_l2_ctm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level2.generate_l2_ctm" title="Link to this definition">#</a></dt>
+<dd><p>Generates level 2 CTM synthetic data</p>
 </dd></dl>
 
 <dl class="py function">
@@ -526,8 +544,10 @@ L2_PTM &lt;- f-corona subtraction &lt;- starfield subtraction &lt;- remix polari
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.add_fcorona"><code class="docutils literal notranslate"><span class="pre">add_fcorona()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.gen_starfield"><code class="docutils literal notranslate"><span class="pre">gen_starfield()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.add_starfield"><code class="docutils literal notranslate"><span class="pre">add_starfield()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.add_starfield_clear"><code class="docutils literal notranslate"><span class="pre">add_starfield_clear()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.remix_polarization"><code class="docutils literal notranslate"><span class="pre">remix_polarization()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.generate_l2_ptm"><code class="docutils literal notranslate"><span class="pre">generate_l2_ptm()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.generate_l2_ctm"><code class="docutils literal notranslate"><span class="pre">generate_l2_ctm()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level2.generate_l2_all"><code class="docutils literal notranslate"><span class="pre">generate_l2_all()</span></code></a></li>
 </ul>
 </li>
@@ -584,7 +604,7 @@ L2_PTM &lt;- f-corona subtraction &lt;- starfield subtraction &lt;- remix polari
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.0.2.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
     <br/>
   </p>
 </div>

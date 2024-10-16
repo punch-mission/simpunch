@@ -29,7 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
@@ -37,7 +37,7 @@
   <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/level1/index';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -404,17 +404,23 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.deproject" title="simpunch.level1.deproject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deproject</span></code></a>(input_data, output_wcs[, adaptive_reprojection])</p></td>
 <td><p>Data deprojection</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.mark_quality" title="simpunch.level1.mark_quality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mark_quality</span></code></a>(input_data)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.deproject_clear" title="simpunch.level1.deproject_clear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deproject_clear</span></code></a>(input_data, output_wcs[, ...])</p></td>
+<td><p>Data deprojection</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.mark_quality" title="simpunch.level1.mark_quality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mark_quality</span></code></a>(input_data)</p></td>
 <td><p>Data quality marking</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.remix_polarization" title="simpunch.level1.remix_polarization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remix_polarization</span></code></a>(input_data)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.remix_polarization" title="simpunch.level1.remix_polarization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remix_polarization</span></code></a>(input_data)</p></td>
 <td><p>Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.add_distortion" title="simpunch.level1.add_distortion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_distortion</span></code></a>(input_data[, num_bins])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.add_distortion" title="simpunch.level1.add_distortion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_distortion</span></code></a>(input_data[, num_bins])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_pmzp" title="simpunch.level1.generate_l1_pmzp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_pmzp</span></code></a>(input_file, path_output, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_pmzp" title="simpunch.level1.generate_l1_pmzp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_pmzp</span></code></a>(input_file, path_output, ...)</p></td>
 <td><p>Generates level 1 polarized synthetic data</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_cr" title="simpunch.level1.generate_l1_cr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_cr</span></code></a>(input_file, path_output, ...)</p></td>
+<td><p>Generates level 1 clear synthetic data</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_all" title="simpunch.level1.generate_l1_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_all</span></code></a>(datadir)</p></td>
 <td><p>Generate all level 1 synthetic data</p></td>
@@ -462,6 +468,12 @@ document.write(`
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level1.deproject_clear">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">deproject_clear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive_reprojection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.deproject_clear" title="Link to this definition">#</a></dt>
+<dd><p>Data deprojection</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level1.mark_quality">
 <span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">mark_quality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.mark_quality" title="Link to this definition">#</a></dt>
 <dd><p>Data quality marking</p>
@@ -482,6 +494,12 @@ document.write(`
 <dt class="sig sig-object py" id="simpunch.level1.generate_l1_pmzp">
 <span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_pmzp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.generate_l1_pmzp" title="Link to this definition">#</a></dt>
 <dd><p>Generates level 1 polarized synthetic data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.level1.generate_l1_cr">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_cr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.generate_l1_cr" title="Link to this definition">#</a></dt>
+<dd><p>Generates level 1 clear synthetic data</p>
 </dd></dl>
 
 <dl class="py function">
@@ -547,10 +565,12 @@ L1 &lt;- polarization deprojection &lt;- quality marking &lt;- deproject to spac
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.calculate_pc_matrix"><code class="docutils literal notranslate"><span class="pre">calculate_pc_matrix()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.generate_spacecraft_wcs"><code class="docutils literal notranslate"><span class="pre">generate_spacecraft_wcs()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.deproject"><code class="docutils literal notranslate"><span class="pre">deproject()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.deproject_clear"><code class="docutils literal notranslate"><span class="pre">deproject_clear()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.mark_quality"><code class="docutils literal notranslate"><span class="pre">mark_quality()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.remix_polarization"><code class="docutils literal notranslate"><span class="pre">remix_polarization()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.add_distortion"><code class="docutils literal notranslate"><span class="pre">add_distortion()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.generate_l1_pmzp"><code class="docutils literal notranslate"><span class="pre">generate_l1_pmzp()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.generate_l1_cr"><code class="docutils literal notranslate"><span class="pre">generate_l1_cr()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.generate_l1_all"><code class="docutils literal notranslate"><span class="pre">generate_l1_all()</span></code></a></li>
 </ul>
 </li>
@@ -607,7 +627,7 @@ L1 &lt;- polarization deprojection &lt;- quality marking &lt;- deproject to spac
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.0.2.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
     <br/>
   </p>
 </div>
