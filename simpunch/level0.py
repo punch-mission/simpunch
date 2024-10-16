@@ -14,7 +14,6 @@ from prefect import flow
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
-from punchbowl.data.wcs import calculate_pc_matrix, extract_crota_from_wcs
 from punchbowl.level1.initial_uncertainty import compute_noise
 from regularizepsf import ArrayCorrector
 from tqdm import tqdm
@@ -136,18 +135,90 @@ def uncorrect_psf(input_data, psf_model):
 
 
 def starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1):
-    cr_offsets = np.random.normal(0, cr_offset_scale, 2)
-    input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
+    # TODO - Removed temporarily for getting the pipeline moving
+    #cr_offsets = np.random.normal(0, cr_offset_scale, 2)
+    #input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
 
-    pc_offset = np.random.normal(0, pc_offset_scale) * u.deg
-    current_crota = extract_crota_from_wcs(input_data.wcs)
-    new_pc = calculate_pc_matrix(current_crota + pc_offset, input_data.wcs.wcs.cdelt)
-    input_data.wcs.wcs.pc = new_pc
+    #pc_offset = np.random.normal(0, pc_offset_scale) * u.deg
+    #current_crota = extract_crota_from_wcs(input_data.wcs)
+    #new_pc = calculate_pc_matrix(current_crota + pc_offset, input_data.wcs.wcs.cdelt)
+    #input_data.wcs.wcs.pc = new_pc
 
     return input_data
 
 
 def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path):
+    """Generates level 0 polarized synthetic data"""
+
+    input_data = load_ndcube_from_fits(input_file)
+
+    # Define the output data product
+    product_code = input_data.meta['TYPECODE'].value + input_data.meta['OBSCODE'].value
+    product_level = '0'
+    output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    output_meta['DATE-OBS'] = str(input_data.meta.datetime)
+
+    # Synchronize overlapping metadata keys
+    output_header = output_meta.to_fits_header(input_data.wcs)
+    for key in output_header.keys():
+        if (key in input_data.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
+            output_meta[key] = input_data.meta[key].value
+
+    # input_data = NDCube(data=input_data.data+1E-13, meta=output_meta, wcs=input_data.wcs)
+    input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
+
+    # TODO - fold into reprojection?
+    output_data = starfield_misalignment(input_data)
+
+    output_data = uncorrect_psf(output_data, psf_model)
+
+    # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
+    output_data = add_stray_light(output_data)
+
+    output_data = add_deficient_pixels(output_data)
+
+    output_data = uncorrect_vignetting_lff(output_data, wfi_vignetting_model_path, nfi_vignetting_model_path)
+
+    output_data = streaking(output_data)
+
+    output_data = photometric_uncalibration(output_data)
+
+    if input_data.meta['OBSCODE'].value == "4":
+        scaling = {"gain": 4.9 * u.photon / u.DN,
+              "wavelength": 530. * u.nm,
+              "exposure": 49 * u.s,
+              "aperture": 49.57 * u.mm**2}
+    else:
+        scaling = {"gain": 4.9 * u.photon / u.DN,
+              "wavelength": 530. * u.nm,
+              "exposure": 49 * u.s,
+              "aperture": 34 * u.mm ** 2}
+    output_data.data[:, :] = msb_to_dn(output_data.data[:, :], output_data.wcs, **scaling)
+
+    noise = compute_noise(output_data.data)
+    output_data.data[...] += noise[...]
+
+    output_data = spiking(output_data)
+
+    output_data = certainty_estimate(output_data, noise)  # TODO: shouldn't certainty take into account spikes?
+
+    # TODO - Sync up any final header data here
+
+    # Set output dtype
+    # TODO - also check this in the output data w/r/t BITPIX
+    output_data.data[output_data.data > 2**16-1] = 2**16-1
+    write_data = NDCube(data=output_data.data[:, :].astype(np.int32),
+                        uncertainty=None,
+                        meta=output_data.meta,
+                        wcs=output_data.wcs)
+    write_data = update_spacecraft_location(write_data, write_data.meta.astropy_time)
+
+    # Write out
+    output_data.meta['FILEVRSN'] = '1'
+    write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
+
+
+def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path):
     """Generates level 0 polarized synthetic data"""
 
     input_data = load_ndcube_from_fits(input_file)
@@ -230,6 +301,7 @@ def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vign
 
     # Parse list of level 1 model data
     files_l1 = glob.glob(datadir + '/synthetic_l1/*.fits')
+    files_cr = glob.glob(datadir + '/synthetic_l1/*CR*.fits')
     print(f"Generating based on {len(files_l1)} files.")
     files_l1.sort()
 
@@ -238,9 +310,13 @@ def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vign
     pool = ProcessPoolExecutor()
     futures = []
     # Run individual generators
-    for file_l1 in tqdm(files_l1, total=len(files_l1)):
-        futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, psf_model,
-                                   wfi_vignetting_model_path, nfi_vignetting_model_path))
+    #for file_l1 in tqdm(files_l1, total=len(files_l1)):
+        #futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, psf_model,
+        #                           wfi_vignetting_model_path, nfi_vignetting_model_path))
+
+    for file_cr in tqdm(files_cr, total=len(files_cr)):
+        futures.append(pool.submit(generate_l0_cr, file_cr, outdir, psf_model,
+                                    wfi_vignetting_model_path, nfi_vignetting_model_path))
 
     with tqdm(total=len(futures)) as pbar:
         for future in as_completed(futures):
