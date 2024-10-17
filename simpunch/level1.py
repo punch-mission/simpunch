@@ -4,7 +4,6 @@ Generates synthetic level 1 data
 import copy
 import glob
 import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import astropy.units as u
 import numpy as np
@@ -13,7 +12,8 @@ import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCollection, NDCube
-from prefect import flow
+from prefect import flow, task
+from prefect.futures import wait
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
@@ -261,7 +261,7 @@ def add_distortion(input_data, num_bins: int = 100):
 
     return input_data
 
-
+@task
 def generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id):
     """Generates level 1 polarized synthetic data"""
     input_pdata = load_ndcube_from_fits(input_file)
@@ -326,6 +326,7 @@ def generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id):
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
 
 
+@task
 def generate_l1_cr(input_file, path_output, rotation_stage, spacecraft_id):
     """Generates level 1 clear synthetic data"""
     input_pdata = load_ndcube_from_fits(input_file)
@@ -387,29 +388,24 @@ def generate_l1_all(datadir):
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
-    pool = ProcessPoolExecutor()
     futures = []
 
     # Run individual generators
-    #for i, file_ptm in tqdm(enumerate(files_ptm), total=len(files_ptm)):
-        #rotation_stage = int((i % 16) / 2)
-        #futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '1'))
-        #futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '2'))
-        #futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '3'))
-        #futures.append(pool.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, '4'))
+    for i, file_ptm in tqdm(enumerate(files_ptm), total=len(files_ptm)):
+        rotation_stage = int((i % 16) / 2)
+        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, '1'))
+        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, '2'))
+        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, '3'))
+        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, '4'))
 
     for i, file_ctm in tqdm(enumerate(files_ctm), total=len(files_ctm)):
         rotation_stage = int((i % 16) / 2)
-        futures.append(pool.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, '1'))
-        futures.append(pool.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, '2'))
-        futures.append(pool.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, '3'))
-        futures.append(pool.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, '4'))
+        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, '1'))
+        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, '2'))
+        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, '3'))
+        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, '4'))
 
-    with tqdm(total=len(futures)) as pbar:
-        for future in as_completed(futures):
-            future.result()
-            pbar.update(1)
-
+    wait(futures)
 
 if __name__ == '__main__':
     generate_l1_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")
