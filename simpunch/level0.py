@@ -3,18 +3,19 @@ Generates synthetic level 0 data
 """
 import glob
 import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import astropy.units as u
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
-from prefect import flow
+from prefect import flow, task
+from prefect.futures import wait
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
 from punchbowl.level1.initial_uncertainty import compute_noise
+from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayCorrector
 from tqdm import tqdm
 
@@ -147,6 +148,7 @@ def starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_s
     return input_data
 
 
+@task
 def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path):
     """Generates level 0 polarized synthetic data"""
 
@@ -202,6 +204,8 @@ def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_pa
 
     output_data = certainty_estimate(output_data, noise)  # TODO: shouldn't certainty take into account spikes?
 
+    output_data.data[:, :] = encode_sqrt(output_data.data[:, :])
+
     # TODO - Sync up any final header data here
 
     # Set output dtype
@@ -217,7 +221,7 @@ def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_pa
     output_data.meta['FILEVRSN'] = '1'
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
 
-
+@task
 def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path):
     """Generates level 0 polarized synthetic data"""
 
@@ -277,6 +281,8 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
 
     # Set output dtype
     # TODO - also check this in the output data w/r/t BITPIX
+    output_data.data[:, :] = encode_sqrt(output_data.data[:, :])
+
     output_data.data[output_data.data > 2**16-1] = 2**16-1
     write_data = NDCube(data=output_data.data[:, :].astype(np.int32),
                         uncertainty=None,
@@ -307,22 +313,17 @@ def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vign
 
     psf_model = ArrayCorrector.load(psf_model_path)
 
-    pool = ProcessPoolExecutor()
     futures = []
     # Run individual generators
-    #for file_l1 in tqdm(files_l1, total=len(files_l1)):
-        #futures.append(pool.submit(generate_l0_pmzp, file_l1, outdir, psf_model,
-        #                           wfi_vignetting_model_path, nfi_vignetting_model_path))
+    for file_l1 in tqdm(files_l1, total=len(files_l1)):
+        futures.append(generate_l0_pmzp.submit(file_l1, outdir, psf_model,
+                                  wfi_vignetting_model_path, nfi_vignetting_model_path))
 
     for file_cr in tqdm(files_cr, total=len(files_cr)):
-        futures.append(pool.submit(generate_l0_cr, file_cr, outdir, psf_model,
+        futures.append(generate_l0_cr.submit(file_cr, outdir, psf_model,
                                     wfi_vignetting_model_path, nfi_vignetting_model_path))
 
-    with tqdm(total=len(futures)) as pbar:
-        for future in as_completed(futures):
-            future.result()
-            pbar.update(1)
-
+    wait(futures)
 
 if __name__ == '__main__':
 

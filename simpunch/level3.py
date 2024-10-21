@@ -7,7 +7,6 @@ PNN - PUNCH Level-3 Polarized NFI Image
 """
 import glob
 import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 import astropy.units as u
@@ -22,11 +21,13 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
 from ndcube import NDCube
+from prefect import flow, task
+from prefect.futures import wait
+from prefect_dask import DaskTaskRunner
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import get_base_file_name
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from tqdm import tqdm
-from prefect import flow
 
 from simpunch.util import update_spacecraft_location
 
@@ -154,6 +155,7 @@ def assemble_punchdata_clear(input_tb, wcs, product_code, product_level, mask=No
     return NDCube(data=datacube, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
 
+@task
 def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage):
     """Generate PTM - PUNCH Level-3 Polarized Mosaic"""
     # Define the mosaic WCS (helio)
@@ -190,6 +192,7 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + '.fits')
 
 
+@task
 def generate_l3_ctm(input_tb, path_output, time_obs, time_delta, rotation_stage):
     """Generate CTM - PUNCH Level-3 Clear Mosaic"""
     # Define the mosaic WCS (helio)
@@ -482,69 +485,71 @@ def generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta):
     write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits')
 
 
-    def generate_l3_can(input_tb, path_output, time_obs, time_delta):
-        """Generate CAN - PUNCH Level-3 Clear Low Noise NFI Image"""
-        # Define the mosaic WCS (helio)
-        mosaic_shape = (4096, 4096)
-        mosaic_wcs = WCS(naxis=2)
-        mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
-        mosaic_wcs.wcs.crval = 0, 0
-        mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
-        mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
+def generate_l3_can(input_tb, path_output, time_obs, time_delta):
+    """Generate CAN - PUNCH Level-3 Clear Low Noise NFI Image"""
+    # Define the mosaic WCS (helio)
+    mosaic_shape = (4096, 4096)
+    mosaic_wcs = WCS(naxis=2)
+    mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
+    mosaic_wcs.wcs.crval = 0, 0
+    mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
+    mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
 
-        # Define the NFI WCS (helio)
-        nfi1_shape = [2048, 2048]
-        nfi1_wcs = WCS(naxis=2)
-        nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
-        nfi1_wcs.wcs.crval = 0, 0
-        nfi1_wcs.wcs.cdelt = 0.01, 0.01
-        nfi1_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
+    # Define the NFI WCS (helio)
+    nfi1_shape = [2048, 2048]
+    nfi1_wcs = WCS(naxis=2)
+    nfi1_wcs.wcs.crpix = nfi1_shape[1] / 2 - 0.5, nfi1_shape[0] / 2 - 0.5
+    nfi1_wcs.wcs.crval = 0, 0
+    nfi1_wcs.wcs.cdelt = 0.01, 0.01
+    nfi1_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
 
-        # Mask data to define the field of view
-        mask = define_mask(shape=(4096, 4096), distance_value=0.155)
+    # Mask data to define the field of view
+    mask = define_mask(shape=(4096, 4096), distance_value=0.155)
 
-        # Read data and assemble into PUNCHData object
-        pdata = assemble_punchdata_clear(input_tb, nfi1_wcs, product_code='CAN', product_level='3', mask=mask)
+    # Read data and assemble into PUNCHData object
+    pdata = assemble_punchdata_clear(input_tb, nfi1_wcs, product_code='CAN', product_level='3', mask=mask)
 
-        reprojected_data = np.zeros((2048, 2048), dtype=pdata.data.dtype)
+    reprojected_data = np.zeros((2048, 2048), dtype=pdata.data.dtype)
 
-        reprojected_data[:, :] = reproject.reproject_adaptive((pdata.data[:, :], mosaic_wcs[i]), nfi1_wcs,
-                                                                 (2048, 2048),
-                                                                 roundtrip_coords=False, return_footprint=False,
-                                                                 kernel='Gaussian', boundary_mode='ignore')
+    reprojected_data[:, :] = reproject.reproject_adaptive((pdata.data[:, :], mosaic_wcs), nfi1_wcs,
+                                                             (2048, 2048),
+                                                             roundtrip_coords=False, return_footprint=False,
+                                                             kernel='Gaussian', boundary_mode='ignore')
 
-        uncert = StdDevUncertainty(np.zeros(reprojected_data.shape))
-        uncert.array[reprojected_data == 0] = 1
+    uncert = StdDevUncertainty(np.zeros(reprojected_data.shape))
+    uncert.array[reprojected_data == 0] = 1
 
-        meta = NormalizedMetadata.load_template('PAN', '3')
-        tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
-        tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
-        tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
-        meta['DATE-OBS'] = tstring_start
-        meta['DATE-BEG'] = tstring_start
-        meta['DATE-END'] = tstring_end
-        meta['DATE-AVG'] = tstring_avg
-        meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
-        outdata = NDCube(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
+    meta = NormalizedMetadata.load_template('PAN', '3')
+    tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
+    tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
+    tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
+    meta['DATE-OBS'] = tstring_start
+    meta['DATE-BEG'] = tstring_start
+    meta['DATE-END'] = tstring_end
+    meta['DATE-AVG'] = tstring_avg
+    meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
+    outdata = NDCube(data=reprojected_data, wcs=nfi1_wcs, meta=meta, uncertainty=uncert)
 
-        # Update required metadata
-        tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
-        tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
-        tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
+    # Update required metadata
+    tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
+    tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
+    tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-        outdata.meta['DATE-OBS'] = tstring_start
-        outdata.meta['DATE-BEG'] = tstring_start
-        outdata.meta['DATE-END'] = tstring_end
-        outdata.meta['DATE-AVG'] = tstring_avg
-        outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
+    outdata.meta['DATE-OBS'] = tstring_start
+    outdata.meta['DATE-BEG'] = tstring_start
+    outdata.meta['DATE-END'] = tstring_end
+    outdata.meta['DATE-AVG'] = tstring_avg
+    outdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
 
-        outdata = update_spacecraft_location(outdata, time_obs)
-        # outdata = update_wcs_with_helio(outdata)
-        outdata = generate_uncertainty(outdata)
-        write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits')
+    outdata = update_spacecraft_location(outdata, time_obs)
+    # outdata = update_wcs_with_helio(outdata)
+    outdata = generate_uncertainty(outdata)
+    write_ndcube_to_fits(outdata, path_output + get_base_file_name(outdata) + '.fits')
 
 
-@flow(log_prints=True)
+@flow(log_prints=True, task_runner=DaskTaskRunner(
+    cluster_kwargs={"n_workers": 4, "threads_per_worker": 2}
+))
 def generate_l3_all(datadir, start_time, num_repeats=1):
     """Generate all level 3 synthetic data"""
 
@@ -574,27 +579,14 @@ def generate_l3_all(datadir, start_time, num_repeats=1):
 
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
 
-    pool = ProcessPoolExecutor()
-    futures = []
     # Run individual generators
+    runs = []
+
     for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
-        #futures.append(pool.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta,
-        #                           rotation_indices[i % 8]))
-        futures.append(pool.submit(generate_l3_ctm, file_tb, outdir, time_obs, time_delta,
-                                   rotation_indices[i % 8]))
-        # futures.append(pool.submit(generate_l3_pnn, file_tb, file_pb, outdir, time_obs, time_delta))
-        #
-        # if i % 8 == 0:
-        #     futures.append(pool.submit(generate_l3_pam, file_tb, file_pb, outdir, time_obs, time_delta_ln))
-        #     futures.append(pool.submit(generate_l3_pan, file_tb, file_pb, outdir, time_obs, time_delta_ln))
+        runs.append(generate_l3_ptm.submit(file_tb, file_pb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
+        runs.append(generate_l3_ctm.submit(file_tb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
 
-    with tqdm(total=len(futures)) as pbar:
-        for future in as_completed(futures):
-            future.result()
-            pbar.update(1)
-
-    pool.shutdown()
-
+    wait(runs)
 
 if __name__ == '__main__':
-    generate_l3_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")
+    generate_l3_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/", datetime.now())

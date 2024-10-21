@@ -4,7 +4,6 @@ PTM - PUNCH Level-2 Polarized (MZP) Mosaic
 """
 import glob
 import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 import solpolpy
@@ -12,7 +11,8 @@ from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.table import QTable
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_gaussian_sources_image, make_noise_image
-from prefect import flow
+from prefect import flow, task
+from prefect.futures import wait
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
@@ -218,7 +218,7 @@ def remix_polarization(input_data):
 
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
-
+@task
 def generate_l2_ptm(input_file, path_output):
     """Generates level 2 PTM synthetic data"""
 
@@ -250,6 +250,7 @@ def generate_l2_ptm(input_file, path_output):
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
 
 
+@task
 def generate_l2_ctm(input_file, path_output):
     """Generates level 2 CTM synthetic data"""
 
@@ -299,19 +300,15 @@ def generate_l2_all(datadir):
     print(f"Generating based on {len(files_ctm)} CTM files.")
     files_ptm.sort()
 
-    pool = ProcessPoolExecutor()
     futures = []
     # Run individual generators
-    #for file_ptm in tqdm(files_ptm):
-        #futures.append(pool.submit(generate_l2_ptm, file_ptm, outdir))
+    for file_ptm in tqdm(files_ptm):
+        futures.append(generate_l2_ptm.submit(file_ptm, outdir))
 
     for file_ctm in tqdm(files_ctm):
-        futures.append(pool.submit(generate_l2_ctm, file_ctm, outdir))
+        futures.append(generate_l2_ctm.submit(file_ctm, outdir))
 
-    with tqdm(total=len(futures)) as pbar:
-        for future in as_completed(futures):
-            future.result()
-            pbar.update(1)
+    wait(futures)
 
 
 if __name__ == '__main__':
