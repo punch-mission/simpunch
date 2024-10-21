@@ -31,6 +31,7 @@ Functions
    simpunch.level3.generate_l3_pnn
    simpunch.level3.generate_l3_pam
    simpunch.level3.generate_l3_pan
+   simpunch.level3.generate_l3_can
    simpunch.level3.generate_l3_all
 
 
@@ -88,6 +89,11 @@ Module Contents
 .. py:function:: generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta)
 
    Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image
+
+
+.. py:function:: generate_l3_can(input_tb, path_output, time_obs, time_delta)
+
+   Generate CAN - PUNCH Level-3 Clear Low Noise NFI Image
 
 
 .. py:function:: generate_l3_all(datadir, start_time, num_repeats=1)
