@@ -31,6 +31,8 @@ jobs:
         wget https://raw.githubusercontent.com/punch-mission/punch-mission/refs/heads/main/requirements.txt
     - name: Install dependencies
       run: |
+        eval `ssh-agent -s`
+        ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY }}'
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install ".[test]"
