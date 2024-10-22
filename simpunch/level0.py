@@ -11,6 +11,7 @@ from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import flow, task
 from prefect.futures import wait
+from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
@@ -295,7 +296,9 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
 
 
-@flow(log_prints=True)
+@flow(log_prints=True, task_runner=DaskTaskRunner(
+    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2}
+))
 def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vignetting_model_path):
     """Generate all level 0 synthetic data"""
 
