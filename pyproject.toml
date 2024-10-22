@@ -13,6 +13,7 @@ dependencies = [
     "matplotlib",
     "regularizepsf",
     "click",
+    "prefect[dask, sqlalchemy]",
     "punchbowl @ git+ssh://git@github.com/punch-mission/punchbowl",
     "toml",
     "scipy",
