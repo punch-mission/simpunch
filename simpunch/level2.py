@@ -297,8 +297,8 @@ def generate_l2_all(datadir):
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
-    files_ptm = glob.glob(datadir + '/synthetic_l3/*PTM*.fits')
-    files_ctm = glob.glob(datadir + '/synthetic_l3/*CTM*.fits')
+    files_ptm = glob.glob(datadir + '/synthetic_l3_build4/*PTM*.fits')
+    files_ctm = glob.glob(datadir + '/synthetic_l3_build4/*CTM*.fits')
     print(f"Generating based on {len(files_ptm)} PTM files.")
     print(f"Generating based on {len(files_ctm)} CTM files.")
     files_ptm.sort()

@@ -309,8 +309,8 @@ def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vign
     print(f"Outputting to {outdir}")
 
     # Parse list of level 1 model data
-    files_l1 = glob.glob(datadir + '/synthetic_l1/*.fits')
-    files_cr = glob.glob(datadir + '/synthetic_l1/*CR*.fits')
+    files_l1 = glob.glob(datadir + '/synthetic_l1_build4/*L1_P*.fits')
+    files_cr = glob.glob(datadir + '/synthetic_l1_build4/*CR*.fits')
     print(f"Generating based on {len(files_l1)} files.")
     files_l1.sort()
 
@@ -329,8 +329,6 @@ def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vign
     wait(futures)
 
 if __name__ == '__main__':
-
-
     generate_l0_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/",
                     "/Users/jhughes/Desktop/repos/simpunch/synthetic_input_psf.h5",
                     "/Users/jhughes/Desktop/repos/simpunch/PUNCH_L1_GM1_20240817174727_v2.fits",
