@@ -282,9 +282,9 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
 
     # Set output dtype
     # TODO - also check this in the output data w/r/t BITPIX
-    output_data.data[:, :] = encode_sqrt(output_data.data[:, :])
+    output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
 
-    output_data.data[output_data.data > 2**16-1] = 2**16-1
+    output_data.data[output_data.data > 2**10-1] = 2**10-1
     write_data = NDCube(data=output_data.data[:, :].astype(np.int32),
                         uncertainty=None,
                         meta=output_data.meta,
