@@ -381,7 +381,7 @@ def generate_l1_all(datadir):
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_l1/')
+    outdir = os.path.join(datadir, 'synthetic_l1_build4/')
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 

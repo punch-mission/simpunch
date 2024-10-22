@@ -304,7 +304,7 @@ def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vign
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_l0/')
+    outdir = os.path.join(datadir, 'synthetic_l0_build4/')
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 

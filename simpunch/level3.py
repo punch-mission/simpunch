@@ -555,7 +555,7 @@ def generate_l3_all(datadir, start_time, num_repeats=1):
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_l3/')
+    outdir = os.path.join(datadir, 'synthetic_l3_build4/')
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 

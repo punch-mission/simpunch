@@ -292,7 +292,7 @@ def generate_l2_all(datadir):
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_l2/')
+    outdir = os.path.join(datadir, 'synthetic_l2_build4/')
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
