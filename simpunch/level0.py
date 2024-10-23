@@ -171,9 +171,9 @@ def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_pa
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
 
     # TODO - fold into reprojection?
-    output_data = starfield_misalignment(input_data)
+    # output_data = starfield_misalignment(input_data)
 
-    output_data = uncorrect_psf(output_data, psf_model)
+    output_data = uncorrect_psf(input_data, psf_model)
 
     # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data)
@@ -244,9 +244,9 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
 
     # TODO - fold into reprojection?
-    output_data = starfield_misalignment(input_data)
+    # output_data = starfield_misalignment(input_data)
 
-    output_data = uncorrect_psf(output_data, psf_model)
+    output_data = uncorrect_psf(input_data, psf_model)
 
     # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data)
