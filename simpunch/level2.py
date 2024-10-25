@@ -59,18 +59,14 @@ def gen_fcorona(shape,
 
     distance = np.sqrt(((x_rotated - x_center) / a) ** 2 + ((y_rotated - y_center) / b) ** 2)
 
-    def n_function(r, max_radius, min_n, max_n):
-        return min_n + (max_n - min_n) * (r / max_radius)
-
     max_radius = np.sqrt((shape[xdim] / 2) ** 2 + (shape[ydim] / 2) ** 2)
     min_n = 1.54
     max_n = 1.65
 
-    n = n_function(distance, max_radius, min_n, max_n)
+    n = min_n + (max_n - min_n) * (distance / max_radius)
 
-    superellipse = (np.abs((x_rotated - x_center) / a) ** n + np.abs((y_rotated - y_center) / b) ** n) ** (1 / n)
-
-    superellipse = superellipse / (2 ** (1 / n))
+    superellipse = (np.abs((x_rotated - x_center) / a) ** n +
+                    np.abs((y_rotated - y_center) / b) ** n) ** (1 / n) / (2 ** (1 / n))
 
     max_distance = 1
     fcorona_profile = np.exp(-superellipse ** 2 / (2 * max_distance ** 2))
