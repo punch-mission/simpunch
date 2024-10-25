@@ -9,6 +9,7 @@ import numpy as np
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.table import QTable
+import astropy.units as u
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_gaussian_sources_image, make_noise_image
 from prefect import flow, task
@@ -26,7 +27,7 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
                                                      11: StokesSymbol("B", "total brightness")})
 
 
-def gen_fcorona(shape):
+def gen_fcorona(shape, tilt_angle: float = 3*u.deg, tilt_offset: float = 0):
     fcorona = np.zeros(shape)
 
     if len(shape) > 2:
@@ -40,17 +41,12 @@ def gen_fcorona(shape):
     a = 600  # Horizontal axis radius
     b = 300  # Vertical axis radius
 
-    tilt_angle_deg = 3  # Tilt angle in degrees
-
-    # Convert tilt angle to radians
-    tilt_angle_rad = np.deg2rad(tilt_angle_deg)
-
     x, y = np.meshgrid(np.arange(shape[xdim]), np.arange(shape[ydim]))
-    x_center, y_center = shape[xdim] // 2, shape[ydim] // 2
+    x_center, y_center = shape[xdim] // 2, shape[ydim] // 2 + tilt_offset
 
     # Rotate coordinates (x, y) around the center
-    x_rotated = (x - x_center) * np.cos(tilt_angle_rad) + (y - y_center) * np.sin(tilt_angle_rad) + x_center
-    y_rotated = -(x - x_center) * np.sin(tilt_angle_rad) + (y - y_center) * np.cos(tilt_angle_rad) + y_center
+    x_rotated = (x - x_center) * np.cos(tilt_angle) + (y - y_center) * np.sin(tilt_angle) + x_center
+    y_rotated = -(x - x_center) * np.sin(tilt_angle) + (y - y_center) * np.cos(tilt_angle) + y_center
 
     # Calculate distance from the center normalized by a and b for rotated coordinates
     distance = np.sqrt(((x_rotated - x_center) / a) ** 2 + ((y_rotated - y_center) / b) ** 2)
