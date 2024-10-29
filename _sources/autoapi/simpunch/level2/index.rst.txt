@@ -23,6 +23,7 @@ Functions
 
 .. autoapisummary::
 
+   simpunch.level2.get_fcorona_parameters
    simpunch.level2.gen_fcorona
    simpunch.level2.add_fcorona
    simpunch.level2.gen_starfield
@@ -39,7 +40,9 @@ Module Contents
 
 .. py:data:: PUNCH_STOKES_MAPPING
 
-.. py:function:: gen_fcorona(shape)
+.. py:function:: get_fcorona_parameters(date_obs)
+
+.. py:function:: gen_fcorona(shape, tilt_angle: float = 3 * u.deg, a: float = 600.0, b: float = 300.0, tilt_offset: tuple[float] = (0, 0))
 
 .. py:function:: add_fcorona(input_data)
 
