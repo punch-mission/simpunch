@@ -9,6 +9,7 @@ import numpy as np
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.table import QTable
+import astropy.units as u
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_gaussian_sources_image, make_noise_image
 from prefect import flow, task
@@ -26,7 +27,22 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
                                                      11: StokesSymbol("B", "total brightness")})
 
 
-def gen_fcorona(shape):
+def get_fcorona_parameters(date_obs):
+
+    phase = date_obs.decimalyear - int(date_obs.decimalyear)
+
+    tilt_angle = 3 * u.deg * np.sin(phase * 2 * np.pi)
+    b = 300. + 50 * np.cos(phase * 2 * np.pi)
+
+    return {'tilt_angle': tilt_angle,
+            'b': b}
+
+
+def gen_fcorona(shape,
+                tilt_angle: float = 3*u.deg,
+                a: float = 600.,
+                b: float = 300.,
+                tilt_offset: tuple[float] = (0,0)):
     fcorona = np.zeros(shape)
 
     if len(shape) > 2:
@@ -36,49 +52,26 @@ def gen_fcorona(shape):
         xdim = 0
         ydim = 1
 
-    # Superellipse parameters
-    a = 600  # Horizontal axis radius
-    b = 300  # Vertical axis radius
-
-    tilt_angle_deg = 3  # Tilt angle in degrees
-
-    # Convert tilt angle to radians
-    tilt_angle_rad = np.deg2rad(tilt_angle_deg)
-
     x, y = np.meshgrid(np.arange(shape[xdim]), np.arange(shape[ydim]))
-    x_center, y_center = shape[xdim] // 2, shape[ydim] // 2
+    x_center, y_center = shape[xdim] // 2 + tilt_offset[0], shape[ydim] // 2 + tilt_offset[1]
 
-    # Rotate coordinates (x, y) around the center
-    x_rotated = (x - x_center) * np.cos(tilt_angle_rad) + (y - y_center) * np.sin(tilt_angle_rad) + x_center
-    y_rotated = -(x - x_center) * np.sin(tilt_angle_rad) + (y - y_center) * np.cos(tilt_angle_rad) + y_center
+    x_rotated = (x - x_center) * np.cos(tilt_angle) + (y - y_center) * np.sin(tilt_angle) + x_center
+    y_rotated = -(x - x_center) * np.sin(tilt_angle) + (y - y_center) * np.cos(tilt_angle) + y_center
 
-    # Calculate distance from the center normalized by a and b for rotated coordinates
     distance = np.sqrt(((x_rotated - x_center) / a) ** 2 + ((y_rotated - y_center) / b) ** 2)
 
-    # Define a function for varying n with radius
-    def n_function(r, max_radius, min_n, max_n):
-        # Example of a linear function for n based on radius
-        return min_n + (max_n - min_n) * (r / max_radius)
+    max_radius = np.sqrt((shape[xdim] / 2) ** 2 + (shape[ydim] / 2) ** 2)
+    min_n = 1.54
+    max_n = 1.65
 
-    # Set parameters for varying n
-    max_radius = np.sqrt((shape[xdim] / 2) ** 2 + (shape[ydim] / 2) ** 2)  # Maximum radius from center
-    min_n = 1.54  # Minimum value of n
-    max_n = 1.65  # Maximum value of n
+    n = min_n + (max_n - min_n) * (distance / max_radius)
 
-    # Calculate n as a function of distance from the center
-    n = n_function(distance, max_radius, min_n, max_n)
+    superellipse = (np.abs((x_rotated - x_center) / a) ** n +
+                    np.abs((y_rotated - y_center) / b) ** n) ** (1 / n) / (2 ** (1 / n))
 
-    # Calculate the superellipse equation
-    superellipse = (np.abs((x_rotated - x_center) / a) ** n + np.abs((y_rotated - y_center) / b) ** n) ** (1 / n)
-
-    # Normalize distance to range [0, 1]
-    superellipse = superellipse / (2 ** (1 / n))
-
-    # Apply a Gaussian-like profile to simulate intensity variation
     max_distance = 1
     fcorona_profile = np.exp(-superellipse ** 2 / (2 * max_distance ** 2))
 
-    # Normalize profile to [0, 1] and scale to desired magnitude
     fcorona_profile = fcorona_profile / fcorona_profile.max() * 1e-12
 
     if len(shape) > 2:
@@ -93,7 +86,9 @@ def gen_fcorona(shape):
 def add_fcorona(input_data):
     """Adds synthetic f-corona model"""
 
-    fcorona = gen_fcorona(input_data.data.shape)
+    fcorona_parameters = get_fcorona_parameters(input_data.meta.astropy_time)
+
+    fcorona = gen_fcorona(input_data.data.shape, **fcorona_parameters)
 
     fcorona = fcorona * (input_data.data != 0)
 
