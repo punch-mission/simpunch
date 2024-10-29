@@ -32,9 +32,12 @@ def get_fcorona_parameters(date_obs):
     phase = date_obs.decimalyear - int(date_obs.decimalyear)
 
     tilt_angle = 3 * u.deg * np.sin(phase * 2 * np.pi)
-    b = 300. + 50 * np.sin(phase * 2 * np.pi)
+    b = 300. + 50 * np.cos(phase * 2 * np.pi)
 
-    return (tilt_angle, b)
+    parameters = {'tilt_angle': tilt_angle,
+                  'b': b}
+
+    return parameters
 
 
 def gen_fcorona(shape,
@@ -85,9 +88,9 @@ def gen_fcorona(shape,
 def add_fcorona(input_data):
     """Adds synthetic f-corona model"""
 
-    (tilt_angle, b) = get_fcorona_parameters(input_data.meta.astropy_time)
+    fcorona_parameters = get_fcorona_parameters(input_data.meta.astropy_time)
 
-    fcorona = gen_fcorona(input_data.data.shape, tilt_angle = tilt_angle, b = b)
+    fcorona = gen_fcorona(input_data.data.shape, **fcorona_parameters)
 
     fcorona = fcorona * (input_data.data != 0)
 
