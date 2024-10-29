@@ -34,10 +34,8 @@ def get_fcorona_parameters(date_obs):
     tilt_angle = 3 * u.deg * np.sin(phase * 2 * np.pi)
     b = 300. + 50 * np.cos(phase * 2 * np.pi)
 
-    parameters = {'tilt_angle': tilt_angle,
-                  'b': b}
-
-    return parameters
+    return {'tilt_angle': tilt_angle,
+            'b': b}
 
 
 def gen_fcorona(shape,
