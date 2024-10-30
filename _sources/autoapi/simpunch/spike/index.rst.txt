@@ -1,0 +1,47 @@
+simpunch.spike
+==============
+
+.. py:module:: simpunch.spike
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   simpunch.spike.TESTDATA_DIR
+   simpunch.spike.HIT_MAP_DIR
+   simpunch.spike.SPIKE_SCALING_MEAN
+   simpunch.spike.SPIKE_SCALING_STD
+   simpunch.spike.SPIKE_FREQUENCY
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.spike.read_hit_map
+   simpunch.spike.load_spike_library
+   simpunch.spike.generate_spike_image
+
+
+Module Contents
+---------------
+
+.. py:data:: TESTDATA_DIR
+
+.. py:data:: HIT_MAP_DIR
+
+.. py:data:: SPIKE_SCALING_MEAN
+
+.. py:data:: SPIKE_SCALING_STD
+
+.. py:data:: SPIKE_FREQUENCY
+
+.. py:function:: read_hit_map(path)
+
+.. py:function:: load_spike_library()
+
+.. py:function:: generate_spike_image(image_shape, spike_frequency=SPIKE_FREQUENCY, spike_scaling_mean=SPIKE_SCALING_MEAN, spike_scaling_std=SPIKE_SCALING_STD, max_spike=2**16, patch_size=50, rotate=True, transpose=True, library=None)
+

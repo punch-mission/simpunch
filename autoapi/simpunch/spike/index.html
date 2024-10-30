@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="../../../_static/favicon.ico" rel="icon" type="image/x-icon">
-    <title>simpunch.noise &#8212; simpunch 0.0.1 documentation</title>
+    <title>simpunch.spike &#8212; simpunch 0.0.1 documentation</title>
   
   
   
@@ -42,11 +42,11 @@
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/noise/index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/simpunch/spike/index';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="simpunch.spike" href="../spike/index.html" />
-    <link rel="prev" title="simpunch.level3" href="../level3/index.html" />
+    <link rel="next" title="simpunch.stars" href="../stars/index.html" />
+    <link rel="prev" title="simpunch.noise" href="../noise/index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -283,8 +283,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../level1/index.html">simpunch.level1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level2/index.html">simpunch.level2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level3/index.html">simpunch.level3</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">simpunch.noise</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../spike/index.html">simpunch.spike</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../noise/index.html">simpunch.noise</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">simpunch.spike</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../stars/index.html">simpunch.stars</a></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../tests/index.html">simpunch.tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_noise/index.html">simpunch.tests.test_noise</a></li>
@@ -337,7 +337,7 @@
     
     <li class="breadcrumb-item"><a href="../index.html" class="nav-link">simpunch</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">simpunch.noise</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">simpunch.spike</span></li>
   </ul>
 </nav>
 </div>
@@ -354,14 +354,43 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-simpunch.noise">
-<span id="simpunch-noise"></span><h1>simpunch.noise<a class="headerlink" href="#module-simpunch.noise" title="Link to this heading">#</a></h1>
+  <section id="module-simpunch.spike">
+<span id="simpunch-spike"></span><h1>simpunch.spike<a class="headerlink" href="#module-simpunch.spike" title="Link to this heading">#</a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.spike.TESTDATA_DIR" title="simpunch.spike.TESTDATA_DIR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TESTDATA_DIR</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.spike.HIT_MAP_DIR" title="simpunch.spike.HIT_MAP_DIR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HIT_MAP_DIR</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.spike.SPIKE_SCALING_MEAN" title="simpunch.spike.SPIKE_SCALING_MEAN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SPIKE_SCALING_MEAN</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.spike.SPIKE_SCALING_STD" title="simpunch.spike.SPIKE_SCALING_STD"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SPIKE_SCALING_STD</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.spike.SPIKE_FREQUENCY" title="simpunch.spike.SPIKE_FREQUENCY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SPIKE_FREQUENCY</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.noise.generate_noise" title="simpunch.noise.generate_noise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_noise</span></code></a>(→ numpy.ndarray)</p></td>
-<td><p>Generates noise based on an input data array, with specified noise parameters</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.spike.read_hit_map" title="simpunch.spike.read_hit_map"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hit_map</span></code></a>(path)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.spike.load_spike_library" title="simpunch.spike.load_spike_library"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_spike_library</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.spike.generate_spike_image" title="simpunch.spike.generate_spike_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_spike_image</span></code></a>(image_shape[, spike_frequency, ...])</p></td>
+<td><p></p></td>
 </tr>
 </tbody>
 </table>
@@ -369,29 +398,45 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="simpunch.spike.TESTDATA_DIR">
+<span class="sig-prename descclassname"><span class="pre">simpunch.spike.</span></span><span class="sig-name descname"><span class="pre">TESTDATA_DIR</span></span><a class="headerlink" href="#simpunch.spike.TESTDATA_DIR" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="simpunch.spike.HIT_MAP_DIR">
+<span class="sig-prename descclassname"><span class="pre">simpunch.spike.</span></span><span class="sig-name descname"><span class="pre">HIT_MAP_DIR</span></span><a class="headerlink" href="#simpunch.spike.HIT_MAP_DIR" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="simpunch.spike.SPIKE_SCALING_MEAN">
+<span class="sig-prename descclassname"><span class="pre">simpunch.spike.</span></span><span class="sig-name descname"><span class="pre">SPIKE_SCALING_MEAN</span></span><a class="headerlink" href="#simpunch.spike.SPIKE_SCALING_MEAN" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="simpunch.spike.SPIKE_SCALING_STD">
+<span class="sig-prename descclassname"><span class="pre">simpunch.spike.</span></span><span class="sig-name descname"><span class="pre">SPIKE_SCALING_STD</span></span><a class="headerlink" href="#simpunch.spike.SPIKE_SCALING_STD" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="simpunch.spike.SPIKE_FREQUENCY">
+<span class="sig-prename descclassname"><span class="pre">simpunch.spike.</span></span><span class="sig-name descname"><span class="pre">SPIKE_FREQUENCY</span></span><a class="headerlink" href="#simpunch.spike.SPIKE_FREQUENCY" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.noise.generate_noise">
-<span class="sig-prename descclassname"><span class="pre">simpunch.noise.</span></span><span class="sig-name descname"><span class="pre">generate_noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dark_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">55.81</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_noise_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">17</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitrate_signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#simpunch.noise.generate_noise" title="Link to this definition">#</a></dt>
-<dd><p>Generates noise based on an input data array, with specified noise parameters</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> – input data array (n x n)</p></li>
-<li><p><strong>bias_level</strong> – ccd bias level</p></li>
-<li><p><strong>dark_level</strong> – ccd dark level</p></li>
-<li><p><strong>gain</strong> – ccd gain</p></li>
-<li><p><strong>read_noise_level</strong> – ccd read noise level</p></li>
-<li><p><strong>bitrate_signal</strong> – desired ccd data bit level</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>computed noise array corresponding to input data and ccd/noise parameters</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="simpunch.spike.read_hit_map">
+<span class="sig-prename descclassname"><span class="pre">simpunch.spike.</span></span><span class="sig-name descname"><span class="pre">read_hit_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.spike.read_hit_map" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.spike.load_spike_library">
+<span class="sig-prename descclassname"><span class="pre">simpunch.spike.</span></span><span class="sig-name descname"><span class="pre">load_spike_library</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.spike.load_spike_library" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.spike.generate_spike_image">
+<span class="sig-prename descclassname"><span class="pre">simpunch.spike.</span></span><span class="sig-name descname"><span class="pre">generate_spike_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spike_frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">SPIKE_FREQUENCY</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spike_scaling_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">SPIKE_SCALING_MEAN</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spike_scaling_std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">SPIKE_SCALING_STD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_spike</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2**16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transpose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.spike.generate_spike_image" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 </section>
 </section>
@@ -407,20 +452,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../level3/index.html"
+       href="../noise/index.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">simpunch.level3</p>
+        <p class="prev-next-title">simpunch.noise</p>
       </div>
     </a>
     <a class="right-next"
-       href="../spike/index.html"
+       href="../stars/index.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">simpunch.spike</p>
+        <p class="prev-next-title">simpunch.stars</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -443,9 +488,17 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#attributes">Attributes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.noise.generate_noise"><code class="docutils literal notranslate"><span class="pre">generate_noise()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.spike.TESTDATA_DIR"><code class="docutils literal notranslate"><span class="pre">TESTDATA_DIR</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.spike.HIT_MAP_DIR"><code class="docutils literal notranslate"><span class="pre">HIT_MAP_DIR</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.spike.SPIKE_SCALING_MEAN"><code class="docutils literal notranslate"><span class="pre">SPIKE_SCALING_MEAN</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.spike.SPIKE_SCALING_STD"><code class="docutils literal notranslate"><span class="pre">SPIKE_SCALING_STD</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.spike.SPIKE_FREQUENCY"><code class="docutils literal notranslate"><span class="pre">SPIKE_FREQUENCY</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.spike.read_hit_map"><code class="docutils literal notranslate"><span class="pre">read_hit_map()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.spike.load_spike_library"><code class="docutils literal notranslate"><span class="pre">load_spike_library()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.spike.generate_spike_image"><code class="docutils literal notranslate"><span class="pre">generate_spike_image()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -455,7 +508,7 @@
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/punch-mission/simpunch/edit/main/docs/source/autoapi/simpunch/noise/index.rst">
+    <a href="https://github.com/punch-mission/simpunch/edit/main/docs/source/autoapi/simpunch/spike/index.rst">
       <i class="fa-solid fa-pencil"></i>
       
       

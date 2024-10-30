@@ -1,0 +1,19 @@
+simpunch.tests.test_spike
+=========================
+
+.. py:module:: simpunch.tests.test_spike
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.tests.test_spike.test_random_spike_generation
+
+
+Module Contents
+---------------
+
+.. py:function:: test_random_spike_generation()
+

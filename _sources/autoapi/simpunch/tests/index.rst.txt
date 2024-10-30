@@ -11,6 +11,7 @@ Submodules
    :maxdepth: 1
 
    /autoapi/simpunch/tests/test_noise/index
+   /autoapi/simpunch/tests/test_spike/index
    /autoapi/simpunch/tests/test_stars/index
    /autoapi/simpunch/tests/test_wcs/index
 
