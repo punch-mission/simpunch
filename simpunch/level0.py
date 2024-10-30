@@ -7,6 +7,7 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
+from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import flow, task
@@ -20,6 +21,7 @@ from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayCorrector
 from tqdm import tqdm
 
+from simpunch.spike import generate_spike_image
 from simpunch.util import update_spacecraft_location
 
 
@@ -73,18 +75,10 @@ def photometric_uncalibration(input_data,
     return input_data
 
 
-def spiking(input_data, spike_scaling=2**16-5_000):
-    spike_index = np.random.choice(input_data.data.shape[0] * input_data.data.shape[1],
-                                   np.random.randint(40*49-1000, 40*49+1000))
-    spike_index2d = np.unravel_index(spike_index, input_data.data.shape)
-
-    spike_values = np.random.normal(spike_scaling,
-                                    spike_scaling * 0.01,
-                                    len(spike_index))
-    spike_values = np.clip(spike_values, 0, spike_scaling)
-
-    input_data.data[spike_index2d] = spike_values
-    return input_data
+def spiking(input_data):
+    spike_image = generate_spike_image(input_data.data.shape)
+    input_data.data += spike_image
+    return input_data, spike_image
 
 
 def streak_correction_matrix(
@@ -201,7 +195,7 @@ def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_pa
     noise = compute_noise(output_data.data)
     output_data.data[...] += noise[...]
 
-    output_data = spiking(output_data)
+    output_data, spike_image = spiking(output_data)
 
     output_data = certainty_estimate(output_data, noise)  # TODO: shouldn't certainty take into account spikes?
 
@@ -221,7 +215,7 @@ def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_pa
     # Write out
     output_data.meta['FILEVRSN'] = '1'
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
-
+    fits.writeto(path_output + get_base_file_name(output_data) + '_spike.fits', spike_image, overwrite=True)
 @task
 def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path):
     """Generates level 0 polarized synthetic data"""
@@ -274,7 +268,7 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
     noise = compute_noise(output_data.data)
     output_data.data[...] += noise[...]
 
-    output_data = spiking(output_data)
+    output_data, spike_image = spiking(output_data)
 
     output_data = certainty_estimate(output_data, noise)  # TODO: shouldn't certainty take into account spikes?
 
@@ -294,6 +288,7 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
     # Write out
     output_data.meta['FILEVRSN'] = '1'
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
+    fits.writeto(path_output + get_base_file_name(output_data) + '_spike.fits', spike_image, overwrite=True)
 
 
 @flow(log_prints=True, task_runner=DaskTaskRunner(
