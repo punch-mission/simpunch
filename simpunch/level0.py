@@ -2,6 +2,7 @@
 import glob
 import os
 from pathlib import Path
+from random import random
 
 import astropy.units as u
 import numpy as np
@@ -84,6 +85,22 @@ def uncorrect_psf(input_data: NDCube, psf_model: ArrayCorrector) -> NDCube:
     input_data.data[...] = psf_model.correct_image(input_data.data, alpha=3.0, epsilon=0.3)[...]
     return input_data
 
+def add_transients(input_data: NDCube,
+                   transient_area: int = 600**2,
+                   transient_probability:float = 0.03,
+                   transient_brightness_range: (float, float) = (0.6, 0.8)) -> NDCube:
+    """Add a block of brighter transient data to simulate aurora."""
+    transient_image = np.zeros_like(input_data.data)
+    if random() < transient_probability:
+        width = int(np.sqrt(transient_area) * random())
+        height = int(transient_area / width)
+        i, j = int(random() * input_data.data.shape[0]), int(random() * input_data.data.shape[1])
+        transient_brightness = np.random.uniform(transient_brightness_range[0], transient_brightness_range[1])
+        transient_value = np.mean(input_data.data[i:i+width, j:j+height]) * transient_brightness
+        input_data.data[i:i+width, j:j+height] += transient_value
+        transient_image[i:i+width, j:j+height] = transient_value
+    return input_data, transient_image
+
 
 def starfield_misalignment(input_data: NDCube,
                            cr_offset_scale: float = 0.1,
@@ -105,7 +122,8 @@ def generate_l0_pmzp(input_file: NDCube,
                      path_output: str,
                      psf_model: ArrayCorrector,
                      wfi_vignetting_model_path: str,
-                     nfi_vignetting_model_path: str) -> None:
+                     nfi_vignetting_model_path: str,
+                     transient_probability: float=0.03) -> None:
     """Generate level 0 polarized synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
 
@@ -123,7 +141,7 @@ def generate_l0_pmzp(input_file: NDCube,
 
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
     output_data = starfield_misalignment(input_data)
-
+    output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
 
     # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
@@ -171,11 +189,13 @@ def generate_l0_pmzp(input_file: NDCube,
     output_data.meta["FILEVRSN"] = "1"
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + ".fits")
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
+    write_array_to_fits(path_output + get_base_file_name(output_data) + "_transient.fits", transient)
 
 @task
 def generate_l0_cr(input_file: NDCube, path_output: str,
                    psf_model: ArrayCorrector,
-                   wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None:
+                   wfi_vignetting_model_path: str, nfi_vignetting_model_path: str,
+                   transient_probability: float = 0.03) -> None:
     """Generate level 0 clear synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
 
@@ -192,20 +212,13 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
             output_meta[key] = input_data.meta[key].value
 
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
-
     output_data = starfield_misalignment(input_data)
-
+    output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
-
-    # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data)
-
     output_data = add_deficient_pixels(output_data)
-
     output_data = uncorrect_vignetting(output_data, wfi_vignetting_model_path, nfi_vignetting_model_path)
-
     output_data = apply_streaks(output_data)
-
     output_data = perform_photometric_uncalibration(output_data)
 
     if input_data.meta["OBSCODE"].value == "4":
@@ -242,12 +255,14 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     output_data.meta["FILEVRSN"] = "1"
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + ".fits")
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
+    write_array_to_fits(path_output + get_base_file_name(output_data) + "_transient.fits", transient)
 
 @flow(log_prints=True,
       task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 8, "threads_per_worker": 2},
 ))
 def generate_l0_all(datadir: str, psf_model_path: str,
-                    wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None:
+                    wfi_vignetting_model_path: str, nfi_vignetting_model_path: str,
+                    transient_probability: float = 0.03) -> None:
     """Generate all level 0 synthetic data."""
     print(f"Running from {datadir}")
     outdir = os.path.join(datadir, "synthetic_l0/")
@@ -265,9 +280,9 @@ def generate_l0_all(datadir: str, psf_model_path: str,
     futures = []
     for file_l1 in tqdm(files_l1, total=len(files_l1)):
         futures.append(generate_l0_pmzp.submit(file_l1, outdir, psf_model, # noqa: PERF401
-                                  wfi_vignetting_model_path, nfi_vignetting_model_path))
+                                  wfi_vignetting_model_path, nfi_vignetting_model_path, transient_probability))
 
     for file_cr in tqdm(files_cr, total=len(files_cr)):
         futures.append(generate_l0_cr.submit(file_cr, outdir, psf_model,  # noqa: PERF401
-                                    wfi_vignetting_model_path, nfi_vignetting_model_path))
+                                    wfi_vignetting_model_path, nfi_vignetting_model_path, transient_probability))
     wait(futures)

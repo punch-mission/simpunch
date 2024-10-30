@@ -20,6 +20,7 @@ def generate_flow(gamera_directory: str,
                   nfi_vignetting_model_path: str,
                   num_repeats: int = 1,
                   start_time: datetime | None = None,
+                  transient_probability: float = 0.03,
                   update_database: bool = True) -> None:
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
@@ -28,14 +29,15 @@ def generate_flow(gamera_directory: str,
     generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
     generate_l2_all(gamera_directory)
     generate_l1_all(gamera_directory)
-    generate_l0_all(gamera_directory, psf_model_path, wfi_vignetting_model_path, nfi_vignetting_model_path)
+    generate_l0_all(gamera_directory, psf_model_path, wfi_vignetting_model_path, nfi_vignetting_model_path,
+                    transient_probability=transient_probability)
 
     if update_database:
         from punchpipe import __version__
         from punchpipe.controlsegment.db import File
         from punchpipe.controlsegment.util import get_database_session
         db_session = get_database_session()
-        for file_path in sorted(glob.glob(os.path.join(gamera_directory, "synthetic_l0/*.fits")),
+        for file_path in sorted(glob.glob(os.path.join(gamera_directory, "synthetic_l0/*v[0-9].fits")),
                                 key=lambda s: os.path.basename(s)[13:27]):
             file_name = os.path.basename(file_path)
             level = "0"
@@ -66,8 +68,3 @@ def generate_flow(gamera_directory: str,
             )
             db_session.add(db_entry)
             db_session.commit()
-
-        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l0/"))
-        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l1/"))
-        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l2/"))
-        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l3/"))
