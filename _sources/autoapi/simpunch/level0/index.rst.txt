@@ -22,6 +22,7 @@ Functions
    simpunch.level0.add_deficient_pixels
    simpunch.level0.add_stray_light
    simpunch.level0.uncorrect_psf
+   simpunch.level0.add_transients
    simpunch.level0.starfield_misalignment
    simpunch.level0.generate_l0_pmzp
    simpunch.level0.generate_l0_cr
@@ -71,22 +72,27 @@ Module Contents
    Apply an inverse PSF to an image.
 
 
+.. py:function:: add_transients(input_data: ndcube.NDCube, transient_area: int = 600**2, transient_probability: float = 0.03, transient_brightness_range: (float, float) = (0.6, 0.8)) -> ndcube.NDCube
+
+   Add a block of brighter transient data to simulate aurora.
+
+
 .. py:function:: starfield_misalignment(input_data: ndcube.NDCube, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1) -> ndcube.NDCube
 
    Offset the pointing in an image to simulate spacecraft uncertainty.
 
 
-.. py:function:: generate_l0_pmzp(input_file: ndcube.NDCube, path_output: str, psf_model: regularizepsf.ArrayCorrector, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None
+.. py:function:: generate_l0_pmzp(input_file: ndcube.NDCube, path_output: str, psf_model: regularizepsf.ArrayCorrector, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str, transient_probability: float = 0.03) -> None
 
    Generate level 0 polarized synthetic data.
 
 
-.. py:function:: generate_l0_cr(input_file: ndcube.NDCube, path_output: str, psf_model: regularizepsf.ArrayCorrector, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None
+.. py:function:: generate_l0_cr(input_file: ndcube.NDCube, path_output: str, psf_model: regularizepsf.ArrayCorrector, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str, transient_probability: float = 0.03) -> None
 
    Generate level 0 clear synthetic data.
 
 
-.. py:function:: generate_l0_all(datadir: str, psf_model_path: str, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None
+.. py:function:: generate_l0_all(datadir: str, psf_model_path: str, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str, transient_probability: float = 0.03) -> None
 
    Generate all level 0 synthetic data.
 
