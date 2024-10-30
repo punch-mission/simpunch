@@ -15,5 +15,8 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: test_helio_celestial_wcs()
+.. py:function:: test_helio_celestial_wcs() -> None
+
+   Test WCS conversions.
+
 

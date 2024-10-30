@@ -5,7 +5,7 @@ simpunch.level0
 
 .. autoapi-nested-parse::
 
-   Generates synthetic level 0 data
+   Generate synthetic level 0 data.
 
 
 
@@ -14,12 +14,11 @@ Functions
 
 .. autoapisummary::
 
-   simpunch.level0.certainty_estimate
-   simpunch.level0.photometric_uncalibration
-   simpunch.level0.spiking
-   simpunch.level0.streak_correction_matrix
-   simpunch.level0.streaking
-   simpunch.level0.uncorrect_vignetting_lff
+   simpunch.level0.perform_photometric_uncalibration
+   simpunch.level0.add_spikes
+   simpunch.level0.create_streak_matrix
+   simpunch.level0.apply_streaks
+   simpunch.level0.uncorrect_vignetting
    simpunch.level0.add_deficient_pixels
    simpunch.level0.add_stray_light
    simpunch.level0.uncorrect_psf
@@ -32,38 +31,63 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: certainty_estimate(input_data, noise_level)
+.. py:function:: perform_photometric_uncalibration(input_data: ndcube.NDCube) -> ndcube.NDCube
 
-.. py:function:: photometric_uncalibration(input_data, gain: float = 4.93, bitrate_signal: int = 16)
-
-.. py:function:: spiking(input_data)
-
-.. py:function:: streak_correction_matrix(n: int, exposure_time: float, readout_line_time: float, reset_line_time: float) -> numpy.ndarray
-
-.. py:function:: streaking(input_data, exposure_time: float = 49 * 1000, readout_line_time: float = 163 / 2148, reset_line_time: float = 163 / 2148)
-
-.. py:function:: uncorrect_vignetting_lff(input_data, wfi_vignetting_model_path, nfi_vignetting_model_path)
-
-.. py:function:: add_deficient_pixels(input_data)
-
-.. py:function:: add_stray_light(input_data)
-
-.. py:function:: uncorrect_psf(input_data, psf_model)
-
-.. py:function:: starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1)
-
-.. py:function:: generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path)
-
-   Generates level 0 polarized synthetic data
+   Undo quartic fit calibration.
 
 
-.. py:function:: generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path)
+.. py:function:: add_spikes(input_data: ndcube.NDCube) -> (ndcube.NDCube, numpy.ndarray)
 
-   Generates level 0 polarized synthetic data
+   Add spikes to images.
 
 
-.. py:function:: generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vignetting_model_path)
+.. py:function:: create_streak_matrix(n: int, exposure_time: float, readout_line_time: float, reset_line_time: float) -> numpy.ndarray
 
-   Generate all level 0 synthetic data
+   Construct the matrix that streaks an image.
+
+
+.. py:function:: apply_streaks(input_data: ndcube.NDCube, exposure_time: float = 49 * 1000, readout_line_time: float = 163 / 2148, reset_line_time: float = 163 / 2148) -> ndcube.NDCube
+
+   Apply the streak matrix to the image.
+
+
+.. py:function:: uncorrect_vignetting(input_data: ndcube.NDCube, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None
+
+   Apply the vignetting function.
+
+
+.. py:function:: add_deficient_pixels(input_data: ndcube.NDCube) -> ndcube.NDCube
+
+   Add deficient pixels to the image.
+
+
+.. py:function:: add_stray_light(input_data: ndcube.NDCube) -> ndcube.NDCube
+
+   Add stray light to the image.
+
+
+.. py:function:: uncorrect_psf(input_data: ndcube.NDCube, psf_model: regularizepsf.ArrayCorrector) -> ndcube.NDCube
+
+   Apply an inverse PSF to an image.
+
+
+.. py:function:: starfield_misalignment(input_data: ndcube.NDCube, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1) -> ndcube.NDCube
+
+   Offset the pointing in an image to simulate spacecraft uncertainty.
+
+
+.. py:function:: generate_l0_pmzp(input_file: ndcube.NDCube, path_output: str, psf_model: regularizepsf.ArrayCorrector, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None
+
+   Generate level 0 polarized synthetic data.
+
+
+.. py:function:: generate_l0_cr(input_file: ndcube.NDCube, path_output: str, psf_model: regularizepsf.ArrayCorrector, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None
+
+   Generate level 0 clear synthetic data.
+
+
+.. py:function:: generate_l0_all(datadir: str, psf_model_path: str, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None
+
+   Generate all level 0 synthetic data.
 
 

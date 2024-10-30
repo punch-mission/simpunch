@@ -279,6 +279,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">simpunch</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../cli/index.html">simpunch.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../flow/index.html">simpunch.flow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level0/index.html">simpunch.level0</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">simpunch.level1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level2/index.html">simpunch.level2</a></li>
@@ -289,7 +291,6 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../tests/index.html">simpunch.tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_noise/index.html">simpunch.tests.test_noise</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_spike/index.html">simpunch.tests.test_spike</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../tests/test_stars/index.html">simpunch.tests.test_stars</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_wcs/index.html">simpunch.tests.test_wcs</a></li>
 </ul>
 </details></li>
@@ -356,51 +357,37 @@
                   
   <section id="module-simpunch.level1">
 <span id="simpunch-level1"></span><h1>simpunch.level1<a class="headerlink" href="#module-simpunch.level1" title="Link to this heading">#</a></h1>
-<p>Generates synthetic level 1 data</p>
-<section id="attributes">
-<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">#</a></h2>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.PUNCH_STOKES_MAPPING" title="simpunch.level1.PUNCH_STOKES_MAPPING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PUNCH_STOKES_MAPPING</span></code></a></p></td>
-<td><p></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
+<p>Generates synthetic level 1 data.</p>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.calculate_pc_matrix" title="simpunch.level1.calculate_pc_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_pc_matrix</span></code></a>() → numpy.ndarray)</p></td>
-<td><p>Calculate a PC matrix given CROTA and CDELT</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.generate_spacecraft_wcs" title="simpunch.level1.generate_spacecraft_wcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_spacecraft_wcs</span></code></a>(→ astropy.wcs.WCS)</p></td>
+<td><p>Generate the spacecraft world coordinate system.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.generate_spacecraft_wcs" title="simpunch.level1.generate_spacecraft_wcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_spacecraft_wcs</span></code></a>(→ astropy.wcs.WCS)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.deproject_polar" title="simpunch.level1.deproject_polar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deproject_polar</span></code></a>(input_data, output_wcs, ...)</p></td>
+<td><p>Deproject a polarized image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.deproject" title="simpunch.level1.deproject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deproject</span></code></a>(input_data, output_wcs[, adaptive_reprojection])</p></td>
-<td><p>Data deprojection</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.deproject_clear" title="simpunch.level1.deproject_clear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deproject_clear</span></code></a>(input_data, output_wcs, ...)</p></td>
+<td><p>Deproject a clear image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.deproject_clear" title="simpunch.level1.deproject_clear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deproject_clear</span></code></a>(input_data, output_wcs[, ...])</p></td>
-<td><p>Data deprojection</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.mark_quality" title="simpunch.level1.mark_quality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mark_quality</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Mark the quality of image patches.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.mark_quality" title="simpunch.level1.mark_quality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mark_quality</span></code></a>(input_data)</p></td>
-<td><p>Data quality marking</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.remix_polarization" title="simpunch.level1.remix_polarization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remix_polarization</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.remix_polarization" title="simpunch.level1.remix_polarization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remix_polarization</span></code></a>(input_data)</p></td>
-<td><p>Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.add_distortion" title="simpunch.level1.add_distortion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_distortion</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Add a distortion model to the WCS. Currently empty.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.add_distortion" title="simpunch.level1.add_distortion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_distortion</span></code></a>(input_data[, num_bins])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_pmzp" title="simpunch.level1.generate_l1_pmzp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_pmzp</span></code></a>(→ None)</p></td>
+<td><p>Generate level 1 polarized synthetic data.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_pmzp" title="simpunch.level1.generate_l1_pmzp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_pmzp</span></code></a>(input_file, path_output, ...)</p></td>
-<td><p>Generates level 1 polarized synthetic data</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_cr" title="simpunch.level1.generate_l1_cr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_cr</span></code></a>(→ None)</p></td>
+<td><p>Generate level 1 clear synthetic data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_cr" title="simpunch.level1.generate_l1_cr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_cr</span></code></a>(input_file, path_output, ...)</p></td>
-<td><p>Generates level 1 clear synthetic data</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_all" title="simpunch.level1.generate_l1_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_all</span></code></a>(datadir)</p></td>
-<td><p>Generate all level 1 synthetic data</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level1.generate_l1_all" title="simpunch.level1.generate_l1_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l1_all</span></code></a>(→ None)</p></td>
+<td><p>Generate all level 1 synthetic data.</p></td>
 </tr>
 </tbody>
 </table>
@@ -408,82 +395,59 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
-<dl class="py data">
-<dt class="sig sig-object py" id="simpunch.level1.PUNCH_STOKES_MAPPING">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">PUNCH_STOKES_MAPPING</span></span><a class="headerlink" href="#simpunch.level1.PUNCH_STOKES_MAPPING" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level1.calculate_pc_matrix">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">calculate_pc_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crota</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdelt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#simpunch.level1.calculate_pc_matrix" title="Link to this definition">#</a></dt>
-<dd><p>Calculate a PC matrix given CROTA and CDELT</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>crota</strong> (<em>float</em>) – rotation angle from the WCS</p></li>
-<li><p><strong>cdelt</strong> (<em>float</em>) – pixel size from the WCS</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>PC matrix</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="simpunch.level1.generate_spacecraft_wcs">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_spacecraft_wcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.time.Time</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">astropy.wcs.WCS</span></span></span><a class="headerlink" href="#simpunch.level1.generate_spacecraft_wcs" title="Link to this definition">#</a></dt>
+<dd><p>Generate the spacecraft world coordinate system.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level1.generate_spacecraft_wcs">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_spacecraft_wcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">astropy.wcs.WCS</span></span></span><a class="headerlink" href="#simpunch.level1.generate_spacecraft_wcs" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level1.deproject">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">deproject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive_reprojection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.deproject" title="Link to this definition">#</a></dt>
-<dd><p>Data deprojection</p>
+<dt class="sig sig-object py" id="simpunch.level1.deproject_polar">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">deproject_polar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_wcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.wcs.WCS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive_reprojection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.deproject_polar" title="Link to this definition">#</a></dt>
+<dd><p>Deproject a polarized image.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level1.deproject_clear">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">deproject_clear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive_reprojection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.deproject_clear" title="Link to this definition">#</a></dt>
-<dd><p>Data deprojection</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">deproject_clear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_wcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.wcs.WCS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptive_reprojection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.deproject_clear" title="Link to this definition">#</a></dt>
+<dd><p>Deproject a clear image.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level1.mark_quality">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">mark_quality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.mark_quality" title="Link to this definition">#</a></dt>
-<dd><p>Data quality marking</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">mark_quality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level1.mark_quality" title="Link to this definition">#</a></dt>
+<dd><p>Mark the quality of image patches.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level1.remix_polarization">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">remix_polarization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.remix_polarization" title="Link to this definition">#</a></dt>
-<dd><p>Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">remix_polarization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level1.remix_polarization" title="Link to this definition">#</a></dt>
+<dd><p>Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level1.add_distortion">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">add_distortion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.add_distortion" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">add_distortion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level1.add_distortion" title="Link to this definition">#</a></dt>
+<dd><p>Add a distortion model to the WCS. Currently empty.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level1.generate_l1_pmzp">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_pmzp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.generate_l1_pmzp" title="Link to this definition">#</a></dt>
-<dd><p>Generates level 1 polarized synthetic data</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_pmzp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level1.generate_l1_pmzp" title="Link to this definition">#</a></dt>
+<dd><p>Generate level 1 polarized synthetic data.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level1.generate_l1_cr">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_cr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.generate_l1_cr" title="Link to this definition">#</a></dt>
-<dd><p>Generates level 1 clear synthetic data</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_cr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level1.generate_l1_cr" title="Link to this definition">#</a></dt>
+<dd><p>Generate level 1 clear synthetic data.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level1.generate_l1_all">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level1.generate_l1_all" title="Link to this definition">#</a></dt>
-<dd><p>Generate all level 1 synthetic data
-L1 &lt;- polarization deprojection &lt;- quality marking &lt;- deproject to spacecraft FOV &lt;- L2_PTM</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level1.</span></span><span class="sig-name descname"><span class="pre">generate_l1_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level1.generate_l1_all" title="Link to this definition">#</a></dt>
+<dd><p>Generate all level 1 synthetic data.</p>
+<p>L1 &lt;- polarization deprojection &lt;- quality marking &lt;- deproject to spacecraft FOV &lt;- L2_PTM</p>
 </dd></dl>
 
 </section>
@@ -536,13 +500,10 @@ L1 &lt;- polarization deprojection &lt;- quality marking &lt;- deproject to spac
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#attributes">Attributes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.PUNCH_STOKES_MAPPING"><code class="docutils literal notranslate"><span class="pre">PUNCH_STOKES_MAPPING</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.calculate_pc_matrix"><code class="docutils literal notranslate"><span class="pre">calculate_pc_matrix()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.generate_spacecraft_wcs"><code class="docutils literal notranslate"><span class="pre">generate_spacecraft_wcs()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.deproject"><code class="docutils literal notranslate"><span class="pre">deproject()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.deproject_polar"><code class="docutils literal notranslate"><span class="pre">deproject_polar()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.deproject_clear"><code class="docutils literal notranslate"><span class="pre">deproject_clear()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.mark_quality"><code class="docutils literal notranslate"><span class="pre">mark_quality()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level1.remix_polarization"><code class="docutils literal notranslate"><span class="pre">remix_polarization()</span></code></a></li>
@@ -596,7 +557,7 @@ L1 &lt;- polarization deprojection &lt;- quality marking &lt;- deproject to spac
 
   <p class="copyright">
     
-      © Copyright 2023, PUNCH Science Operations Center.
+      © Copyright 2024, PUNCH Science Operations Center.
       <br/>
     
   </p>

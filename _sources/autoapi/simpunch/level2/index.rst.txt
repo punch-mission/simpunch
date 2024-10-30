@@ -5,17 +5,10 @@ simpunch.level2
 
 .. autoapi-nested-parse::
 
-   Generates synthetic level 2 data
+   Generate synthetic level 2 data.
+
    PTM - PUNCH Level-2 Polarized (MZP) Mosaic
 
-
-
-Attributes
-----------
-
-.. autoapisummary::
-
-   simpunch.level2.PUNCH_STOKES_MAPPING
 
 
 Functions
@@ -24,10 +17,10 @@ Functions
 .. autoapisummary::
 
    simpunch.level2.get_fcorona_parameters
-   simpunch.level2.gen_fcorona
+   simpunch.level2.generate_fcorona
    simpunch.level2.add_fcorona
-   simpunch.level2.gen_starfield
-   simpunch.level2.add_starfield
+   simpunch.level2.generate_starfield
+   simpunch.level2.add_starfield_polarized
    simpunch.level2.add_starfield_clear
    simpunch.level2.remix_polarization
    simpunch.level2.generate_l2_ptm
@@ -38,47 +31,55 @@ Functions
 Module Contents
 ---------------
 
-.. py:data:: PUNCH_STOKES_MAPPING
+.. py:function:: get_fcorona_parameters(date_obs: astropy.time.Time) -> dict[str, float]
 
-.. py:function:: get_fcorona_parameters(date_obs)
-
-.. py:function:: gen_fcorona(shape, tilt_angle: float = 3 * u.deg, a: float = 600.0, b: float = 300.0, tilt_offset: tuple[float] = (0, 0))
-
-.. py:function:: add_fcorona(input_data)
-
-   Adds synthetic f-corona model
+   Get time dependent F corona model parameters.
 
 
-.. py:function:: gen_starfield(wcs, img_shape, fwhm, wcs_mode: str = 'all', mag_set=0, flux_set=500000, noise_mean: float | None = 25.0, noise_std: float | None = 5.0, dimmest_magnitude=8)
+.. py:function:: generate_fcorona(shape: (int, int), tilt_angle: float = 3 * u.deg, a: float = 600.0, b: float = 300.0, tilt_offset: tuple[float] = (0, 0)) -> numpy.ndarray
 
-.. py:function:: add_starfield(input_data)
-
-   Adds synthetic starfield
+   Generate an F corona model.
 
 
-.. py:function:: add_starfield_clear(input_data)
+.. py:function:: add_fcorona(input_data: ndcube.NDCube) -> ndcube.NDCube
 
-   Adds synthetic starfield
-
-
-.. py:function:: remix_polarization(input_data)
-
-   Remix polarization from (B, pB) to (M,Z,P) using solpolpy
+   Add synthetic f-corona model.
 
 
-.. py:function:: generate_l2_ptm(input_file, path_output)
+.. py:function:: generate_starfield(wcs: astropy.wcs.WCS, img_shape: (int, int), fwhm: float, wcs_mode: str = 'all', mag_set: float = 0, flux_set: float = 500000, noise_mean: float | None = 25.0, noise_std: float | None = 5.0, dimmest_magnitude: float = 8) -> (numpy.ndarray, astropy.table.QTable)
 
-   Generates level 2 PTM synthetic data
-
-
-.. py:function:: generate_l2_ctm(input_file, path_output)
-
-   Generates level 2 CTM synthetic data
+   Generate a realistic starfield.
 
 
-.. py:function:: generate_l2_all(datadir)
+.. py:function:: add_starfield_polarized(input_data: ndcube.NDCube) -> ndcube.NDCube
 
-   Generate all level 2 synthetic data
+   Add synthetic starfield.
+
+
+.. py:function:: add_starfield_clear(input_data: ndcube.NDCube) -> ndcube.NDCube
+
+   Add synthetic starfield.
+
+
+.. py:function:: remix_polarization(input_data: ndcube.NDCube) -> ndcube.NDCube
+
+   Remix polarization from (B, pB) to (M,Z,P) using solpolpy.
+
+
+.. py:function:: generate_l2_ptm(input_file: str, path_output: str) -> None
+
+   Generate level 2 PTM synthetic data.
+
+
+.. py:function:: generate_l2_ctm(input_file: str, path_output: str) -> None
+
+   Generate level 2 CTM synthetic data.
+
+
+.. py:function:: generate_l2_all(datadir: str) -> None
+
+   Generate all level 2 synthetic data.
+
    L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM
 
 

@@ -3,6 +3,11 @@ simpunch.spike
 
 .. py:module:: simpunch.spike
 
+.. autoapi-nested-parse::
+
+   Tools for generating realistic spikes.
+
+
 
 Attributes
 ----------
@@ -39,9 +44,18 @@ Module Contents
 
 .. py:data:: SPIKE_FREQUENCY
 
-.. py:function:: read_hit_map(path)
+.. py:function:: read_hit_map(path: str) -> numpy.ndarray
 
-.. py:function:: load_spike_library()
+   Read in a hit map file and make an image of the spikes.
 
-.. py:function:: generate_spike_image(image_shape, spike_frequency=SPIKE_FREQUENCY, spike_scaling_mean=SPIKE_SCALING_MEAN, spike_scaling_std=SPIKE_SCALING_STD, max_spike=2**16, patch_size=50, rotate=True, transpose=True, library=None)
+
+.. py:function:: load_spike_library() -> numpy.ndarray
+
+   Load all the spike images as a 3D numpy array.
+
+
+.. py:function:: generate_spike_image(image_shape: (int, int), spike_frequency: int = SPIKE_FREQUENCY, spike_scaling_mean: float = SPIKE_SCALING_MEAN, spike_scaling_std: float = SPIKE_SCALING_STD, max_spike: int = 2**16, patch_size: int = 50, rotate: bool = True, transpose: bool = True, library: numpy.ndarray | None = None) -> numpy.ndarray
+
+   Generate a realistic spike image.
+
 

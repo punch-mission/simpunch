@@ -1,0 +1,45 @@
+simpunch.cli
+============
+
+.. py:module:: simpunch.cli
+
+.. autoapi-nested-parse::
+
+   Command line interface.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.cli.main
+   simpunch.cli.generate
+   simpunch.cli.automate
+   simpunch.cli.load_configuration
+
+
+Module Contents
+---------------
+
+.. py:function:: main()
+
+   Simulate PUNCH data with simpunch.
+
+
+.. py:function:: generate(configuration_path)
+
+   Run a single instance of the pipeline.
+
+
+.. py:function:: automate()
+
+   Automate the data generation using Prefect.
+
+
+.. py:function:: load_configuration(configuration_path: str) -> dict
+
+   Load a configuration file.
+
+

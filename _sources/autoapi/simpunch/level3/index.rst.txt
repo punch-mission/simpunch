@@ -5,11 +5,10 @@ simpunch.level3
 
 .. autoapi-nested-parse::
 
-   Generates synthetic level 3 data
-   PAM - PUNCH Level-3 Polarized Low Noise Mosaic
-   PAN - PUNCH Level-3 Polarized Low Noise NFI Image
+   Generate synthetic level 3 data.
+
    PTM - PUNCH Level-3 Polarized Mosaic
-   PNN - PUNCH Level-3 Polarized NFI Image
+   CTM - PUNCH Level-3 Clear Mosaic
 
 
 
@@ -18,86 +17,56 @@ Functions
 
 .. autoapisummary::
 
-   simpunch.level3.update_wcs_with_helio
-   simpunch.level3.extract_crota_from_wcs
-   simpunch.level3.get_sun_ra_dec
    simpunch.level3.define_mask
    simpunch.level3.define_trefoil_mask
    simpunch.level3.generate_uncertainty
-   simpunch.level3.assemble_punchdata
+   simpunch.level3.assemble_punchdata_polarized
    simpunch.level3.assemble_punchdata_clear
    simpunch.level3.generate_l3_ptm
    simpunch.level3.generate_l3_ctm
-   simpunch.level3.generate_l3_pnn
-   simpunch.level3.generate_l3_pam
-   simpunch.level3.generate_l3_pan
-   simpunch.level3.generate_l3_can
    simpunch.level3.generate_l3_all
 
 
 Module Contents
 ---------------
 
-.. py:function:: update_wcs_with_helio(cube: ndcube.NDCube) -> ndcube.NDCube
+.. py:function:: define_mask(shape: (int, int) = (4096, 4096), distance_value: float = 0.68) -> numpy.ndarray
 
-.. py:function:: extract_crota_from_wcs(wcs)
-
-.. py:function:: get_sun_ra_dec(dt: datetime.datetime)
-
-.. py:function:: define_mask(shape=(4096, 4096), distance_value=0.68)
-
-   Define a mask to describe the FOV for low-noise PUNCH data products
+   Define a mask to describe the FOV for low-noise PUNCH data products.
 
 
-.. py:function:: define_trefoil_mask(rotation_stage=0)
+.. py:function:: define_trefoil_mask(rotation_stage: int = 0) -> numpy.ndarray
 
-   Define a mask to describe the FOV for trefoil mosaic PUNCH data products
+   Define a mask to describe the FOV for trefoil mosaic PUNCH data products.
 
 
 .. py:function:: generate_uncertainty(pdata: ndcube.NDCube) -> ndcube.NDCube
 
-.. py:function:: assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None)
-
-   Assemble a punchdata object with correct metadata
+   Generate realistic uncertainty for PUNCH.
 
 
-.. py:function:: assemble_punchdata_clear(input_tb, wcs, product_code, product_level, mask=None)
+.. py:function:: assemble_punchdata_polarized(input_tb: str, input_pb: str, wcs: astropy.wcs.WCS, product_code: str, product_level: str, mask: numpy.ndarray | None = None) -> ndcube.NDCube
 
-   Assemble a punchdata object with correct metadata for a clear data product
-
-
-.. py:function:: generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage)
-
-   Generate PTM - PUNCH Level-3 Polarized Mosaic
+   Assemble a punchdata object with correct metadata.
 
 
-.. py:function:: generate_l3_ctm(input_tb, path_output, time_obs, time_delta, rotation_stage)
+.. py:function:: assemble_punchdata_clear(input_tb: str, wcs: astropy.wcs.WCS, product_code: str, product_level: str, mask: numpy.ndarray | None = None) -> ndcube.NDCube
 
-   Generate CTM - PUNCH Level-3 Clear Mosaic
-
-
-.. py:function:: generate_l3_pnn(input_tb, input_pb, path_output, time_obs, time_delta)
-
-   Generate PNN - PUNCH Level-3 Polarized NFI Image
+   Assemble a punchdata object with correct metadata for a clear data product.
 
 
-.. py:function:: generate_l3_pam(input_tb, input_pb, path_output, time_obs, time_delta)
+.. py:function:: generate_l3_ptm(input_tb: str, input_pb: str, path_output: str, time_obs: datetime.datetime, time_delta: datetime.timedelta, rotation_stage: int) -> None
 
-   Generate PAM - PUNCH Level-3 Polarized Low Noise Mosaic
-
-
-.. py:function:: generate_l3_pan(input_tb, input_pb, path_output, time_obs, time_delta)
-
-   Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image
+   Generate PTM - PUNCH Level-3 Polarized Mosaic.
 
 
-.. py:function:: generate_l3_can(input_tb, path_output, time_obs, time_delta)
+.. py:function:: generate_l3_ctm(input_tb: str, path_output: str, time_obs: datetime.datetime, time_delta: datetime.timedelta, rotation_stage: int) -> None
 
-   Generate CAN - PUNCH Level-3 Clear Low Noise NFI Image
+   Generate CTM - PUNCH Level-3 Clear Mosaic.
 
 
-.. py:function:: generate_l3_all(datadir, start_time, num_repeats=1)
+.. py:function:: generate_l3_all(datadir: str, start_time: datetime.datetime, num_repeats: int = 1) -> None
 
-   Generate all level 3 synthetic data
+   Generate all level 3 synthetic data.
 
 

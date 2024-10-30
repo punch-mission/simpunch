@@ -5,16 +5,8 @@ simpunch.level1
 
 .. autoapi-nested-parse::
 
-   Generates synthetic level 1 data
+   Generates synthetic level 1 data.
 
-
-
-Attributes
-----------
-
-.. autoapisummary::
-
-   simpunch.level1.PUNCH_STOKES_MAPPING
 
 
 Functions
@@ -22,9 +14,8 @@ Functions
 
 .. autoapisummary::
 
-   simpunch.level1.calculate_pc_matrix
    simpunch.level1.generate_spacecraft_wcs
-   simpunch.level1.deproject
+   simpunch.level1.deproject_polar
    simpunch.level1.deproject_clear
    simpunch.level1.mark_quality
    simpunch.level1.remix_polarization
@@ -37,58 +28,50 @@ Functions
 Module Contents
 ---------------
 
-.. py:data:: PUNCH_STOKES_MAPPING
+.. py:function:: generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int, time: astropy.time.Time) -> astropy.wcs.WCS
 
-.. py:function:: calculate_pc_matrix(crota: float, cdelt: (float, float)) -> numpy.ndarray
-
-   Calculate a PC matrix given CROTA and CDELT
-
-   :param crota: rotation angle from the WCS
-   :type crota: float
-   :param cdelt: pixel size from the WCS
-   :type cdelt: float
-
-   :returns: PC matrix
-   :rtype: np.ndarray
+   Generate the spacecraft world coordinate system.
 
 
-.. py:function:: generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> astropy.wcs.WCS
+.. py:function:: deproject_polar(input_data: ndcube.NDCube, output_wcs: astropy.wcs.WCS, adaptive_reprojection: bool = False) -> (ndcube.NDCube, astropy.wcs.WCS)
 
-.. py:function:: deproject(input_data, output_wcs, adaptive_reprojection=False)
-
-   Data deprojection
+   Deproject a polarized image.
 
 
-.. py:function:: deproject_clear(input_data, output_wcs, adaptive_reprojection=False)
+.. py:function:: deproject_clear(input_data: ndcube.NDCube, output_wcs: astropy.wcs.WCS, adaptive_reprojection: bool = False) -> (ndcube.NDCube, astropy.wcs.WCS)
 
-   Data deprojection
-
-
-.. py:function:: mark_quality(input_data)
-
-   Data quality marking
+   Deproject a clear image.
 
 
-.. py:function:: remix_polarization(input_data)
+.. py:function:: mark_quality(input_data: ndcube.NDCube) -> ndcube.NDCube
 
-   Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy
-
-
-.. py:function:: add_distortion(input_data, num_bins: int = 100)
-
-.. py:function:: generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id)
-
-   Generates level 1 polarized synthetic data
+   Mark the quality of image patches.
 
 
-.. py:function:: generate_l1_cr(input_file, path_output, rotation_stage, spacecraft_id)
+.. py:function:: remix_polarization(input_data: ndcube.NDCube) -> ndcube.NDCube
 
-   Generates level 1 clear synthetic data
+   Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy.
 
 
-.. py:function:: generate_l1_all(datadir)
+.. py:function:: add_distortion(input_data: ndcube.NDCube, num_bins: int = 100) -> ndcube.NDCube
 
-   Generate all level 1 synthetic data
+   Add a distortion model to the WCS. Currently empty.
+
+
+.. py:function:: generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None
+
+   Generate level 1 polarized synthetic data.
+
+
+.. py:function:: generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None
+
+   Generate level 1 clear synthetic data.
+
+
+.. py:function:: generate_l1_all(datadir: str) -> None
+
+   Generate all level 1 synthetic data.
+
    L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM
 
 

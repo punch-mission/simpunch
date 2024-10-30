@@ -279,6 +279,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">simpunch</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../cli/index.html">simpunch.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../flow/index.html">simpunch.flow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level0/index.html">simpunch.level0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level1/index.html">simpunch.level1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level2/index.html">simpunch.level2</a></li>
@@ -289,7 +291,6 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../tests/index.html">simpunch.tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_noise/index.html">simpunch.tests.test_noise</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_spike/index.html">simpunch.tests.test_spike</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../tests/test_stars/index.html">simpunch.tests.test_stars</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_wcs/index.html">simpunch.tests.test_wcs</a></li>
 </ul>
 </details></li>
@@ -356,59 +357,36 @@
                   
   <section id="module-simpunch.level3">
 <span id="simpunch-level3"></span><h1>simpunch.level3<a class="headerlink" href="#module-simpunch.level3" title="Link to this heading">#</a></h1>
-<p>Generates synthetic level 3 data
-PAM - PUNCH Level-3 Polarized Low Noise Mosaic
-PAN - PUNCH Level-3 Polarized Low Noise NFI Image
-PTM - PUNCH Level-3 Polarized Mosaic
-PNN - PUNCH Level-3 Polarized NFI Image</p>
+<p>Generate synthetic level 3 data.</p>
+<p>PTM - PUNCH Level-3 Polarized Mosaic
+CTM - PUNCH Level-3 Clear Mosaic</p>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.update_wcs_with_helio" title="simpunch.level3.update_wcs_with_helio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_wcs_with_helio</span></code></a>(→ ndcube.NDCube)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.define_mask" title="simpunch.level3.define_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">define_mask</span></code></a>(=, distance_value)</p></td>
+<td><p>Define a mask to describe the FOV for low-noise PUNCH data products.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.extract_crota_from_wcs" title="simpunch.level3.extract_crota_from_wcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_crota_from_wcs</span></code></a>(wcs)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.define_trefoil_mask" title="simpunch.level3.define_trefoil_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">define_trefoil_mask</span></code></a>(→ numpy.ndarray)</p></td>
+<td><p>Define a mask to describe the FOV for trefoil mosaic PUNCH data products.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.get_sun_ra_dec" title="simpunch.level3.get_sun_ra_dec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_sun_ra_dec</span></code></a>(dt)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.generate_uncertainty" title="simpunch.level3.generate_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_uncertainty</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Generate realistic uncertainty for PUNCH.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.define_mask" title="simpunch.level3.define_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">define_mask</span></code></a>([shape, distance_value])</p></td>
-<td><p>Define a mask to describe the FOV for low-noise PUNCH data products</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.assemble_punchdata_polarized" title="simpunch.level3.assemble_punchdata_polarized"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assemble_punchdata_polarized</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Assemble a punchdata object with correct metadata.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.define_trefoil_mask" title="simpunch.level3.define_trefoil_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">define_trefoil_mask</span></code></a>([rotation_stage])</p></td>
-<td><p>Define a mask to describe the FOV for trefoil mosaic PUNCH data products</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.assemble_punchdata_clear" title="simpunch.level3.assemble_punchdata_clear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assemble_punchdata_clear</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Assemble a punchdata object with correct metadata for a clear data product.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.generate_uncertainty" title="simpunch.level3.generate_uncertainty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_uncertainty</span></code></a>(→ ndcube.NDCube)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_ptm" title="simpunch.level3.generate_l3_ptm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_ptm</span></code></a>(→ None)</p></td>
+<td><p>Generate PTM - PUNCH Level-3 Polarized Mosaic.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.assemble_punchdata" title="simpunch.level3.assemble_punchdata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assemble_punchdata</span></code></a>(input_tb, input_pb, wcs, ...[, mask])</p></td>
-<td><p>Assemble a punchdata object with correct metadata</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_ctm" title="simpunch.level3.generate_l3_ctm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_ctm</span></code></a>(→ None)</p></td>
+<td><p>Generate CTM - PUNCH Level-3 Clear Mosaic.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.assemble_punchdata_clear" title="simpunch.level3.assemble_punchdata_clear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assemble_punchdata_clear</span></code></a>(input_tb, wcs, product_code, ...)</p></td>
-<td><p>Assemble a punchdata object with correct metadata for a clear data product</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_ptm" title="simpunch.level3.generate_l3_ptm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_ptm</span></code></a>(input_tb, input_pb, path_output, ...)</p></td>
-<td><p>Generate PTM - PUNCH Level-3 Polarized Mosaic</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_ctm" title="simpunch.level3.generate_l3_ctm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_ctm</span></code></a>(input_tb, path_output, time_obs, ...)</p></td>
-<td><p>Generate CTM - PUNCH Level-3 Clear Mosaic</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_pnn" title="simpunch.level3.generate_l3_pnn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_pnn</span></code></a>(input_tb, input_pb, path_output, ...)</p></td>
-<td><p>Generate PNN - PUNCH Level-3 Polarized NFI Image</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_pam" title="simpunch.level3.generate_l3_pam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_pam</span></code></a>(input_tb, input_pb, path_output, ...)</p></td>
-<td><p>Generate PAM - PUNCH Level-3 Polarized Low Noise Mosaic</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_pan" title="simpunch.level3.generate_l3_pan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_pan</span></code></a>(input_tb, input_pb, path_output, ...)</p></td>
-<td><p>Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_can" title="simpunch.level3.generate_l3_can"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_can</span></code></a>(input_tb, path_output, time_obs, ...)</p></td>
-<td><p>Generate CAN - PUNCH Level-3 Clear Low Noise NFI Image</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_all" title="simpunch.level3.generate_l3_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_all</span></code></a>(datadir, start_time[, num_repeats])</p></td>
-<td><p>Generate all level 3 synthetic data</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level3.generate_l3_all" title="simpunch.level3.generate_l3_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l3_all</span></code></a>(→ None)</p></td>
+<td><p>Generate all level 3 synthetic data.</p></td>
 </tr>
 </tbody>
 </table>
@@ -417,89 +395,51 @@ PNN - PUNCH Level-3 Polarized NFI Image</p>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level3.update_wcs_with_helio">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">update_wcs_with_helio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cube</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level3.update_wcs_with_helio" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level3.extract_crota_from_wcs">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">extract_crota_from_wcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.extract_crota_from_wcs" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level3.get_sun_ra_dec">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">get_sun_ra_dec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.datetime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.get_sun_ra_dec" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level3.define_mask">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">define_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(4096,</span> <span class="pre">4096)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.define_mask" title="Link to this definition">#</a></dt>
-<dd><p>Define a mask to describe the FOV for low-noise PUNCH data products</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">define_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(4096,</span> <span class="pre">4096)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.68</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#simpunch.level3.define_mask" title="Link to this definition">#</a></dt>
+<dd><p>Define a mask to describe the FOV for low-noise PUNCH data products.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level3.define_trefoil_mask">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">define_trefoil_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.define_trefoil_mask" title="Link to this definition">#</a></dt>
-<dd><p>Define a mask to describe the FOV for trefoil mosaic PUNCH data products</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">define_trefoil_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#simpunch.level3.define_trefoil_mask" title="Link to this definition">#</a></dt>
+<dd><p>Define a mask to describe the FOV for trefoil mosaic PUNCH data products.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level3.generate_uncertainty">
 <span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level3.generate_uncertainty" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Generate realistic uncertainty for PUNCH.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level3.assemble_punchdata">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">assemble_punchdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.assemble_punchdata" title="Link to this definition">#</a></dt>
-<dd><p>Assemble a punchdata object with correct metadata</p>
+<dt class="sig sig-object py" id="simpunch.level3.assemble_punchdata_polarized">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">assemble_punchdata_polarized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.wcs.WCS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level3.assemble_punchdata_polarized" title="Link to this definition">#</a></dt>
+<dd><p>Assemble a punchdata object with correct metadata.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level3.assemble_punchdata_clear">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">assemble_punchdata_clear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.assemble_punchdata_clear" title="Link to this definition">#</a></dt>
-<dd><p>Assemble a punchdata object with correct metadata for a clear data product</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">assemble_punchdata_clear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.wcs.WCS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level3.assemble_punchdata_clear" title="Link to this definition">#</a></dt>
+<dd><p>Assemble a punchdata object with correct metadata for a clear data product.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level3.generate_l3_ptm">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_ptm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_ptm" title="Link to this definition">#</a></dt>
-<dd><p>Generate PTM - PUNCH Level-3 Polarized Mosaic</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_ptm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.timedelta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level3.generate_l3_ptm" title="Link to this definition">#</a></dt>
+<dd><p>Generate PTM - PUNCH Level-3 Polarized Mosaic.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level3.generate_l3_ctm">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_ctm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_ctm" title="Link to this definition">#</a></dt>
-<dd><p>Generate CTM - PUNCH Level-3 Clear Mosaic</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level3.generate_l3_pnn">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_pnn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_pnn" title="Link to this definition">#</a></dt>
-<dd><p>Generate PNN - PUNCH Level-3 Polarized NFI Image</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level3.generate_l3_pam">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_pam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_pam" title="Link to this definition">#</a></dt>
-<dd><p>Generate PAM - PUNCH Level-3 Polarized Low Noise Mosaic</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level3.generate_l3_pan">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_pan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_pb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_pan" title="Link to this definition">#</a></dt>
-<dd><p>Generate PAN - PUNCH Level-3 Polarized Low Noise NFI Image</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level3.generate_l3_can">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_can</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_can" title="Link to this definition">#</a></dt>
-<dd><p>Generate CAN - PUNCH Level-3 Clear Low Noise NFI Image</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_ctm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.timedelta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_stage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level3.generate_l3_ctm" title="Link to this definition">#</a></dt>
+<dd><p>Generate CTM - PUNCH Level-3 Clear Mosaic.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level3.generate_l3_all">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_repeats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level3.generate_l3_all" title="Link to this definition">#</a></dt>
-<dd><p>Generate all level 3 synthetic data</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level3.</span></span><span class="sig-name descname"><span class="pre">generate_l3_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_repeats</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level3.generate_l3_all" title="Link to this definition">#</a></dt>
+<dd><p>Generate all level 3 synthetic data.</p>
 </dd></dl>
 
 </section>
@@ -554,20 +494,13 @@ PNN - PUNCH Level-3 Polarized NFI Image</p>
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.update_wcs_with_helio"><code class="docutils literal notranslate"><span class="pre">update_wcs_with_helio()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.extract_crota_from_wcs"><code class="docutils literal notranslate"><span class="pre">extract_crota_from_wcs()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.get_sun_ra_dec"><code class="docutils literal notranslate"><span class="pre">get_sun_ra_dec()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.define_mask"><code class="docutils literal notranslate"><span class="pre">define_mask()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.define_trefoil_mask"><code class="docutils literal notranslate"><span class="pre">define_trefoil_mask()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_uncertainty"><code class="docutils literal notranslate"><span class="pre">generate_uncertainty()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.assemble_punchdata"><code class="docutils literal notranslate"><span class="pre">assemble_punchdata()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.assemble_punchdata_polarized"><code class="docutils literal notranslate"><span class="pre">assemble_punchdata_polarized()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.assemble_punchdata_clear"><code class="docutils literal notranslate"><span class="pre">assemble_punchdata_clear()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_ptm"><code class="docutils literal notranslate"><span class="pre">generate_l3_ptm()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_ctm"><code class="docutils literal notranslate"><span class="pre">generate_l3_ctm()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_pnn"><code class="docutils literal notranslate"><span class="pre">generate_l3_pnn()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_pam"><code class="docutils literal notranslate"><span class="pre">generate_l3_pam()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_pan"><code class="docutils literal notranslate"><span class="pre">generate_l3_pan()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_can"><code class="docutils literal notranslate"><span class="pre">generate_l3_can()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level3.generate_l3_all"><code class="docutils literal notranslate"><span class="pre">generate_l3_all()</span></code></a></li>
 </ul>
 </li>
@@ -615,7 +548,7 @@ PNN - PUNCH Level-3 Polarized NFI Image</p>
 
   <p class="copyright">
     
-      © Copyright 2023, PUNCH Science Operations Center.
+      © Copyright 2024, PUNCH Science Operations Center.
       <br/>
     
   </p>

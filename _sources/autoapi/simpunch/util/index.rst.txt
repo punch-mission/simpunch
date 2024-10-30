@@ -3,6 +3,11 @@ simpunch.util
 
 .. py:module:: simpunch.util
 
+.. autoapi-nested-parse::
+
+   Utility functions.
+
+
 
 Functions
 ---------
@@ -10,10 +15,19 @@ Functions
 .. autoapisummary::
 
    simpunch.util.update_spacecraft_location
+   simpunch.util.write_array_to_fits
 
 
 Module Contents
 ---------------
 
-.. py:function:: update_spacecraft_location(input_data, time_obs)
+.. py:function:: update_spacecraft_location(input_data: ndcube.NDCube, time_obs: astropy.time.Time) -> ndcube.NDCube
+
+   Update the spacecraft location metadata.
+
+
+.. py:function:: write_array_to_fits(path: str, image: numpy.ndarray, overwrite: bool = True) -> None
+
+   Write an array to a FITS file using compression.
+
 

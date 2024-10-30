@@ -3,6 +3,11 @@ simpunch
 
 .. py:module:: simpunch
 
+.. autoapi-nested-parse::
+
+   Initialize the package.
+
+
 
 Submodules
 ----------
@@ -10,6 +15,8 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
+   /autoapi/simpunch/cli/index
+   /autoapi/simpunch/flow/index
    /autoapi/simpunch/level0/index
    /autoapi/simpunch/level1/index
    /autoapi/simpunch/level2/index

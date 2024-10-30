@@ -46,7 +46,7 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="simpunch.level1" href="../level1/index.html" />
-    <link rel="prev" title="simpunch" href="../index.html" />
+    <link rel="prev" title="simpunch.flow" href="../flow/index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -279,6 +279,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">simpunch</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../cli/index.html">simpunch.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../flow/index.html">simpunch.flow</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">simpunch.level0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level1/index.html">simpunch.level1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level2/index.html">simpunch.level2</a></li>
@@ -289,7 +291,6 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../tests/index.html">simpunch.tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_noise/index.html">simpunch.tests.test_noise</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_spike/index.html">simpunch.tests.test_spike</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../tests/test_stars/index.html">simpunch.tests.test_stars</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_wcs/index.html">simpunch.tests.test_wcs</a></li>
 </ul>
 </details></li>
@@ -356,49 +357,46 @@
                   
   <section id="module-simpunch.level0">
 <span id="simpunch-level0"></span><h1>simpunch.level0<a class="headerlink" href="#module-simpunch.level0" title="Link to this heading">#</a></h1>
-<p>Generates synthetic level 0 data</p>
+<p>Generate synthetic level 0 data.</p>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.certainty_estimate" title="simpunch.level0.certainty_estimate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">certainty_estimate</span></code></a>(input_data, noise_level)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.perform_photometric_uncalibration" title="simpunch.level0.perform_photometric_uncalibration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">perform_photometric_uncalibration</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Undo quartic fit calibration.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.photometric_uncalibration" title="simpunch.level0.photometric_uncalibration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">photometric_uncalibration</span></code></a>(input_data[, gain, ...])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.add_spikes" title="simpunch.level0.add_spikes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_spikes</span></code></a>(input_data, numpy.ndarray)</p></td>
+<td><p>Add spikes to images.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.spiking" title="simpunch.level0.spiking"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spiking</span></code></a>(input_data)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.create_streak_matrix" title="simpunch.level0.create_streak_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_streak_matrix</span></code></a>(→ numpy.ndarray)</p></td>
+<td><p>Construct the matrix that streaks an image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.streak_correction_matrix" title="simpunch.level0.streak_correction_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">streak_correction_matrix</span></code></a>(→ numpy.ndarray)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.apply_streaks" title="simpunch.level0.apply_streaks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_streaks</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Apply the streak matrix to the image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.streaking" title="simpunch.level0.streaking"><code class="xref py py-obj docutils literal notranslate"><span class="pre">streaking</span></code></a>(input_data[, exposure_time, ...])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.uncorrect_vignetting" title="simpunch.level0.uncorrect_vignetting"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uncorrect_vignetting</span></code></a>(→ None)</p></td>
+<td><p>Apply the vignetting function.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.uncorrect_vignetting_lff" title="simpunch.level0.uncorrect_vignetting_lff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uncorrect_vignetting_lff</span></code></a>(input_data, ...)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.add_deficient_pixels" title="simpunch.level0.add_deficient_pixels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_deficient_pixels</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Add deficient pixels to the image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.add_deficient_pixels" title="simpunch.level0.add_deficient_pixels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_deficient_pixels</span></code></a>(input_data)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.add_stray_light" title="simpunch.level0.add_stray_light"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_stray_light</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Add stray light to the image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.add_stray_light" title="simpunch.level0.add_stray_light"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_stray_light</span></code></a>(input_data)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.uncorrect_psf" title="simpunch.level0.uncorrect_psf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uncorrect_psf</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Apply an inverse PSF to an image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.uncorrect_psf" title="simpunch.level0.uncorrect_psf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uncorrect_psf</span></code></a>(input_data, psf_model)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.starfield_misalignment" title="simpunch.level0.starfield_misalignment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">starfield_misalignment</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Offset the pointing in an image to simulate spacecraft uncertainty.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.starfield_misalignment" title="simpunch.level0.starfield_misalignment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">starfield_misalignment</span></code></a>(input_data[, cr_offset_scale, ...])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_pmzp" title="simpunch.level0.generate_l0_pmzp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_pmzp</span></code></a>(→ None)</p></td>
+<td><p>Generate level 0 polarized synthetic data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_pmzp" title="simpunch.level0.generate_l0_pmzp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_pmzp</span></code></a>(input_file, path_output, psf_model, ...)</p></td>
-<td><p>Generates level 0 polarized synthetic data</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_cr" title="simpunch.level0.generate_l0_cr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_cr</span></code></a>(→ None)</p></td>
+<td><p>Generate level 0 clear synthetic data.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_cr" title="simpunch.level0.generate_l0_cr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_cr</span></code></a>(input_file, path_output, psf_model, ...)</p></td>
-<td><p>Generates level 0 polarized synthetic data</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_all" title="simpunch.level0.generate_l0_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_all</span></code></a>(datadir, psf_model_path, ...)</p></td>
-<td><p>Generate all level 0 synthetic data</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.level0.generate_l0_all" title="simpunch.level0.generate_l0_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_l0_all</span></code></a>(→ None)</p></td>
+<td><p>Generate all level 0 synthetic data.</p></td>
 </tr>
 </tbody>
 </table>
@@ -407,71 +405,75 @@
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level0.certainty_estimate">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">certainty_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_level</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.certainty_estimate" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="simpunch.level0.perform_photometric_uncalibration">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">perform_photometric_uncalibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level0.perform_photometric_uncalibration" title="Link to this definition">#</a></dt>
+<dd><p>Undo quartic fit calibration.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level0.photometric_uncalibration">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">photometric_uncalibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4.93</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitrate_signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.photometric_uncalibration" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="simpunch.level0.add_spikes">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">add_spikes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.add_spikes" title="Link to this definition">#</a></dt>
+<dd><p>Add spikes to images.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level0.spiking">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">spiking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.spiking" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="simpunch.level0.create_streak_matrix">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">create_streak_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_line_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_line_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#simpunch.level0.create_streak_matrix" title="Link to this definition">#</a></dt>
+<dd><p>Construct the matrix that streaks an image.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level0.streak_correction_matrix">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">streak_correction_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_line_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_line_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#simpunch.level0.streak_correction_matrix" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="simpunch.level0.apply_streaks">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">apply_streaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">49</span> <span class="pre">*</span> <span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_line_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">163</span> <span class="pre">/</span> <span class="pre">2148</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_line_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">163</span> <span class="pre">/</span> <span class="pre">2148</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level0.apply_streaks" title="Link to this definition">#</a></dt>
+<dd><p>Apply the streak matrix to the image.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level0.streaking">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">streaking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">49</span> <span class="pre">*</span> <span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_line_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">163</span> <span class="pre">/</span> <span class="pre">2148</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_line_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">163</span> <span class="pre">/</span> <span class="pre">2148</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.streaking" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="simpunch.level0.uncorrect_vignetting_lff">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">uncorrect_vignetting_lff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.uncorrect_vignetting_lff" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="simpunch.level0.uncorrect_vignetting">
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">uncorrect_vignetting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level0.uncorrect_vignetting" title="Link to this definition">#</a></dt>
+<dd><p>Apply the vignetting function.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.add_deficient_pixels">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">add_deficient_pixels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.add_deficient_pixels" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">add_deficient_pixels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level0.add_deficient_pixels" title="Link to this definition">#</a></dt>
+<dd><p>Add deficient pixels to the image.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.add_stray_light">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">add_stray_light</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.add_stray_light" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">add_stray_light</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level0.add_stray_light" title="Link to this definition">#</a></dt>
+<dd><p>Add stray light to the image.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.uncorrect_psf">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">uncorrect_psf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.uncorrect_psf" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">uncorrect_psf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">regularizepsf.ArrayCorrector</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level0.uncorrect_psf" title="Link to this definition">#</a></dt>
+<dd><p>Apply an inverse PSF to an image.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.starfield_misalignment">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">starfield_misalignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cr_offset_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pc_offset_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.starfield_misalignment" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">starfield_misalignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cr_offset_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pc_offset_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.level0.starfield_misalignment" title="Link to this definition">#</a></dt>
+<dd><p>Offset the pointing in an image to simulate spacecraft uncertainty.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.generate_l0_pmzp">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_pmzp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.generate_l0_pmzp" title="Link to this definition">#</a></dt>
-<dd><p>Generates level 0 polarized synthetic data</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_pmzp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">regularizepsf.ArrayCorrector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level0.generate_l0_pmzp" title="Link to this definition">#</a></dt>
+<dd><p>Generate level 0 polarized synthetic data.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.generate_l0_cr">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_cr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.generate_l0_cr" title="Link to this definition">#</a></dt>
-<dd><p>Generates level 0 polarized synthetic data</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_cr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">regularizepsf.ArrayCorrector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level0.generate_l0_cr" title="Link to this definition">#</a></dt>
+<dd><p>Generate level 0 clear synthetic data.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.level0.generate_l0_all">
-<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.level0.generate_l0_all" title="Link to this definition">#</a></dt>
-<dd><p>Generate all level 0 synthetic data</p>
+<span class="sig-prename descclassname"><span class="pre">simpunch.level0.</span></span><span class="sig-name descname"><span class="pre">generate_l0_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datadir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfi_vignetting_model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfi_vignetting_model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.level0.generate_l0_all" title="Link to this definition">#</a></dt>
+<dd><p>Generate all level 0 synthetic data.</p>
 </dd></dl>
 
 </section>
@@ -488,12 +490,12 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../index.html"
+       href="../flow/index.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">simpunch</p>
+        <p class="prev-next-title">simpunch.flow</p>
       </div>
     </a>
     <a class="right-next"
@@ -526,12 +528,11 @@
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.certainty_estimate"><code class="docutils literal notranslate"><span class="pre">certainty_estimate()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.photometric_uncalibration"><code class="docutils literal notranslate"><span class="pre">photometric_uncalibration()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.spiking"><code class="docutils literal notranslate"><span class="pre">spiking()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.streak_correction_matrix"><code class="docutils literal notranslate"><span class="pre">streak_correction_matrix()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.streaking"><code class="docutils literal notranslate"><span class="pre">streaking()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.uncorrect_vignetting_lff"><code class="docutils literal notranslate"><span class="pre">uncorrect_vignetting_lff()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.perform_photometric_uncalibration"><code class="docutils literal notranslate"><span class="pre">perform_photometric_uncalibration()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.add_spikes"><code class="docutils literal notranslate"><span class="pre">add_spikes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.create_streak_matrix"><code class="docutils literal notranslate"><span class="pre">create_streak_matrix()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.apply_streaks"><code class="docutils literal notranslate"><span class="pre">apply_streaks()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.uncorrect_vignetting"><code class="docutils literal notranslate"><span class="pre">uncorrect_vignetting()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.add_deficient_pixels"><code class="docutils literal notranslate"><span class="pre">add_deficient_pixels()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.add_stray_light"><code class="docutils literal notranslate"><span class="pre">add_stray_light()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.level0.uncorrect_psf"><code class="docutils literal notranslate"><span class="pre">uncorrect_psf()</span></code></a></li>
@@ -585,7 +586,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023, PUNCH Science Operations Center.
+      © Copyright 2024, PUNCH Science Operations Center.
       <br/>
     
   </p>

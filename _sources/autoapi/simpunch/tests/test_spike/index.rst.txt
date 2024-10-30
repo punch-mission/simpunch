@@ -15,5 +15,8 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: test_random_spike_generation()
+.. py:function:: test_random_spike_generation() -> None
+
+   Randomly generate spike images to verify.
+
 

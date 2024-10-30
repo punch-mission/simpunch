@@ -3,6 +3,11 @@ simpunch.tests
 
 .. py:module:: simpunch.tests
 
+.. autoapi-nested-parse::
+
+   Testing suite.
+
+
 
 Submodules
 ----------
@@ -12,7 +17,6 @@ Submodules
 
    /autoapi/simpunch/tests/test_noise/index
    /autoapi/simpunch/tests/test_spike/index
-   /autoapi/simpunch/tests/test_stars/index
    /autoapi/simpunch/tests/test_wcs/index
 
 

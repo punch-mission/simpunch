@@ -3,6 +3,11 @@ simpunch.noise
 
 .. py:module:: simpunch.noise
 
+.. autoapi-nested-parse::
+
+   Calculation to generate noise.
+
+
 
 Functions
 ---------
@@ -17,7 +22,7 @@ Module Contents
 
 .. py:function:: generate_noise(data: numpy.ndarray, bias_level: float = 100, dark_level: float = 55.81, gain: float = 4.3, read_noise_level: float = 17, bitrate_signal: int = 16) -> numpy.ndarray
 
-   Generates noise based on an input data array, with specified noise parameters
+   Generate noise based on an input data array, with specified noise parameters.
 
    :param data: input data array (n x n)
    :param bias_level: ccd bias level

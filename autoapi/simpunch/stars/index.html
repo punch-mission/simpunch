@@ -279,6 +279,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">simpunch</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../cli/index.html">simpunch.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../flow/index.html">simpunch.flow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level0/index.html">simpunch.level0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level1/index.html">simpunch.level1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level2/index.html">simpunch.level2</a></li>
@@ -289,7 +291,6 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../tests/index.html">simpunch.tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_noise/index.html">simpunch.tests.test_noise</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_spike/index.html">simpunch.tests.test_spike</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../tests/test_stars/index.html">simpunch.tests.test_stars</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_wcs/index.html">simpunch.tests.test_wcs</a></li>
 </ul>
 </details></li>
@@ -356,6 +357,7 @@
                   
   <section id="module-simpunch.stars">
 <span id="simpunch-stars"></span><h1>simpunch.stars<a class="headerlink" href="#module-simpunch.stars" title="Link to this heading">#</a></h1>
+<p>Functions for starfield generation.</p>
 <section id="attributes">
 <h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
@@ -374,20 +376,17 @@
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.load_catalog" title="simpunch.stars.load_catalog"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_catalog</span></code></a>([catalog_path, url])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.load_catalog" title="simpunch.stars.load_catalog"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_catalog</span></code></a>(, url)</p></td>
+<td><p>Load the Hipparcos catalog.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpunch.stars.load_raw_hipparcos_catalog" title="simpunch.stars.load_raw_hipparcos_catalog"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_raw_hipparcos_catalog</span></code></a>(, url)</p></td>
 <td><p>Download hipparcos catalog from website.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.filter_for_visible_stars" title="simpunch.stars.filter_for_visible_stars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_for_visible_stars</span></code></a>(→ pandas.DataFrame)</p></td>
-<td><p>Filters to only include stars brighter than a given magnitude</p></td>
+<td><p>Filter to only include stars brighter than a given magnitude.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simpunch.stars.find_catalog_in_image" title="simpunch.stars.find_catalog_in_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_catalog_in_image</span></code></a>(, mode)</p></td>
-<td><p>Using the provided WCS converts the RA/DEC catalog into pixel coordinates</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.stars.make_fake_stars_for_wfi" title="simpunch.stars.make_fake_stars_for_wfi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_fake_stars_for_wfi</span></code></a>(my_wcs, array_corrector_path)</p></td>
-<td><p></p></td>
+<td><p>Convert the RA/DEC catalog into pixel coordinates using the provided WCS.</p></td>
 </tr>
 </tbody>
 </table>
@@ -407,8 +406,9 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.stars.load_catalog">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">load_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">os.path.join(THIS_DIR,</span> <span class="pre">'data/hip_main.dat')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">HIPPARCOS_URL</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.stars.load_catalog" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">load_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">os.path.join(THIS_DIR,</span> <span class="pre">'data/hip_main.dat')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">HIPPARCOS_URL</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#simpunch.stars.load_catalog" title="Link to this definition">#</a></dt>
+<dd><p>Load the Hipparcos catalog.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.stars.load_raw_hipparcos_catalog">
@@ -433,7 +433,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.stars.filter_for_visible_stars">
 <span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">filter_for_visible_stars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimmest_magnitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#simpunch.stars.filter_for_visible_stars" title="Link to this definition">#</a></dt>
-<dd><p>Filters to only include stars brighter than a given magnitude</p>
+<dd><p>Filter to only include stars brighter than a given magnitude.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -453,7 +453,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.stars.find_catalog_in_image">
 <span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">find_catalog_in_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.wcs.WCS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'all'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#simpunch.stars.find_catalog_in_image" title="Link to this definition">#</a></dt>
-<dd><p>Using the provided WCS converts the RA/DEC catalog into pixel coordinates</p>
+<dd><p>Convert the RA/DEC catalog into pixel coordinates using the provided WCS.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -474,11 +474,6 @@ see
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="simpunch.stars.make_fake_stars_for_wfi">
-<span class="sig-prename descclassname"><span class="pre">simpunch.stars.</span></span><span class="sig-name descname"><span class="pre">make_fake_stars_for_wfi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">my_wcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_corrector_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_mag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.44</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_flux</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psf_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(400,</span> <span class="pre">400)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.stars.make_fake_stars_for_wfi" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
 
 </section>
 </section>
@@ -539,7 +534,6 @@ see
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.load_raw_hipparcos_catalog"><code class="docutils literal notranslate"><span class="pre">load_raw_hipparcos_catalog()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.filter_for_visible_stars"><code class="docutils literal notranslate"><span class="pre">filter_for_visible_stars()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.find_catalog_in_image"><code class="docutils literal notranslate"><span class="pre">find_catalog_in_image()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.stars.make_fake_stars_for_wfi"><code class="docutils literal notranslate"><span class="pre">make_fake_stars_for_wfi()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -586,7 +580,7 @@ see
 
   <p class="copyright">
     
-      © Copyright 2023, PUNCH Science Operations Center.
+      © Copyright 2024, PUNCH Science Operations Center.
       <br/>
     
   </p>

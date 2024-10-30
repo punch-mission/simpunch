@@ -1,0 +1,27 @@
+simpunch.flow
+=============
+
+.. py:module:: simpunch.flow
+
+.. autoapi-nested-parse::
+
+   Run the entire pipeline backward.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   simpunch.flow.generate_flow
+
+
+Module Contents
+---------------
+
+.. py:function:: generate_flow(gamera_directory: str, output_directory: str, psf_model_path: str, wfi_vignetting_model_path: str, nfi_vignetting_model_path: str, num_repeats: int = 1, start_time: datetime.datetime | None = None, update_database: bool = True) -> None
+
+   Generate all the products in the reverse pipeline.
+
+

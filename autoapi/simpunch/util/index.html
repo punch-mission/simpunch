@@ -278,6 +278,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">simpunch</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../cli/index.html">simpunch.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../flow/index.html">simpunch.flow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level0/index.html">simpunch.level0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level1/index.html">simpunch.level1</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../level2/index.html">simpunch.level2</a></li>
@@ -288,7 +290,6 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../tests/index.html">simpunch.tests</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_noise/index.html">simpunch.tests.test_noise</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_spike/index.html">simpunch.tests.test_spike</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../tests/test_stars/index.html">simpunch.tests.test_stars</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tests/test_wcs/index.html">simpunch.tests.test_wcs</a></li>
 </ul>
 </details></li>
@@ -355,12 +356,16 @@
                   
   <section id="module-simpunch.util">
 <span id="simpunch-util"></span><h1>simpunch.util<a class="headerlink" href="#module-simpunch.util" title="Link to this heading">#</a></h1>
+<p>Utility functions.</p>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.util.update_spacecraft_location" title="simpunch.util.update_spacecraft_location"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_spacecraft_location</span></code></a>(input_data, time_obs)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simpunch.util.update_spacecraft_location" title="simpunch.util.update_spacecraft_location"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_spacecraft_location</span></code></a>(→ ndcube.NDCube)</p></td>
+<td><p>Update the spacecraft location metadata.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simpunch.util.write_array_to_fits" title="simpunch.util.write_array_to_fits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_array_to_fits</span></code></a>(→ None)</p></td>
+<td><p>Write an array to a FITS file using compression.</p></td>
 </tr>
 </tbody>
 </table>
@@ -370,8 +375,15 @@
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="simpunch.util.update_spacecraft_location">
-<span class="sig-prename descclassname"><span class="pre">simpunch.util.</span></span><span class="sig-name descname"><span class="pre">update_spacecraft_location</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simpunch.util.update_spacecraft_location" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">simpunch.util.</span></span><span class="sig-name descname"><span class="pre">update_spacecraft_location</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndcube.NDCube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.time.Time</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndcube.NDCube</span></span></span><a class="headerlink" href="#simpunch.util.update_spacecraft_location" title="Link to this definition">#</a></dt>
+<dd><p>Update the spacecraft location metadata.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simpunch.util.write_array_to_fits">
+<span class="sig-prename descclassname"><span class="pre">simpunch.util.</span></span><span class="sig-name descname"><span class="pre">write_array_to_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simpunch.util.write_array_to_fits" title="Link to this definition">#</a></dt>
+<dd><p>Write an array to a FITS file using compression.</p>
+</dd></dl>
 
 </section>
 </section>
@@ -417,6 +429,7 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.util.update_spacecraft_location"><code class="docutils literal notranslate"><span class="pre">update_spacecraft_location()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simpunch.util.write_array_to_fits"><code class="docutils literal notranslate"><span class="pre">write_array_to_fits()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -463,7 +476,7 @@
 
   <p class="copyright">
     
-      © Copyright 2023, PUNCH Science Operations Center.
+      © Copyright 2024, PUNCH Science Operations Center.
       <br/>
     
   </p>

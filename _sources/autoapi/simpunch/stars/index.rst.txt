@@ -3,6 +3,11 @@ simpunch.stars
 
 .. py:module:: simpunch.stars
 
+.. autoapi-nested-parse::
+
+   Functions for starfield generation.
+
+
 
 Attributes
 ----------
@@ -22,7 +27,6 @@ Functions
    simpunch.stars.load_raw_hipparcos_catalog
    simpunch.stars.filter_for_visible_stars
    simpunch.stars.find_catalog_in_image
-   simpunch.stars.make_fake_stars_for_wfi
 
 
 Module Contents
@@ -34,7 +38,10 @@ Module Contents
    :value: 'https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat'
 
 
-.. py:function:: load_catalog(catalog_path: str = os.path.join(THIS_DIR, 'data/hip_main.dat'), url: str = HIPPARCOS_URL)
+.. py:function:: load_catalog(catalog_path: str = os.path.join(THIS_DIR, 'data/hip_main.dat'), url: str = HIPPARCOS_URL) -> pandas.DataFrame
+
+   Load the Hipparcos catalog.
+
 
 .. py:function:: load_raw_hipparcos_catalog(catalog_path: str = os.path.join(THIS_DIR, 'data/hip_main.dat'), url: str = HIPPARCOS_URL) -> pandas.DataFrame
 
@@ -51,7 +58,7 @@ Module Contents
 
 .. py:function:: filter_for_visible_stars(catalog: pandas.DataFrame, dimmest_magnitude: float = 6) -> pandas.DataFrame
 
-   Filters to only include stars brighter than a given magnitude
+   Filter to only include stars brighter than a given magnitude.
 
    :param catalog: a catalog data frame
    :type catalog: pd.DataFrame
@@ -64,7 +71,7 @@ Module Contents
 
 .. py:function:: find_catalog_in_image(catalog: pandas.DataFrame, wcs: astropy.wcs.WCS, image_shape: (int, int), mode: str = 'all') -> numpy.ndarray
 
-   Using the provided WCS converts the RA/DEC catalog into pixel coordinates
+   Convert the RA/DEC catalog into pixel coordinates using the provided WCS.
 
    :param catalog: a catalog dataframe
    :type catalog: pd.DataFrame
@@ -81,6 +88,4 @@ Module Contents
    :returns: pixel coordinates of stars in catalog that are present in the image
    :rtype: np.ndarray
 
-
-.. py:function:: make_fake_stars_for_wfi(my_wcs, array_corrector_path, reference_mag=-1.44, reference_flux=100000, psf_shape=(400, 400))
 

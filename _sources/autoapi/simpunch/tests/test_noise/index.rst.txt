@@ -15,5 +15,8 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: test_noise_generation()
+.. py:function:: test_noise_generation() -> None
+
+   Verify noise generates.
+
 
