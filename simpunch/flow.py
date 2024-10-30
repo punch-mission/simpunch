@@ -4,7 +4,7 @@ import os
 import shutil
 from datetime import datetime
 
-from prefect import flow, serve
+from prefect import flow
 
 from simpunch.level0 import generate_l0_all
 from simpunch.level1 import generate_l1_all
@@ -13,13 +13,13 @@ from simpunch.level3 import generate_l3_all
 
 
 @flow(log_prints=True)
-def generate_flow(gamera_directory: str = "/d0/punchsoc/gamera_data/",
-                  output_directory: str = "/d0/punchsoc/gamera_data",
-                  start_time: datetime | None = None,
-                  psf_model_path: str = "./build_3_review_files/synthetic_backward_psf.h5",
-                  wfi_vignetting_model_path: str = "./build_3_review_files/PUNCH_L1_GM1_20240817174727_v2.fits",
-                  nfi_vignetting_model_path: str = "./build_3_review_files/PUNCH_L1_GM4_20240819045110_v1.fits",
+def generate_flow(gamera_directory: str,
+                  output_directory: str,
+                  psf_model_path: str,
+                  wfi_vignetting_model_path: str,
+                  nfi_vignetting_model_path: str,
                   num_repeats: int = 1,
+                  start_time: datetime | None = None,
                   update_database: bool = True) -> None:
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
@@ -35,7 +35,7 @@ def generate_flow(gamera_directory: str = "/d0/punchsoc/gamera_data/",
         from punchpipe.controlsegment.db import File
         from punchpipe.controlsegment.util import get_database_session
         db_session = get_database_session()
-        for file_path in sorted(glob.glob(os.path.join(gamera_directory, "synthetic_l0_build4/*.fits")),
+        for file_path in sorted(glob.glob(os.path.join(gamera_directory, "synthetic_l0/*.fits")),
                                 key=lambda s: os.path.basename(s)[13:27]):
             file_name = os.path.basename(file_path)
             level = "0"
@@ -67,12 +67,7 @@ def generate_flow(gamera_directory: str = "/d0/punchsoc/gamera_data/",
             db_session.add(db_entry)
             db_session.commit()
 
-        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l0_build4/"))
-        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l1_build4/"))
-        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l2_build4/"))
-        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l3_build4/"))
-
-
-if __name__ == "__main__":
-    serve(generate_flow.to_deployment(name="simulator-deployment",
-                                      description="Create more synthetic data."))
+        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l0/"))
+        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l1/"))
+        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l2/"))
+        shutil.rmtree(os.path.join(gamera_directory, "synthetic_l3/"))

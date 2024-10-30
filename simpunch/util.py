@@ -1,6 +1,8 @@
 """Utility functions."""
 import astropy.time
 import astropy.units as u
+import numpy as np
+from astropy.io import fits
 from ndcube import NDCube
 from punchbowl.data.wcs import get_p_angle
 from sunpy.coordinates import sun
@@ -45,3 +47,11 @@ def update_spacecraft_location(input_data: NDCube, time_obs: astropy.time.Time) 
     input_data.meta["CAR_ROT"] = float(sun.carrington_rotation_number(time_obs))
 
     return input_data
+
+
+def write_array_to_fits(path: str, image: np.ndarray, overwrite: bool = True) -> None:
+    """Write an array to a FITS file using compression."""
+    hdu_data = fits.CompImageHDU(data=image, name="Primary data array")
+    hdul = fits.HDUList([fits.PrimaryHDU(), hdu_data])
+    hdul.writeto(path, overwrite=overwrite, checksum=True)
+    hdul.close()

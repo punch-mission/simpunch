@@ -5,7 +5,6 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
-from astropy.io import fits
 from ndcube import NDCube
 from prefect import flow, task
 from prefect.futures import wait
@@ -20,7 +19,7 @@ from regularizepsf import ArrayCorrector
 from tqdm import tqdm
 
 from simpunch.spike import generate_spike_image
-from simpunch.util import update_spacecraft_location
+from simpunch.util import update_spacecraft_location, write_array_to_fits
 
 
 def perform_photometric_uncalibration(input_data: NDCube) -> NDCube:
@@ -171,14 +170,13 @@ def generate_l0_pmzp(input_file: NDCube,
     # Write out
     output_data.meta["FILEVRSN"] = "1"
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + ".fits")
-    fits.writeto(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image, overwrite=True)
-
+    write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
 
 @task
 def generate_l0_cr(input_file: NDCube, path_output: str,
                    psf_model: ArrayCorrector,
                    wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None:
-    """Generate level 0 polarized synthetic data."""
+    """Generate level 0 clear synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
 
     # Define the output data product
@@ -243,8 +241,7 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     # Write out
     output_data.meta["FILEVRSN"] = "1"
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + ".fits")
-    fits.writeto(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image, overwrite=True)
-
+    write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
 
 @flow(log_prints=True,
       task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 8, "threads_per_worker": 2},
