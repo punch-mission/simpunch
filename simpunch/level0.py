@@ -8,7 +8,6 @@ from pathlib import Path
 import astropy.units as u
 import numpy as np
 from astropy.io import fits
-from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import flow, task
 from prefect.futures import wait
@@ -16,6 +15,7 @@ from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
+from punchbowl.data.wcs import calculate_pc_matrix, extract_crota_from_wcs
 from punchbowl.level1.initial_uncertainty import compute_noise
 from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayCorrector
@@ -25,53 +25,10 @@ from simpunch.spike import generate_spike_image
 from simpunch.util import update_spacecraft_location
 
 
-def certainty_estimate(input_data, noise_level):
-    input_data.uncertainty = StdDevUncertainty(noise_level)
-    return input_data
-
-
 def photometric_uncalibration(input_data,
                               gain: float = 4.93,
                               bitrate_signal: int = 16):
-
-    # # Input data should be in calibrated units of MSB
-    # # First establish a conversion rate backwards to photons
-    #
-    # msb_def = 2.0090000E7 * u.W / u.m**2 / u.sr
-    #
-    # # Constants
-    # wavelength = 530 * u.nm  # Wavelength in nanometers
-    # exposure_time = 49 * u.s  # Exposure in seconds
-    #
-    # # Calculate energy of a single photon
-    # energy_per_photon = (const.h * const.c / wavelength).to(u.J) / u.photon
-    #
-    # # Get the pixel scaling
-    # pixel_scale = (proj_plane_pixel_area(input_data.wcs) * u.deg**2).to(u.sr) / u.pixel
-    # # pixel_scale = (abs(input_data.wcs.pixel_scale_matrix[0, 0]) * u.deg**2).to(u.sr) / u.pixel
-    #
-    # # The instrument aperture is 22mm,
-    # however the effective area is a bit smaller due to losses and quantum efficiency
-    # aperture = 49.57 * u.mm**2
-    # # aperture = 0.392699082 * u.cm**2
-    #
-    # # Calculate the photon count per pixel
-    # photons_per_pixel = (msb_def / energy_per_photon * aperture * pixel_scale * exposure_time).decompose()
-    #
-    # # Convert the input data to a photon count
-    # photon_data = input_data.data * photons_per_pixel.value
-    #
-    # # Now using the gain convert to DN
-    # dn_data = photon_data / gain
-    #
-    # # TODO - Perhaps the stars at night are a bit too bright. Check the scaling earlier in the pipeline.
-    # # Clip / scale the data at the signal bitrate
-    # dn_data = np.clip(dn_data, 0, 2**bitrate_signal-1)
-    #
-    # dn_data = dn_data.astype(int)
-    #
-    # input_data.data[:, :] = dn_data
-
+    """Undo quartic fit calibration"""
     return input_data
 
 
@@ -79,7 +36,6 @@ def spiking(input_data):
     spike_image = generate_spike_image(input_data.data.shape)
     input_data.data += spike_image
     return input_data, spike_image
-
 
 def streak_correction_matrix(
     n: int, exposure_time: float, readout_line_time: float, reset_line_time: float,
@@ -131,14 +87,13 @@ def uncorrect_psf(input_data, psf_model):
 
 
 def starfield_misalignment(input_data, cr_offset_scale: float = 0.1, pc_offset_scale: float = 0.1):
-    # TODO - Removed temporarily for getting the pipeline moving
-    #cr_offsets = np.random.normal(0, cr_offset_scale, 2)
-    #input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
+    cr_offsets = np.random.normal(0, cr_offset_scale, 2)
+    input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
 
-    #pc_offset = np.random.normal(0, pc_offset_scale) * u.deg
-    #current_crota = extract_crota_from_wcs(input_data.wcs)
-    #new_pc = calculate_pc_matrix(current_crota + pc_offset, input_data.wcs.wcs.cdelt)
-    #input_data.wcs.wcs.pc = new_pc
+    pc_offset = np.random.normal(0, pc_offset_scale) * u.deg
+    current_crota = extract_crota_from_wcs(input_data.wcs)
+    new_pc = calculate_pc_matrix(current_crota + pc_offset, input_data.wcs.wcs.cdelt)
+    input_data.wcs.wcs.pc = new_pc
 
     return input_data
 
@@ -197,8 +152,6 @@ def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_pa
 
     output_data, spike_image = spiking(output_data)
 
-    output_data = certainty_estimate(output_data, noise)  # TODO: shouldn't certainty take into account spikes?
-
     output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
 
     # TODO - Sync up any final header data here
@@ -216,6 +169,8 @@ def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_pa
     output_data.meta['FILEVRSN'] = '1'
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
     fits.writeto(path_output + get_base_file_name(output_data) + '_spike.fits', spike_image, overwrite=True)
+
+
 @task
 def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path, nfi_vignetting_model_path):
     """Generates level 0 polarized synthetic data"""
@@ -269,8 +224,6 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
     output_data.data[...] += noise[...]
 
     output_data, spike_image = spiking(output_data)
-
-    output_data = certainty_estimate(output_data, noise)  # TODO: shouldn't certainty take into account spikes?
 
     # TODO - Sync up any final header data here
 

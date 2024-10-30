@@ -5,11 +5,11 @@ PTM - PUNCH Level-2 Polarized (MZP) Mosaic
 import glob
 import os
 
+import astropy.units as u
 import numpy as np
 import solpolpy
 from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.table import QTable
-import astropy.units as u
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_gaussian_sources_image, make_noise_image
 from prefect import flow, task
@@ -39,11 +39,11 @@ def get_fcorona_parameters(date_obs):
             'b': b}
 
 
-def gen_fcorona(shape,
-                tilt_angle: float = 3*u.deg,
-                a: float = 600.,
-                b: float = 300.,
-                tilt_offset: tuple[float] = (0,0)):
+def generate_fcorona(shape,
+                     tilt_angle: float = 3*u.deg,
+                     a: float = 600.,
+                     b: float = 300.,
+                     tilt_offset: tuple[float] = (0,0)):
     fcorona = np.zeros(shape)
 
     if len(shape) > 2:
@@ -89,7 +89,7 @@ def add_fcorona(input_data):
 
     fcorona_parameters = get_fcorona_parameters(input_data.meta.astropy_time)
 
-    fcorona = gen_fcorona(input_data.data.shape, **fcorona_parameters)
+    fcorona = generate_fcorona(input_data.data.shape, **fcorona_parameters)
 
     fcorona = fcorona * (input_data.data != 0)
 
@@ -98,15 +98,15 @@ def add_fcorona(input_data):
     return input_data
 
 
-def gen_starfield(wcs,
-                  img_shape,
-                  fwhm,
-                  wcs_mode: str = 'all',
-                  mag_set=0,
-                  flux_set=500_000,
-                  noise_mean: float | None = 25.0,
-                  noise_std: float | None = 5.0,
-                  dimmest_magnitude=8):
+def generate_starfield(wcs,
+                       img_shape,
+                       fwhm,
+                       wcs_mode: str = 'all',
+                       mag_set=0,
+                       flux_set=500_000,
+                       noise_mean: float | None = 25.0,
+                       noise_std: float | None = 5.0,
+                       dimmest_magnitude=8):
     sigma = fwhm / 2.355
 
     catalog = load_raw_hipparcos_catalog()
@@ -140,16 +140,8 @@ def add_starfield(input_data):
                                                            input_data.meta.astropy_time,
                                                            input_data.data.shape)
 
-    # shape = input_data.data[0,:,:].shape
-    # wcs_stellar = WCS(naxis=2)
-    # wcs_stellar.wcs.crpix = shape[1] / 2 + 0.5, shape[0] / 2 + 0.5
-    # wcs_stellar.wcs.crval = wcs_stellar_input.wcs.crval[0], wcs_stellar_input.wcs.crval[1]
-    # wcs_stellar.wcs.cdelt = wcs_stellar_input.wcs.cdelt[0], wcs_stellar_input.wcs.cdelt[1]
-    # wcs_stellar.wcs.ctype = 'RA---ARC', 'DEC--ARC'
-    # wcs_stellar.wcs.pc = wcs_stellar_input.wcs.pc
-
-    starfield, stars = gen_starfield(wcs_stellar_input, input_data.data[0, :, :].shape, flux_set=2.0384547E-9,
-                                     fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
+    starfield, stars = generate_starfield(wcs_stellar_input, input_data.data[0, :, :].shape, flux_set=2.0384547E-9,
+                                          fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
 
     starfield_data = np.zeros(input_data.data.shape)
     for i in range(starfield_data.shape[0]):
@@ -167,8 +159,8 @@ def add_starfield_clear(input_data):
                                                            input_data.meta.astropy_time,
                                                            input_data.data.shape)
 
-    starfield, stars = gen_starfield(wcs_stellar_input, input_data.data[:, :].shape, flux_set=2.0384547E-9,
-                                     fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
+    starfield, stars = generate_starfield(wcs_stellar_input, input_data.data[:, :].shape, flux_set=2.0384547E-9,
+                                          fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
 
     starfield_data = np.zeros(input_data.data.shape)
     starfield_data[:, :] = starfield * (np.logical_not(np.isclose(input_data.data[:, :], 0, atol=1E-18)))

@@ -17,7 +17,8 @@ from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
+from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
+                                calculate_pc_matrix)
 from sunpy.coordinates import sun
 from tqdm import tqdm
 
@@ -26,29 +27,6 @@ from simpunch.util import update_spacecraft_location
 
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
                                                      11: StokesSymbol("B", "total brightness")})
-
-
-def calculate_pc_matrix(crota: float, cdelt: (float, float)) -> np.ndarray:
-    """Calculate a PC matrix given CROTA and CDELT
-
-    Parameters
-    ----------
-    crota : float
-        rotation angle from the WCS
-    cdelt : float
-        pixel size from the WCS
-
-    Returns
-    -------
-    np.ndarray
-        PC matrix
-    """
-    return np.array(
-        [
-            [np.cos(crota), np.sin(crota) * (cdelt[1] / cdelt[0])],
-            [-np.sin(crota) * (cdelt[0] / cdelt[1]), np.cos(crota)],
-        ]
-    )
 
 
 def generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> WCS:
@@ -94,13 +72,6 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> WCS:
 
 def deproject(input_data, output_wcs, adaptive_reprojection=False):
     """Data deprojection"""
-    # input_wcs = input_data.wcs.copy()
-    # input_header = input_wcs.to_header()
-    # # input_header['HGLN_OBS'] = input_data.meta['HGLN_OBS'].value
-    # # input_header['HGLT_OBS'] = input_data.meta['HGLT_OBS'].value
-    # # input_header['DSUN_OBS'] = input_data.meta['DSUN_OBS'].value
-    # input_wcs = WCS(input_header)
-
     reconstructed_wcs = WCS(naxis=3)
     reconstructed_wcs.wcs.ctype = input_data.wcs.wcs.ctype
     reconstructed_wcs.wcs.cunit = input_data.wcs.wcs.cunit
@@ -109,24 +80,15 @@ def deproject(input_data, output_wcs, adaptive_reprojection=False):
     reconstructed_wcs.wcs.crval = input_data.wcs.wcs.crval
     reconstructed_wcs.wcs.pc = input_data.wcs.wcs.pc
 
-    # print(input_wcs)
     reconstructed_wcs = calculate_celestial_wcs_from_helio(reconstructed_wcs,
                                                            input_data.meta.astropy_time,
                                                            input_data.data.shape)
     reconstructed_wcs = reconstructed_wcs.dropaxis(2)
-    #
-    # output_header = output_wcs.copy().to_header()
-    # output_header['HGLN_OBS'] = input_data.meta['HGLN_OBS'].value
-    # output_header['HGLT_OBS'] = input_data.meta['HGLT_OBS'].value
-    # output_header['DSUN_OBS'] = input_data.meta['DSUN_OBS'].value
-    # output_wcs_helio = WCS(output_header)
-    # output_wcs = output_wcs_helio
-    # print(output_wcs)
+
     output_wcs_helio = copy.deepcopy(output_wcs)
     output_wcs = calculate_celestial_wcs_from_helio(output_wcs,
                                                     input_data.meta.astropy_time,
                                                     input_data.data.shape).dropaxis(2)
-    # output_wcs_helio = output_wcs
 
     reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
 
