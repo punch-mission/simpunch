@@ -1,3 +1,4 @@
+"""Calculation to generate noise."""
 import numpy as np
 
 
@@ -10,7 +11,7 @@ def generate_noise(
     bitrate_signal: int = 16,
 ) -> np.ndarray:
     """
-    Generates noise based on an input data array, with specified noise parameters
+    Generate noise based on an input data array, with specified noise parameters.
 
     Parameters
     ----------
@@ -33,7 +34,6 @@ def generate_noise(
         computed noise array corresponding to input data and ccd/noise parameters
 
     """
-
     # Generate a copy of the input signal
     data_signal = np.copy(data)
 

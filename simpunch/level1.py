@@ -1,15 +1,13 @@
-"""
-Generates synthetic level 1 data
-"""
+"""Generates synthetic level 1 data."""
 import copy
 import glob
 import os
 
+import astropy.time
 import astropy.units as u
 import numpy as np
 import reproject
 import solpolpy
-from astropy.coordinates import StokesSymbol, custom_stokes_symbol_mapping
 from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCollection, NDCube
 from prefect import flow, task
@@ -17,49 +15,25 @@ from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
+from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
+                                calculate_pc_matrix)
 from sunpy.coordinates import sun
 from tqdm import tqdm
 
-from simpunch.level2 import add_starfield, add_starfield_clear
+from simpunch.level2 import add_starfield_clear, add_starfield_polarized
 from simpunch.util import update_spacecraft_location
 
-PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
-                                                     11: StokesSymbol("B", "total brightness")})
 
-
-def calculate_pc_matrix(crota: float, cdelt: (float, float)) -> np.ndarray:
-    """Calculate a PC matrix given CROTA and CDELT
-
-    Parameters
-    ----------
-    crota : float
-        rotation angle from the WCS
-    cdelt : float
-        pixel size from the WCS
-
-    Returns
-    -------
-    np.ndarray
-        PC matrix
-    """
-    return np.array(
-        [
-            [np.cos(crota), np.sin(crota) * (cdelt[1] / cdelt[0])],
-            [-np.sin(crota) * (cdelt[0] / cdelt[1]), np.cos(crota)],
-        ]
-    )
-
-
-def generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> WCS:
+def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int, time: astropy.time.Time) -> WCS:
+    """Generate the spacecraft world coordinate system."""
     angle_step = 30
 
-    if spacecraft_id in ['1', '2', '3']:
-        if spacecraft_id == '1':
+    if spacecraft_id in ["1", "2", "3"]:
+        if spacecraft_id == "1":
             angle_wfi = (0 + angle_step * rotation_stage) % 360 * u.deg
-        elif spacecraft_id == '2':
+        elif spacecraft_id == "2":
             angle_wfi = (120 + angle_step * rotation_stage) % 360 * u.deg
-        elif spacecraft_id == '3':
+        elif spacecraft_id == "3":
             angle_wfi = (240 + angle_step * rotation_stage) % 360 * u.deg
 
         out_wcs_shape = [2048, 2048]
@@ -74,7 +48,7 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> WCS:
 
         out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
         out_wcs.wcs.cunit = "deg", "deg"
-    elif spacecraft_id == '4':
+    elif spacecraft_id == "4":
         angle_nfi = (0 + angle_step * rotation_stage) % 360 * u.deg
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
@@ -84,23 +58,17 @@ def generate_spacecraft_wcs(spacecraft_id, rotation_stage, time) -> WCS:
 
         out_wcs.wcs.pc = calculate_pc_matrix(angle_nfi, out_wcs.wcs.cdelt)
 
-        out_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
+        out_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
         out_wcs.wcs.cunit = "deg", "deg"
     else:
-        raise ValueError("Invalid spacecraft_id.")
+        msg = "Invalid spacecraft_id."
+        raise ValueError(msg)
 
     return out_wcs
 
 
-def deproject(input_data, output_wcs, adaptive_reprojection=False):
-    """Data deprojection"""
-    # input_wcs = input_data.wcs.copy()
-    # input_header = input_wcs.to_header()
-    # # input_header['HGLN_OBS'] = input_data.meta['HGLN_OBS'].value
-    # # input_header['HGLT_OBS'] = input_data.meta['HGLT_OBS'].value
-    # # input_header['DSUN_OBS'] = input_data.meta['DSUN_OBS'].value
-    # input_wcs = WCS(input_header)
-
+def deproject_polar(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> (NDCube, WCS):
+    """Deproject a polarized image."""
     reconstructed_wcs = WCS(naxis=3)
     reconstructed_wcs.wcs.ctype = input_data.wcs.wcs.ctype
     reconstructed_wcs.wcs.cunit = input_data.wcs.wcs.cunit
@@ -109,24 +77,15 @@ def deproject(input_data, output_wcs, adaptive_reprojection=False):
     reconstructed_wcs.wcs.crval = input_data.wcs.wcs.crval
     reconstructed_wcs.wcs.pc = input_data.wcs.wcs.pc
 
-    # print(input_wcs)
     reconstructed_wcs = calculate_celestial_wcs_from_helio(reconstructed_wcs,
                                                            input_data.meta.astropy_time,
                                                            input_data.data.shape)
     reconstructed_wcs = reconstructed_wcs.dropaxis(2)
-    #
-    # output_header = output_wcs.copy().to_header()
-    # output_header['HGLN_OBS'] = input_data.meta['HGLN_OBS'].value
-    # output_header['HGLT_OBS'] = input_data.meta['HGLT_OBS'].value
-    # output_header['DSUN_OBS'] = input_data.meta['DSUN_OBS'].value
-    # output_wcs_helio = WCS(output_header)
-    # output_wcs = output_wcs_helio
-    # print(output_wcs)
+
     output_wcs_helio = copy.deepcopy(output_wcs)
     output_wcs = calculate_celestial_wcs_from_helio(output_wcs,
                                                     input_data.meta.astropy_time,
                                                     input_data.data.shape).dropaxis(2)
-    # output_wcs_helio = output_wcs
 
     reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
 
@@ -137,7 +96,7 @@ def deproject(input_data, output_wcs, adaptive_reprojection=False):
                                                                      output_wcs,
                                                                      (2048, 2048),
                                                                      roundtrip_coords=False, return_footprint=False,
-                                                                     kernel='Gaussian', boundary_mode='ignore')
+                                                                     kernel="Gaussian", boundary_mode="ignore")
         else:
             reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :],
                                                                     reconstructed_wcs),
@@ -149,9 +108,8 @@ def deproject(input_data, output_wcs, adaptive_reprojection=False):
     return NDCube(data=reprojected_data, wcs=output_wcs_helio, meta=input_data.meta), output_wcs_helio
 
 
-def deproject_clear(input_data, output_wcs, adaptive_reprojection=False):
-    """Data deprojection"""
-
+def deproject_clear(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> (NDCube, WCS):
+    """Deproject a clear image."""
     reconstructed_wcs = WCS(naxis=2)
     reconstructed_wcs.wcs.ctype = input_data.wcs.wcs.ctype
     reconstructed_wcs.wcs.cunit = input_data.wcs.wcs.cunit
@@ -177,7 +135,7 @@ def deproject_clear(input_data, output_wcs, adaptive_reprojection=False):
                                                                  output_wcs,
                                                                  (2048, 2048),
                                                                  roundtrip_coords=False, return_footprint=False,
-                                                                 kernel='Gaussian', boundary_mode='ignore')
+                                                                 kernel="Gaussian", boundary_mode="ignore")
     else:
         reprojected_data[:, :] = reproject.reproject_interp((input_data.data[:, :],
                                                                 reconstructed_wcs),
@@ -189,27 +147,25 @@ def deproject_clear(input_data, output_wcs, adaptive_reprojection=False):
     return NDCube(data=reprojected_data, wcs=output_wcs_helio, meta=input_data.meta), output_wcs_helio
 
 
-def mark_quality(input_data):
-    """Data quality marking"""
-
+def mark_quality(input_data: NDCube) -> NDCube:
+    """Mark the quality of image patches."""
     return input_data
 
 
-def remix_polarization(input_data):
-    """Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy"""
-
+def remix_polarization(input_data: NDCube) -> NDCube:
+    """Remix polarization from (M, Z, P) to (P1, P2, P3) using solpolpy."""
     # Unpack data into a NDCollection object
     w = WCS(naxis=2)
     data_collection = NDCollection([("M", NDCube(data=input_data.data[0], wcs=w, meta={})),
                                      ("Z", NDCube(data=input_data.data[1], wcs=w, meta={})),
                                       ("P", NDCube(data=input_data.data[2], wcs=w, meta={}))])
 
-    data_collection['M'].meta['POLAR'] = -60. * u.degree
-    data_collection['Z'].meta['POLAR'] = 0. * u.degree
-    data_collection['P'].meta['POLAR'] = 60. * u.degree
+    data_collection["M"].meta["POLAR"] = -60. * u.degree
+    data_collection["Z"].meta["POLAR"] = 0. * u.degree
+    data_collection["P"].meta["POLAR"] = 60. * u.degree
 
     # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
-    resolved_data_collection = solpolpy.resolve(data_collection, 'npol',
+    resolved_data_collection = solpolpy.resolve(data_collection, "npol",
                                                 out_angles=[-60, 0, 60]*u.deg, imax_effect=False)
 
     # Repack data
@@ -222,14 +178,14 @@ def remix_polarization(input_data):
         uncertainty_list.append(resolved_data_collection[key].uncertainty)
 
     # Remove alpha channel if present
-    if 'alpha' in resolved_data_collection.keys():
+    if "alpha" in resolved_data_collection:
         data_list.pop()
         wcs_list.pop()
         uncertainty_list.pop()
 
     # Repack into an NDCube object
     new_data = np.stack(data_list, axis=0)
-    if uncertainty_list[0] is not None:
+    if uncertainty_list[0] is not None:  # noqa: SIM108
         new_uncertainty = np.stack(uncertainty_list, axis=0)
     else:
         new_uncertainty = None
@@ -239,7 +195,8 @@ def remix_polarization(input_data):
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
-def add_distortion(input_data, num_bins: int = 100):
+def add_distortion(input_data: NDCube, num_bins: int = 100) -> NDCube:
+    """Add a distortion model to the WCS. Currently empty."""
     # make an initial empty distortion model
     r = np.linspace(0, input_data.data.shape[0], num_bins + 1)
     c = np.linspace(0, input_data.data.shape[1], num_bins + 1)
@@ -251,10 +208,10 @@ def add_distortion(input_data, num_bins: int = 100):
     err_y = np.zeros((num_bins, num_bins))
 
     cpdis1 = DistortionLookupTable(
-        -err_x.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0]))
+        -err_x.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
     )
     cpdis2 = DistortionLookupTable(
-        -err_y.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0]))
+        -err_y.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
     )
 
     input_data.wcs.cpdis1 = cpdis1
@@ -263,30 +220,30 @@ def add_distortion(input_data, num_bins: int = 100):
     return input_data
 
 @task
-def generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id):
-    """Generates level 1 polarized synthetic data"""
+def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None:
+    """Generate level 1 polarized synthetic data."""
     input_pdata = load_ndcube_from_fits(input_file)
 
     # Define the output data product
-    product_code = 'PM' + spacecraft_id
-    product_level = '1'
+    product_code = "PM" + spacecraft_id
+    product_level = "1"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
-    output_meta['DATE-OBS'] = input_pdata.meta['DATE-OBS'].value
+    output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
     output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage, input_pdata.meta.astropy_time)
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(output_wcs)
-    for key in output_header.keys():
-        if (key in input_pdata.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
+    for key in output_header:
+        if (key in input_pdata.meta) and output_header[key] == "" and key not in ("COMMENT", "HISTORY"):
             output_meta[key].value = input_pdata.meta[key].value
 
     # Deproject to spacecraft frame
-    output_data, output_wcs = deproject(input_pdata, output_wcs)
+    output_data, output_wcs = deproject_polar(input_pdata, output_wcs)
 
     # Quality marking
     output_data = mark_quality(output_data)
 
-    output_data = add_starfield(output_data)
+    output_data = add_starfield_polarized(output_data)
 
     # Polarization remixing
     output_data = remix_polarization(output_data)
@@ -304,13 +261,13 @@ def generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id):
     output_zdata = NDCube(data=output_data.data[1, :, :].astype(np.float32), wcs=output_zwcs, meta=output_zmeta)
     output_pdata = NDCube(data=output_data.data[2, :, :].astype(np.float32), wcs=output_pwcs, meta=output_pmeta)
 
-    output_mdata.meta['TYPECODE'] = 'PM'
-    output_zdata.meta['TYPECODE'] = 'PZ'
-    output_pdata.meta['TYPECODE'] = 'PP'
+    output_mdata.meta["TYPECODE"] = "PM"
+    output_zdata.meta["TYPECODE"] = "PZ"
+    output_pdata.meta["TYPECODE"] = "PP"
 
-    output_mdata.meta['POLAR'] = -60
-    output_zdata.meta['POLAR'] = 0
-    output_pdata.meta['POLAR'] = 60
+    output_mdata.meta["POLAR"] = -60
+    output_zdata.meta["POLAR"] = 0
+    output_pdata.meta["POLAR"] = 60
 
     # Add distortion
     output_mdata = add_distortion(output_mdata)
@@ -322,27 +279,27 @@ def generate_l1_pmzp(input_file, path_output, rotation_stage, spacecraft_id):
     output_zdata = update_spacecraft_location(output_zdata, output_zdata.meta.astropy_time)
 
     # Write out
-    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + '.fits')
-    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + '.fits')
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + '.fits')
+    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + ".fits")
+    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + ".fits")
+    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
 
 
 @task
-def generate_l1_cr(input_file, path_output, rotation_stage, spacecraft_id):
-    """Generates level 1 clear synthetic data"""
+def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None:
+    """Generate level 1 clear synthetic data."""
     input_pdata = load_ndcube_from_fits(input_file)
 
     # Define the output data product
-    product_code = 'CR' + spacecraft_id
-    product_level = '1'
+    product_code = "CR" + spacecraft_id
+    product_level = "1"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
-    output_meta['DATE-OBS'] = input_pdata.meta['DATE-OBS'].value
+    output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
     output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage, input_pdata.meta.astropy_time)
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(output_wcs)
-    for key in output_header.keys():
-        if (key in input_pdata.meta) and output_header[key] == '' and (key != 'COMMENT') and (key != 'HISTORY'):
+    for key in output_header:
+        if (key in input_pdata.meta) and output_header[key] == "" and key not in ("COMMENT", "HISTORY"):
             output_meta[key].value = input_pdata.meta[key].value
 
     # Deproject to spacecraft frame
@@ -359,9 +316,9 @@ def generate_l1_cr(input_file, path_output, rotation_stage, spacecraft_id):
     # Package into NDCube objects
     output_cdata = NDCube(data=output_data.data[:, :].astype(np.float32), wcs=output_cwcs, meta=output_cmeta)
 
-    output_cdata.meta['TYPECODE'] = 'CR'
+    output_cdata.meta["TYPECODE"] = "CR"
 
-    output_cdata.meta['POLAR'] = 9999
+    output_cdata.meta["POLAR"] = 9999
 
     # Add distortion
     output_cdata = add_distortion(output_cdata)
@@ -369,46 +326,42 @@ def generate_l1_cr(input_file, path_output, rotation_stage, spacecraft_id):
     output_cdata = update_spacecraft_location(output_cdata, output_cdata.meta.astropy_time)
 
     # Write out
-    write_ndcube_to_fits(output_cdata, path_output + get_base_file_name(output_cdata) + '.fits')
+    write_ndcube_to_fits(output_cdata, path_output + get_base_file_name(output_cdata) + ".fits")
 
 
 @flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2}
+    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2},
 ))
-def generate_l1_all(datadir):
-    """Generate all level 1 synthetic data
-     L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM"""
+def generate_l1_all(datadir: str) -> None:
+    """Generate all level 1 synthetic data.
 
+    L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM
+    """
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_l1_build4/')
+    outdir = os.path.join(datadir, "synthetic_l1/")
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
-    files_ptm = glob.glob(datadir + '/synthetic_l2_build4/*PTM*.fits')
-    files_ctm = glob.glob(datadir + '/synthetic_l2_build4/*CTM*.fits')
+    files_ptm = glob.glob(datadir + "/synthetic_l2/*PTM*.fits")
+    files_ctm = glob.glob(datadir + "/synthetic_l2/*CTM*.fits")
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
     futures = []
-
-    # Run individual generators
     for i, file_ptm in tqdm(enumerate(files_ptm), total=len(files_ptm)):
         rotation_stage = int((i % 16) / 2)
-        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, '1'))
-        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, '2'))
-        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, '3'))
-        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, '4'))
+        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, "1"))
+        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, "2"))
+        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, "3"))
+        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, "4"))
 
     for i, file_ctm in tqdm(enumerate(files_ctm), total=len(files_ctm)):
         rotation_stage = int((i % 16) / 2)
-        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, '1'))
-        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, '2'))
-        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, '3'))
-        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, '4'))
+        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, "1"))
+        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, "2"))
+        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, "3"))
+        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, "4"))
 
     wait(futures)
-
-if __name__ == '__main__':
-    generate_l1_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/")
