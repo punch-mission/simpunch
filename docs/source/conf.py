@@ -1,3 +1,4 @@
+# ruff: noqa
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -17,12 +18,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'simpunch'
-copyright = '2023, PUNCH Science Operations Center'
-author = 'PUNCH Science Operations Center'
+project = "simpunch"
+copyright = "2024, PUNCH Science Operations Center"
+author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = "0.0.1"
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,13 +32,13 @@ release = '0.0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ['autoapi.extension',
-              'sphinx.ext.autodoc',
-              'sphinx.ext.napoleon',
-              'sphinx_favicon']
+extensions = ["autoapi.extension",
+              "sphinx.ext.autodoc",
+              "sphinx.ext.napoleon",
+              "sphinx_favicon"]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -52,7 +53,7 @@ exclude_patterns = []
 #
 html_theme = "pydata_sphinx_theme"
 html_show_sourcelink = False
-html_static_path = ['_static']
+html_static_path = ["_static"]
 html_theme_options = {
     "use_edit_page_button": True,
     "icon_links": [
@@ -61,7 +62,7 @@ html_theme_options = {
             "url": "https://github.com/punch-mission/simpunch",
             "icon": "fa-brands fa-github",
             "type": "fontawesome",
-        }
+        },
     ],
     "show_nav_level": 1,
     "show_toc_level": 3,
@@ -69,10 +70,9 @@ html_theme_options = {
         "text": "simpunch",
         "image_light": "_static/logo.png",
         "image_dark": "_static/logo.png",
-    }
+    },
 }
 html_context = {
-    # "github_url": "https://github.com", # or your GitHub Enterprise site
     "github_user": "punch-mission",
     "github_repo": "simpunch",
     "github_version": "main",
@@ -80,6 +80,6 @@ html_context = {
 }
 
 
-autoapi_dirs = ['../../simpunch']
+autoapi_dirs = ["../../simpunch"]
 
 favicons = ["favicon.ico"]
