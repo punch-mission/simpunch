@@ -53,7 +53,6 @@ Changelog = "https://github.com/punch-mission/simpunch/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 packages = ["simpunch"]
-include_package_data = true
 
 [tool.codespell]
 skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
