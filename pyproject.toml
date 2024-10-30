@@ -18,8 +18,8 @@ dependencies = [
     "toml",
     "scipy",
     "photutils",
-    "click"
 ]
+
 requires-python = ">=3.10"
 authors = [
     {name = "J. Marcus Hughes", email = "hughes.jmb@gmail.com"},
