@@ -1,20 +1,12 @@
 # simpunch
 
-This software assists in simulating PUNCH-like data. It's useful in testing the pipeline software.
+This software assists in simulating PUNCH-like data. It's useful in testing the pipeline.
+
+![example simulated image](example.png)
+
+It works by accepting a total brightness and polarized brightness model.
+For PUNCH usage, these have been created using the [FORWARD code](https://www.frontiersin.org/journals/astronomy-and-space-sciences/articles/10.3389/fspas.2016.00008/full)
+from [GAMERA simulation data ](https://arxiv.org/pdf/2405.13069).
+These images are fed backward through the pipeline from level 3 to level 0 products, adding appropriate effects along the way.
 
 ## Instructions
-First run, `generate_l3 /Users/jhughes/Desktop/data/gamera_mosaic_jan2024/ 1`.
-
-Then, run the visualize script `python visualize.py`.
-
-Finally, make movies:
-```
-ffmpeg -framerate 10 -pattern_type glob -i '/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/PUNCH_L3_PAN_*_total.png' -c:v libx264 -pix_fmt yuv420p PAN_total.mp4
-ffmpeg -framerate 10 -pattern_type glob -i '/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/PUNCH_L3_PAN_*_polarized.png' -c:v libx264 -pix_fmt yuv420p PAN_polarized.mp4
-ffmpeg -framerate 10 -pattern_type glob -i '/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/PUNCH_L3_PNN_*_total.png' -c:v libx264 -pix_fmt yuv420p PNN_total.mp4
-ffmpeg -framerate 10 -pattern_type glob -i '/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/PUNCH_L3_PNN_*_polarized.png' -c:v libx264 -pix_fmt yuv420p PNN_polarized.mp4
-ffmpeg -framerate 10 -pattern_type glob -i '/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/PUNCH_L3_PAM_*_total.png' -c:v libx264 -pix_fmt yuv420p PAM_total.mp4
-ffmpeg -framerate 10 -pattern_type glob -i '/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/PUNCH_L3_PAM_*_polarized.png' -c:v libx264 -pix_fmt yuv420p PAM_polarized.mp4
-ffmpeg -framerate 10 -pattern_type glob -i '/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/PUNCH_L3_PTM_*_total.png' -c:v libx264 -pix_fmt yuv420p PTM_total.mp4
-ffmpeg -framerate 10 -pattern_type glob -i '/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_L3_trial/PUNCH_L3_PTM_*_polarized.png' -c:v libx264 -pix_fmt yuv420p PTM_polarized.mp4
-```

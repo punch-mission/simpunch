@@ -1,9 +1,8 @@
 """
-Generates synthetic level 3 data
-PAM - PUNCH Level-3 Polarized Low Noise Mosaic
-PAN - PUNCH Level-3 Polarized Low Noise NFI Image
+Generate synthetic level 3 data.
+
 PTM - PUNCH Level-3 Polarized Mosaic
-PNN - PUNCH Level-3 Polarized NFI Image
+CTM - PUNCH Level-3 Clear Mosaic
 """
 import glob
 import os
@@ -25,27 +24,27 @@ from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import get_base_file_name
 from tqdm import tqdm
 
-from simpunch.util import update_spacecraft_location
+from .util import update_spacecraft_location
 
 
-def define_mask(shape=(4096, 4096), distance_value=0.68):
-    """Define a mask to describe the FOV for low-noise PUNCH data products"""
+def define_mask(shape: (int, int) = (4096, 4096), distance_value: float =0.68) -> np.ndarray:
+    """Define a mask to describe the FOV for low-noise PUNCH data products."""
     center = (int(shape[0] / 2), int(shape[1] / 2))
 
-    Y, X = np.ogrid[:shape[0], :shape[1]]
+    Y, X = np.ogrid[:shape[0], :shape[1]]  # noqa: N806
     dist_arr = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
 
     return (dist_arr / dist_arr.max()) < distance_value
 
 
-def define_trefoil_mask(rotation_stage=0):
-    """Define a mask to describe the FOV for trefoil mosaic PUNCH data products"""
+def define_trefoil_mask(rotation_stage: int = 0) -> np.ndarray:
+    """Define a mask to describe the FOV for trefoil mosaic PUNCH data products."""
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    return np.load(os.path.join(dir_path, 'data/trefoil_mask.npz'))['trefoil_mask'][rotation_stage,:,:]
+    return np.load(os.path.join(dir_path, "data/trefoil_mask.npz"))["trefoil_mask"][rotation_stage,:,:]
 
 
 def generate_uncertainty(pdata: NDCube) -> NDCube:
-
+    """Generate realistic uncertainty for PUNCH."""
     # Input data is scaled to MSB
     # Convert to photons
     # Get the pixel scale in degrees
@@ -81,27 +80,23 @@ def generate_uncertainty(pdata: NDCube) -> NDCube:
     photon_count = (energy_per_second * exposure_time).to(u.J) / energy_per_photon
 
     photon_array = pdata.data * photon_count
-
-    # photon_noise = generate_noise_photon(photon_array)
     photon_noise = np.sqrt(photon_array)
-
-    uncertainty = photon_noise  # / photon_noise.max()
-
+    uncertainty = photon_noise
     uncertainty[pdata.data == 0] = np.inf
-
     pdata.uncertainty.array = uncertainty
 
     return pdata
 
 
-def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mask=None):
-    """Assemble a punchdata object with correct metadata"""
+def assemble_punchdata_polarized(input_tb: str, input_pb: str,
+                                 wcs: WCS, product_code: str,
+                                 product_level: str, mask: np.ndarray | None = None) -> NDCube:
+    """Assemble a punchdata object with correct metadata."""
     with fits.open(input_tb) as hdul:
-        # TODO - Did we resolve this factor of 1e8?
         data_tb = hdul[1].data / 1e8  # the 1e8 comes from the units on FORWARD output
         if data_tb.shape == (2048, 2048):
             data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
-        data_tb[np.where(data_tb == -9.999e-05)] = 0
+        data_tb[np.where(data_tb == -9.999e-05)] = 0. # noqa: PLR2004
         if mask is not None:
             data_tb = data_tb * mask
 
@@ -109,28 +104,29 @@ def assemble_punchdata(input_tb, input_pb, wcs, product_code, product_level, mas
         data_pb = hdul[1].data / 1e8 # the 1e8 comes from the units on FORWARD output
         if data_pb.shape == (2048, 2048):
             data_pb = scipy.ndimage.zoom(data_pb, 2, order=0)
-        data_pb[np.where(data_pb == -9.999e-05)] = 0
+        data_pb[np.where(data_pb == -9.999e-05)] = 0. # noqa: PLR2004
         if mask is not None:
             data_pb = data_pb * mask
 
-    datacube = np.stack([data_tb, data_pb]).astype('float32')
+    datacube = np.stack([data_tb, data_pb]).astype("float32")
     uncertainty = StdDevUncertainty(np.zeros(datacube.shape))
     uncertainty.array[datacube == 0] = 1
     meta = NormalizedMetadata.load_template(product_code, product_level)
     return NDCube(data=datacube, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
 
-def assemble_punchdata_clear(input_tb, wcs, product_code, product_level, mask=None):
-    """Assemble a punchdata object with correct metadata for a clear data product"""
+def assemble_punchdata_clear(input_tb: str, wcs: WCS,
+                             product_code: str, product_level: str, mask: np.ndarray | None =None) -> NDCube:
+    """Assemble a punchdata object with correct metadata for a clear data product."""
     with fits.open(input_tb) as hdul:
         data_tb = hdul[1].data / 1e8  # the 1e8 comes from the units on FORWARD output
         if data_tb.shape == (2048, 2048):
             data_tb = scipy.ndimage.zoom(data_tb, 2, order=0)
-        data_tb[np.where(data_tb == -9.999e-05)] = 0
+        data_tb[np.where(data_tb == -9.999e-05)] = 0. # noqa: PLR2004
         if mask is not None:
             data_tb = data_tb * mask
 
-    datacube = data_tb.astype('float32')
+    datacube = data_tb.astype("float32")
     uncertainty = StdDevUncertainty(np.zeros(datacube.shape))
     uncertainty.array[datacube == 0] = 1
     meta = NormalizedMetadata.load_template(product_code, product_level)
@@ -138,15 +134,16 @@ def assemble_punchdata_clear(input_tb, wcs, product_code, product_level, mask=No
 
 
 @task
-def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotation_stage):
-    """Generate PTM - PUNCH Level-3 Polarized Mosaic"""
+def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
+                    time_obs: datetime, time_delta: timedelta, rotation_stage: int) -> None:
+    """Generate PTM - PUNCH Level-3 Polarized Mosaic."""
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = 0, 0
     mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
-    mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
+    mosaic_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
     mosaic_wcs = add_stokes_axis_to_wcs(mosaic_wcs, 2)
 
     # Mask data to define the field of view
@@ -155,35 +152,39 @@ def generate_l3_ptm(input_tb, input_pb, path_output, time_obs, time_delta, rotat
     mask = None
 
     # Read data and assemble into PUNCHData object
-    pdata = assemble_punchdata(input_tb, input_pb, mosaic_wcs, product_code='PTM', product_level='3', mask=mask)
+    pdata = assemble_punchdata_polarized(input_tb, input_pb,
+                                         mosaic_wcs, product_code="PTM", product_level="3", mask=mask)
 
     # Update required metadata
-    tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
-    tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
-    tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
+    tstring_start = time_obs.strftime("%Y-%m-%dT%H:%M:%S.000")
+    tstring_end = (time_obs + time_delta).strftime("%Y-%m-%dT%H:%M:%S.000")
+    tstring_avg = (time_obs + time_delta / 2).strftime("%Y-%m-%dT%H:%M:%S.000")
 
-    pdata.meta['DATE-OBS'] = tstring_start
-    pdata.meta['DATE-BEG'] = tstring_start
-    pdata.meta['DATE-END'] = tstring_end
-    pdata.meta['DATE-AVG'] = tstring_avg
-    pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
+    pdata.meta["DATE-OBS"] = tstring_start
+    pdata.meta["DATE-BEG"] = tstring_start
+    pdata.meta["DATE-END"] = tstring_end
+    pdata.meta["DATE-AVG"] = tstring_avg
+    pdata.meta["DATE"] = (time_obs + time_delta + timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%S.000")
 
     pdata = update_spacecraft_location(pdata, time_obs)
-    # pdata = update_wcs_with_helio(pdata)
     pdata = generate_uncertainty(pdata)
-    write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + '.fits')
+    write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + ".fits")
 
 
 @task
-def generate_l3_ctm(input_tb, path_output, time_obs, time_delta, rotation_stage):
-    """Generate CTM - PUNCH Level-3 Clear Mosaic"""
+def generate_l3_ctm(input_tb: str,
+                    path_output: str,
+                    time_obs: datetime,
+                    time_delta: timedelta,
+                    rotation_stage: int) -> None:
+    """Generate CTM - PUNCH Level-3 Clear Mosaic."""
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
     mosaic_wcs.wcs.crpix = mosaic_shape[1] / 2 - 0.5, mosaic_shape[0] / 2 - 0.5
     mosaic_wcs.wcs.crval = 0, 0
     mosaic_wcs.wcs.cdelt = 0.0225, 0.0225
-    mosaic_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
+    mosaic_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
 
     # Mask data to define the field of view
     mask = define_trefoil_mask(rotation_stage=rotation_stage)
@@ -191,40 +192,38 @@ def generate_l3_ctm(input_tb, path_output, time_obs, time_delta, rotation_stage)
     mask = None
 
     # Read data and assemble into PUNCHData object
-    pdata = assemble_punchdata_clear(input_tb, mosaic_wcs, product_code='CTM', product_level='3', mask=mask)
+    pdata = assemble_punchdata_clear(input_tb, mosaic_wcs, product_code="CTM", product_level="3", mask=mask)
 
     # Update required metadata
-    tstring_start = time_obs.strftime('%Y-%m-%dT%H:%M:%S.000')
-    tstring_end = (time_obs + time_delta).strftime('%Y-%m-%dT%H:%M:%S.000')
-    tstring_avg = (time_obs + time_delta / 2).strftime('%Y-%m-%dT%H:%M:%S.000')
+    tstring_start = time_obs.strftime("%Y-%m-%dT%H:%M:%S.000")
+    tstring_end = (time_obs + time_delta).strftime("%Y-%m-%dT%H:%M:%S.000")
+    tstring_avg = (time_obs + time_delta / 2).strftime("%Y-%m-%dT%H:%M:%S.000")
 
-    pdata.meta['DATE-OBS'] = tstring_start
-    pdata.meta['DATE-BEG'] = tstring_start
-    pdata.meta['DATE-END'] = tstring_end
-    pdata.meta['DATE-AVG'] = tstring_avg
-    pdata.meta['DATE'] = (time_obs + time_delta + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S.000')
+    pdata.meta["DATE-OBS"] = tstring_start
+    pdata.meta["DATE-BEG"] = tstring_start
+    pdata.meta["DATE-END"] = tstring_end
+    pdata.meta["DATE-AVG"] = tstring_avg
+    pdata.meta["DATE"] = (time_obs + time_delta + timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%S.000")
 
     pdata = update_spacecraft_location(pdata, time_obs)
-    # pdata = update_wcs_with_helio(pdata)
     pdata = generate_uncertainty(pdata)
-    write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + '.fits')
+    write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + ".fits")
 
 
 @flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2}
+    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2},
 ))
-def generate_l3_all(datadir, start_time, num_repeats=1):
-    """Generate all level 3 synthetic data"""
-
+def generate_l3_all(datadir: str, start_time: datetime, num_repeats: int = 1) -> None:
+    """Generate all level 3 synthetic data."""
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_l3_build4/')
+    outdir = os.path.join(datadir, "synthetic_l3/")
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
     # Parse list of model data
-    files_tb = glob.glob(datadir + '/synthetic_cme/*_TB.fits')
-    files_pb = glob.glob(datadir + '/synthetic_cme/*_PB.fits')
+    files_tb = glob.glob(datadir + "/synthetic_cme/*_TB.fits")
+    files_pb = glob.glob(datadir + "/synthetic_cme/*_PB.fits")
     print(f"Generating based on {len(files_tb)} TB files and {len(files_pb)} PB files.")
     files_tb.sort()
     files_pb.sort()
@@ -240,10 +239,8 @@ def generate_l3_all(datadir, start_time, num_repeats=1):
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
 
     runs = []
-    for i, (file_tb, file_pb, time_obs) in tqdm(enumerate(zip(files_tb, files_pb, times_obs)), total=len(files_tb)):
+    for i, (file_tb, file_pb, time_obs) \
+            in tqdm(enumerate(zip(files_tb, files_pb, times_obs, strict=False)), total=len(files_tb)):
         runs.append(generate_l3_ptm.submit(file_tb, file_pb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
         runs.append(generate_l3_ctm.submit(file_tb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
     wait(runs)
-
-if __name__ == '__main__':
-    generate_l3_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/", datetime.now())

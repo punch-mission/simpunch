@@ -1,3 +1,4 @@
+"""Tools for generating realistic spikes."""
 import os
 import random
 from glob import glob
@@ -10,7 +11,8 @@ SPIKE_SCALING_MEAN = 2**16-5_000 # brightness of the average spike
 SPIKE_SCALING_STD = SPIKE_SCALING_MEAN * 0.01 # width of the normal distribution for generating spike brightness
 SPIKE_FREQUENCY = 40 * 49  # number of spikes in an image
 
-def read_hit_map(path):
+def read_hit_map(path: str) -> np.ndarray:
+    """Read in a hit map file and make an image of the spikes."""
     with open(path) as file:
         line = file.readline()
     num_spikes, width, height = map(int, line.split())
@@ -19,20 +21,22 @@ def read_hit_map(path):
     image[table[:, 0].astype(int), table[:, 1].astype(int)] = table[:, 2] / np.percentile(table[:, 2], 80)
     return image
 
-def load_spike_library():
+def load_spike_library() -> np.ndarray:
+    """Load all the spike images as a 3D numpy array."""
     paths = glob(HIT_MAP_DIR + "*.hmp")
     return np.array([read_hit_map(path) for path in paths])
 
 def generate_spike_image(
-        image_shape,
-        spike_frequency=SPIKE_FREQUENCY,
-        spike_scaling_mean=SPIKE_SCALING_MEAN,
-        spike_scaling_std=SPIKE_SCALING_STD,
-        max_spike=2**16,
-        patch_size=50,
-        rotate=True,
-        transpose=True,
-        library=None):
+        image_shape: (int, int),
+        spike_frequency: int = SPIKE_FREQUENCY,
+        spike_scaling_mean: float = SPIKE_SCALING_MEAN,
+        spike_scaling_std: float = SPIKE_SCALING_STD,
+        max_spike: int = 2**16,
+        patch_size: int = 50,
+        rotate: bool = True,
+        transpose: bool = True,
+        library: np.ndarray | None = None) -> np.ndarray:
+    """Generate a realistic spike image."""
     if library is None:
         library = load_spike_library()
 
@@ -48,12 +52,12 @@ def generate_spike_image(
 
     for spike_value, i, j, k, x, y in zip(spike_values,
                                           spike_source_i, spike_source_j, spike_source_k,
-                                          spike_target_x, spike_target_y):
+                                          spike_target_x, spike_target_y, strict=False):
         patch = library[i, j:j+patch_size, k:k+patch_size] * spike_value
         pad_amount = tuple([(0, patch_size-s) for s in patch.shape])
-        patch = np.pad(patch, pad_amount, mode='constant', constant_values=0)
+        patch = np.pad(patch, pad_amount, mode="constant", constant_values=0)
 
-        if transpose and random.random() < 0.5:
+        if transpose and random.random() < 0.5:  # noqa: PLR2004
             patch = patch.T
         if rotate:
             n = int(random.random() // 0.25)
