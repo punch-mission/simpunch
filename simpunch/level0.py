@@ -11,6 +11,7 @@ from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import flow, task
 from prefect.futures import wait
+from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
@@ -170,9 +171,9 @@ def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_pa
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
 
     # TODO - fold into reprojection?
-    output_data = starfield_misalignment(input_data)
+    # output_data = starfield_misalignment(input_data)
 
-    output_data = uncorrect_psf(output_data, psf_model)
+    output_data = uncorrect_psf(input_data, psf_model)
 
     # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data)
@@ -204,13 +205,13 @@ def generate_l0_pmzp(input_file, path_output, psf_model, wfi_vignetting_model_pa
 
     output_data = certainty_estimate(output_data, noise)  # TODO: shouldn't certainty take into account spikes?
 
-    output_data.data[:, :] = encode_sqrt(output_data.data[:, :])
+    output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
 
     # TODO - Sync up any final header data here
 
     # Set output dtype
     # TODO - also check this in the output data w/r/t BITPIX
-    output_data.data[output_data.data > 2**16-1] = 2**16-1
+    output_data.data[output_data.data > 2**10-1] = 2**10-1
     write_data = NDCube(data=output_data.data[:, :].astype(np.int32),
                         uncertainty=None,
                         meta=output_data.meta,
@@ -243,9 +244,9 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
 
     # TODO - fold into reprojection?
-    output_data = starfield_misalignment(input_data)
+    # output_data = starfield_misalignment(input_data)
 
-    output_data = uncorrect_psf(output_data, psf_model)
+    output_data = uncorrect_psf(input_data, psf_model)
 
     # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data)
@@ -281,9 +282,9 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
 
     # Set output dtype
     # TODO - also check this in the output data w/r/t BITPIX
-    output_data.data[:, :] = encode_sqrt(output_data.data[:, :])
+    output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
 
-    output_data.data[output_data.data > 2**16-1] = 2**16-1
+    output_data.data[output_data.data > 2**10-1] = 2**10-1
     write_data = NDCube(data=output_data.data[:, :].astype(np.int32),
                         uncertainty=None,
                         meta=output_data.meta,
@@ -295,19 +296,21 @@ def generate_l0_cr(input_file, path_output, psf_model, wfi_vignetting_model_path
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + '.fits')
 
 
-@flow(log_prints=True)
+@flow(log_prints=True, task_runner=DaskTaskRunner(
+    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2}
+))
 def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vignetting_model_path):
     """Generate all level 0 synthetic data"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_l0/')
+    outdir = os.path.join(datadir, 'synthetic_l0_build4/')
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
     # Parse list of level 1 model data
-    files_l1 = glob.glob(datadir + '/synthetic_l1/*.fits')
-    files_cr = glob.glob(datadir + '/synthetic_l1/*CR*.fits')
+    files_l1 = glob.glob(datadir + '/synthetic_l1_build4/*L1_P*.fits')
+    files_cr = glob.glob(datadir + '/synthetic_l1_build4/*CR*.fits')
     print(f"Generating based on {len(files_l1)} files.")
     files_l1.sort()
 
@@ -326,8 +329,6 @@ def generate_l0_all(datadir, psf_model_path, wfi_vignetting_model_path, nfi_vign
     wait(futures)
 
 if __name__ == '__main__':
-
-
     generate_l0_all("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/",
                     "/Users/jhughes/Desktop/repos/simpunch/synthetic_input_psf.h5",
                     "/Users/jhughes/Desktop/repos/simpunch/PUNCH_L1_GM1_20240817174727_v2.fits",

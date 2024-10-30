@@ -1,9 +1,9 @@
 import os
-import requests
 
 import astropy.units as u
 import numpy as np
 import pandas as pd
+import requests
 from astropy.coordinates import SkyCoord
 from astropy.wcs import WCS, NoConvergence
 from numpy.fft import fft2, ifft2, ifftshift
@@ -209,6 +209,8 @@ def find_catalog_in_image(
         pixel coordinates of stars in catalog that are present in the image
     """
     try:
+        print(np.array(catalog["RAdeg"]))
+        print(np.array(catalog["DEdeg"]))
         xs, ys = SkyCoord(
             ra=np.array(catalog["RAdeg"]) * u.degree,
             dec=np.array(catalog["DEdeg"]) * u.degree,

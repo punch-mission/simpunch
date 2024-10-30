@@ -548,14 +548,14 @@ def generate_l3_can(input_tb, path_output, time_obs, time_delta):
 
 
 @flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 4, "threads_per_worker": 2}
+    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2}
 ))
 def generate_l3_all(datadir, start_time, num_repeats=1):
     """Generate all level 3 synthetic data"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_l3/')
+    outdir = os.path.join(datadir, 'synthetic_l3_build4/')
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 

@@ -28,7 +28,7 @@ def generate_flow(gamera_directory='/d0/punchsoc/gamera_data/',
     generate_l0_all(gamera_directory, psf_model_path, wfi_vignetting_model_path, nfi_vignetting_model_path)
 
     db_session = get_database_session()
-    for file_path in sorted(glob.glob(os.path.join(gamera_directory, 'synthetic_l0/*.fits')),
+    for file_path in sorted(glob.glob(os.path.join(gamera_directory, 'synthetic_l0_build4/*.fits')),
                             key=lambda s: os.path.basename(s)[13:27]):
         file_name = os.path.basename(file_path)
         level = "0"
@@ -60,10 +60,10 @@ def generate_flow(gamera_directory='/d0/punchsoc/gamera_data/',
         db_session.add(db_entry)
         db_session.commit()
 
-    shutil.rmtree(os.path.join(gamera_directory, 'synthetic_l0/'))
-    shutil.rmtree(os.path.join(gamera_directory, 'synthetic_l1/'))
-    shutil.rmtree(os.path.join(gamera_directory, 'synthetic_l2/'))
-    shutil.rmtree(os.path.join(gamera_directory, 'synthetic_l3/'))
+    shutil.rmtree(os.path.join(gamera_directory, 'synthetic_l0_build4/'))
+    shutil.rmtree(os.path.join(gamera_directory, 'synthetic_l1_build4/'))
+    shutil.rmtree(os.path.join(gamera_directory, 'synthetic_l2_build4/'))
+    shutil.rmtree(os.path.join(gamera_directory, 'synthetic_l3_build4/'))
 
 
 if __name__ == "__main__":

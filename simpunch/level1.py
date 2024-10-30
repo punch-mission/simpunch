@@ -14,6 +14,7 @@ from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCollection, NDCube
 from prefect import flow, task
 from prefect.futures import wait
+from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
@@ -371,20 +372,22 @@ def generate_l1_cr(input_file, path_output, rotation_stage, spacecraft_id):
     write_ndcube_to_fits(output_cdata, path_output + get_base_file_name(output_cdata) + '.fits')
 
 
-@flow(log_prints=True)
+@flow(log_prints=True, task_runner=DaskTaskRunner(
+    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2}
+))
 def generate_l1_all(datadir):
     """Generate all level 1 synthetic data
      L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM"""
 
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, 'synthetic_l1/')
+    outdir = os.path.join(datadir, 'synthetic_l1_build4/')
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
     # Parse list of level 3 model data
-    files_ptm = glob.glob(datadir + '/synthetic_l2/*PTM*.fits')
-    files_ctm = glob.glob(datadir + '/synthetic_l2/*CTM*.fits')
+    files_ptm = glob.glob(datadir + '/synthetic_l2_build4/*PTM*.fits')
+    files_ctm = glob.glob(datadir + '/synthetic_l2_build4/*CTM*.fits')
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
