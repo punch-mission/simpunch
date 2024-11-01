@@ -1,5 +1,7 @@
 # ruff: noqa
 from importlib.metadata import version as get_version
+from packaging.version import Version
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -25,7 +27,10 @@ author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags
 release: str = get_version("simpunch")
-
+version: str = release
+_version = Version(release)
+if _version.is_devrelease:
+    version = release = f"{_version.base_version}.dev{_version.dev}"
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be

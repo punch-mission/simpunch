@@ -38,7 +38,7 @@ classifiers = [
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-doctestplus", "pytest-cov", "ruff", "coverage"]
-docs = ["sphinx", "sphinx-autoapi", "sphinx-automodapi", "pydata-sphinx-theme", "sphinx-favicon", "ipython"]
+docs = ["sphinx", "sphinx-autoapi", "sphinx-automodapi", "pydata-sphinx-theme", "sphinx-favicon", "ipython", "packaging"]
 
 [project.scripts]
 simpunch = "simpunch.cli:main"
