@@ -13,7 +13,7 @@ dependencies = [
     "regularizepsf",
     "click",
     "prefect[dask, sqlalchemy]",
-    "punchbowl @ git+ssh://git@github.com/punch-mission/punchbowl",
+    "punchbowl",
     "toml",
     "scipy",
     "photutils",
