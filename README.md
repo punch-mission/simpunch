@@ -2,10 +2,16 @@
 
 This software creates simulated PUNCH-like data. It's useful in testing the calibration pipeline.
 
+> [!CAUTION]
+> This package is still being developed. There will be breaking code changes until v1.
+> We advise you to wait until then to use it.
+
 ![example simulated image](example.png)
 
 It accepts a total brightness and polarized brightness model as input.
-These have been created using the [FORWARD code](https://www.frontiersin.org/journals/astronomy-and-space-sciences/articles/10.3389/fspas.2016.00008/full) from [GAMERA simulation data ](https://arxiv.org/pdf/2405.13069).
+These have been created using the
+[FORWARD code](https://www.frontiersin.org/journals/astronomy-and-space-sciences/articles/10.3389/fspas.2016.00008/full)
+from [GAMERA simulation data ](https://arxiv.org/pdf/2405.13069).
 These images are fed backward through the pipeline from level 3 to level 0 products,
 adding appropriate effects along the way.
 

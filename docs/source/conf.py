@@ -1,4 +1,5 @@
 # ruff: noqa
+from importlib.metadata import version as get_version
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -23,8 +24,7 @@ copyright = "2024, PUNCH Science Operations Center"
 author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags
-release = "0.0.1"
-
+release: str = get_version("simpunch")
 
 # -- General configuration ---------------------------------------------------
 

@@ -1,11 +1,10 @@
 [build-system]
-
-requires = ["setuptools",
-            "wheel"]
+requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "simpunch"
-version = "0.0.1"
+dynamic = ["version"]
 dependencies = [
     "numpy",
     "astropy",
@@ -50,6 +49,8 @@ Documentation = "https://punch-mission.github.io/simpunch/"
 Repository = "https://github.com/punch-mission/simpunch.git"
 "Bug Tracker" = "https://github.com/punch-mission/simpunch/issues"
 Changelog = "https://github.com/punch-mission/simpunch/blob/main/CHANGELOG.md"
+
+[tool.setuptools_scm]
 
 [tool.setuptools]
 packages = ["simpunch"]
