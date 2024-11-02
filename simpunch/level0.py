@@ -16,7 +16,7 @@ from punchbowl.data.units import msb_to_dn
 from punchbowl.data.wcs import calculate_pc_matrix, extract_crota_from_wcs
 from punchbowl.level1.initial_uncertainty import compute_noise
 from punchbowl.level1.sqrt import encode_sqrt
-from regularizepsf import ArrayCorrector
+from regularizepsf import ArrayPSFTransform
 from tqdm import tqdm
 
 from simpunch.spike import generate_spike_image
@@ -80,9 +80,9 @@ def add_stray_light(input_data: NDCube) -> NDCube:
     return input_data
 
 
-def uncorrect_psf(input_data: NDCube, psf_model: ArrayCorrector) -> NDCube:
+def uncorrect_psf(input_data: NDCube, psf_model: ArrayPSFTransform) -> NDCube:
     """Apply an inverse PSF to an image."""
-    input_data.data[...] = psf_model.correct_image(input_data.data, alpha=3.0, epsilon=0.3)[...]
+    input_data.data[...] = psf_model.apply(input_data.data)[...]
     return input_data
 
 def add_transients(input_data: NDCube,
@@ -120,7 +120,7 @@ def starfield_misalignment(input_data: NDCube,
 @task
 def generate_l0_pmzp(input_file: NDCube,
                      path_output: str,
-                     psf_model: ArrayCorrector,
+                     psf_model: ArrayPSFTransform,
                      wfi_vignetting_model_path: str,
                      nfi_vignetting_model_path: str,
                      transient_probability: float=0.03) -> None:
@@ -193,7 +193,7 @@ def generate_l0_pmzp(input_file: NDCube,
 
 @task
 def generate_l0_cr(input_file: NDCube, path_output: str,
-                   psf_model: ArrayCorrector,
+                   psf_model: ArrayPSFTransform,
                    wfi_vignetting_model_path: str, nfi_vignetting_model_path: str,
                    transient_probability: float = 0.03) -> None:
     """Generate level 0 clear synthetic data."""
@@ -275,7 +275,7 @@ def generate_l0_all(datadir: str, psf_model_path: str,
     print(f"Generating based on {len(files_l1)} files.")
     files_l1.sort()
 
-    psf_model = ArrayCorrector.load(psf_model_path)
+    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
 
     futures = []
     for file_l1 in tqdm(files_l1, total=len(files_l1)):

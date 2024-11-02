@@ -1,6 +1,6 @@
 gamera_directory = "/Users/jhughes/Desktop/pipeline_testing"
 output_directory = "/Users/jhughes/Desktop/pipeline_testing"
-psf_model_path = "/Users/jhughes/Desktop/repos/simpunch/synthetic_backward_psf.h5"
+psf_model_path = "/Users/jhughes/Desktop/repos/simpunch/synthetic_backward_psf.fits"
 wfi_vignetting_model_path = "/Users/jhughes/Desktop/repos/simpunch/build_3_review_files/PUNCH_L1_GM1_20240817174727_v2.fits"
 nfi_vignetting_model_path = "/Users/jhughes/Desktop/repos/simpunch/build_3_review_files/PUNCH_L1_GM4_20240819045110_v1.fits"
 num_repeats = 1
