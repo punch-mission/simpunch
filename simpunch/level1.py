@@ -9,6 +9,7 @@ import numpy as np
 import reproject
 import solpolpy
 from astropy.wcs import WCS, DistortionLookupTable
+from astropy.io import fits
 from ndcube import NDCollection, NDCube
 from prefect import flow, task
 from prefect.futures import wait
@@ -196,28 +197,31 @@ def remix_polarization(input_data: NDCube) -> NDCube:
 
 
 def add_distortion(input_data: NDCube, num_bins: int = 100) -> NDCube:
-    """Add a distortion model to the WCS. Currently empty."""
-    # make an initial empty distortion model
-    r = np.linspace(0, input_data.data.shape[0], num_bins + 1)
-    c = np.linspace(0, input_data.data.shape[1], num_bins + 1)
-    r = (r[1:] + r[:-1]) / 2
-    c = (c[1:] + c[:-1]) / 2
+    """Add a distortion model to the WCS."""
+    filename_distortion = "distortion_NFI.fits" if input_data.meta["OBSCODE"].value == "4" else "distortion_WFI.fits"
 
-    err_px, err_py = r, c
-    err_x = np.zeros((num_bins, num_bins))
-    err_y = np.zeros((num_bins, num_bins))
+    with fits.open(filename_distortion) as hdul:
+        err_x = hdul[1].data
+        err_y = hdul[2].data
+
+    # Infer some scaling information from input data
+    # TODO - These values should be given more careful thought, especially crpix and whether it should be (0,0) for distortion
+    crpix = input_data.wcs.wcs.crpix
+    crval = input_data.wcs.wcs.crval
+    cdelt = input_data.wcs.wcs.cdelt * input_data.wcs.wcs.cdelt[0] / err_x.shape[0]
 
     cpdis1 = DistortionLookupTable(
-        -err_x.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
+        -err_x.astype(np.float32), crpix, crval, cdelt,
     )
     cpdis2 = DistortionLookupTable(
-        -err_y.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
+        -err_y.astype(np.float32), crpix, crval, cdelt,
     )
 
     input_data.wcs.cpdis1 = cpdis1
     input_data.wcs.cpdis2 = cpdis2
 
     return input_data
+
 
 @task
 def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None:
