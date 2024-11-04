@@ -196,7 +196,8 @@ def remix_polarization(input_data: NDCube) -> NDCube:
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
-def add_distortion(input_data: NDCube, num_bins: int = 100) -> NDCube:
+# TODO - add scaling factor
+def add_distortion(input_data: NDCube) -> NDCube:
     """Add a distortion model to the WCS."""
     filename_distortion = "distortion_NFI.fits" if input_data.meta["OBSCODE"].value == "4" else "distortion_WFI.fits"
 
@@ -204,11 +205,10 @@ def add_distortion(input_data: NDCube, num_bins: int = 100) -> NDCube:
         err_x = hdul[1].data
         err_y = hdul[2].data
 
-    # Infer some scaling information from input data
-    # TODO - These values should be given more careful thought, especially crpix and whether it should be (0,0) for distortion
-    crpix = input_data.wcs.wcs.crpix
-    crval = input_data.wcs.wcs.crval
-    cdelt = input_data.wcs.wcs.cdelt * input_data.wcs.wcs.cdelt[0] / err_x.shape[0]
+    crpix = err_x.shape[1] / 2 + 0.5, err_x.shape[0] / 2 + 0.5
+    crval = input_data.wcs.pixel_to_world(crpix)
+    cdelt = (input_data.wcs.wcs.cdelt[0] * input_data.wcs.wcs.cdelt[0] / err_x.shape[1],
+             input_data.wcs.wcs.cdelt[0] * input_data.wcs.wcs.cdelt[0] / err_x.shape[1])
 
     cpdis1 = DistortionLookupTable(
         -err_x.astype(np.float32), crpix, crval, cdelt,
