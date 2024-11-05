@@ -199,14 +199,15 @@ def remix_polarization(input_data: NDCube) -> NDCube:
 # TODO - add scaling factor
 def add_distortion(input_data: NDCube) -> NDCube:
     """Add a distortion model to the WCS."""
-    filename_distortion = "distortion_NFI.fits" if input_data.meta["OBSCODE"].value == "4" else "distortion_WFI.fits"
+    filename_distortion = "simpunch/data/distortion_NFI.fits" if input_data.meta["OBSCODE"].value == "4" else "simpunch/data/distortion_WFI.fits"
 
     with fits.open(filename_distortion) as hdul:
         err_x = hdul[1].data
         err_y = hdul[2].data
 
     crpix = err_x.shape[1] / 2 + 0.5, err_x.shape[0] / 2 + 0.5
-    crval = input_data.wcs.pixel_to_world(crpix)
+    coord = input_data.wcs.pixel_to_world(crpix[0], crpix[1])
+    crval = (coord.Tx.to(u.deg).value, coord.Ty.to(u.deg).value)
     cdelt = (input_data.wcs.wcs.cdelt[0] * input_data.wcs.wcs.cdelt[0] / err_x.shape[1],
              input_data.wcs.wcs.cdelt[0] * input_data.wcs.wcs.cdelt[0] / err_x.shape[1])
 
