@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import astropy.units as u
 import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
@@ -11,11 +10,12 @@ from punchbowl.data import NormalizedMetadata
 
 
 @pytest.fixture
-def sample_ndcube():
-    def _sample_ndcube(shape, code="PM1", level="0"):
+def sample_ndcube() -> NDCube:
+    def _sample_ndcube(shape: tuple, code:str = "PM1", level:str = "0") -> NDCube:
         data = np.random.random(shape).astype(np.float32)
         sqrt_abs_data = np.sqrt(np.abs(data))
-        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype(np.float32))
+        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()),
+                                                  (0,1)).astype(np.float32))
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
         wcs.wcs.cunit = "deg", "deg"
@@ -25,13 +25,13 @@ def sample_ndcube():
         wcs.wcs.cname = "HPC lon", "HPC lat"
 
         meta = NormalizedMetadata.load_template(code, level)
-        meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1))
-        meta['FILEVRSN'] = "1"
+        meta["DATE-OBS"] = str(datetime(2024, 2, 22, 16, 0, 1))
+        meta["FILEVRSN"] = "1"
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 
 
-def test_distortion(sample_ndcube) -> None:
+def test_distortion(sample_ndcube: NDCube) -> None:
     """Test distortion addition."""
     input_data = sample_ndcube((2048,2048))
     distorted_data = add_distortion(input_data)

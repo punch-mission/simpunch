@@ -8,16 +8,14 @@ import astropy.units as u
 import numpy as np
 import reproject
 import solpolpy
-from astropy.wcs import WCS, DistortionLookupTable
 from astropy.io import fits
+from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCollection, NDCube
 from prefect import flow, task
 from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
-from punchbowl.data import (NormalizedMetadata, get_base_file_name,
-                            load_ndcube_from_fits, write_ndcube_to_fits)
-from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
-                                calculate_pc_matrix)
+from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_pc_matrix
 from sunpy.coordinates import sun
 from tqdm import tqdm
 
@@ -68,7 +66,7 @@ def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int, time: astro
     return out_wcs
 
 
-def deproject_polar(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> (NDCube, WCS):
+def deproject_polar(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> tuple[NDCube, WCS]:
     """Deproject a polarized image."""
     reconstructed_wcs = WCS(naxis=3)
     reconstructed_wcs.wcs.ctype = input_data.wcs.wcs.ctype
@@ -109,7 +107,7 @@ def deproject_polar(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: 
     return NDCube(data=reprojected_data, wcs=output_wcs_helio, meta=input_data.meta), output_wcs_helio
 
 
-def deproject_clear(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> (NDCube, WCS):
+def deproject_clear(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> tuple[NDCube, WCS]:
     """Deproject a clear image."""
     reconstructed_wcs = WCS(naxis=2)
     reconstructed_wcs.wcs.ctype = input_data.wcs.wcs.ctype
@@ -199,7 +197,11 @@ def remix_polarization(input_data: NDCube) -> NDCube:
 # TODO - add scaling factor
 def add_distortion(input_data: NDCube) -> NDCube:
     """Add a distortion model to the WCS."""
-    filename_distortion = "simpunch/data/distortion_NFI.fits" if input_data.meta["OBSCODE"].value == "4" else "simpunch/data/distortion_WFI.fits"
+    filename_distortion = (
+        "simpunch/data/distortion_NFI.fits"
+        if input_data.meta["OBSCODE"].value == "4"
+        else "simpunch/data/distortion_WFI.fits"
+    )
 
     with fits.open(filename_distortion) as hdul:
         err_x = hdul[1].data
