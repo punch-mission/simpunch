@@ -8,15 +8,14 @@ import astropy.units as u
 import numpy as np
 import reproject
 import solpolpy
+from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCollection, NDCube
 from prefect import flow, task
 from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
-from punchbowl.data import (NormalizedMetadata, get_base_file_name,
-                            load_ndcube_from_fits, write_ndcube_to_fits)
-from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
-                                calculate_pc_matrix)
+from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_pc_matrix
 from sunpy.coordinates import sun
 from tqdm import tqdm
 
@@ -67,7 +66,7 @@ def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int, time: astro
     return out_wcs
 
 
-def deproject_polar(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> (NDCube, WCS):
+def deproject_polar(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> tuple[NDCube, WCS]:
     """Deproject a polarized image."""
     reconstructed_wcs = WCS(naxis=3)
     reconstructed_wcs.wcs.ctype = input_data.wcs.wcs.ctype
@@ -108,7 +107,7 @@ def deproject_polar(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: 
     return NDCube(data=reprojected_data, wcs=output_wcs_helio, meta=input_data.meta), output_wcs_helio
 
 
-def deproject_clear(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> (NDCube, WCS):
+def deproject_clear(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: bool = False) -> tuple[NDCube, WCS]:
     """Deproject a clear image."""
     reconstructed_wcs = WCS(naxis=2)
     reconstructed_wcs.wcs.ctype = input_data.wcs.wcs.ctype
@@ -195,29 +194,37 @@ def remix_polarization(input_data: NDCube) -> NDCube:
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
-def add_distortion(input_data: NDCube, num_bins: int = 100) -> NDCube:
-    """Add a distortion model to the WCS. Currently empty."""
-    # make an initial empty distortion model
-    r = np.linspace(0, input_data.data.shape[0], num_bins + 1)
-    c = np.linspace(0, input_data.data.shape[1], num_bins + 1)
-    r = (r[1:] + r[:-1]) / 2
-    c = (c[1:] + c[:-1]) / 2
+# TODO - add scaling factor
+def add_distortion(input_data: NDCube) -> NDCube:
+    """Add a distortion model to the WCS."""
+    filename_distortion = (
+        "simpunch/data/distortion_NFI.fits"
+        if input_data.meta["OBSCODE"].value == "4"
+        else "simpunch/data/distortion_WFI.fits"
+    )
 
-    err_px, err_py = r, c
-    err_x = np.zeros((num_bins, num_bins))
-    err_y = np.zeros((num_bins, num_bins))
+    with fits.open(filename_distortion) as hdul:
+        err_x = hdul[1].data
+        err_y = hdul[2].data
+
+    crpix = err_x.shape[1] / 2 + 0.5, err_x.shape[0] / 2 + 0.5
+    coord = input_data.wcs.pixel_to_world(crpix[0], crpix[1])
+    crval = (coord.Tx.to(u.deg).value, coord.Ty.to(u.deg).value)
+    cdelt = (input_data.wcs.wcs.cdelt[0] * input_data.wcs.wcs.cdelt[0] / err_x.shape[1],
+             input_data.wcs.wcs.cdelt[0] * input_data.wcs.wcs.cdelt[0] / err_x.shape[1])
 
     cpdis1 = DistortionLookupTable(
-        -err_x.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
+        -err_x.astype(np.float32), crpix, crval, cdelt,
     )
     cpdis2 = DistortionLookupTable(
-        -err_y.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
+        -err_y.astype(np.float32), crpix, crval, cdelt,
     )
 
     input_data.wcs.cpdis1 = cpdis1
     input_data.wcs.cpdis2 = cpdis2
 
     return input_data
+
 
 @task
 def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None:

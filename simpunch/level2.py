@@ -12,7 +12,8 @@ import solpolpy
 from astropy.table import QTable
 from astropy.wcs import WCS
 from ndcube import NDCollection, NDCube
-from photutils.datasets import make_gaussian_sources_image, make_noise_image
+from astropy.modeling.models import Gaussian2D
+from photutils.datasets import make_model_image, make_noise_image
 from prefect import flow, task
 from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
@@ -125,7 +126,12 @@ def generate_starfield(wcs: WCS,
     sources["flux"] = flux_set * np.power(10, -0.4 * (star_mags - mag_set))
     sources["theta"] = np.zeros(len(stars))
 
-    fake_image = make_gaussian_sources_image(img_shape, sources)
+
+    model = Gaussian2D()
+    model_shape = (25,25)
+
+    fake_image = make_model_image(img_shape, model, sources, model_shape=model_shape,
+                                  x_name="x_mean", y_name="y_mean")
     if noise_mean is not None and noise_std is not None:  # we only add noise if it's specified
         fake_image += make_noise_image(img_shape, "gaussian", mean=noise_mean, stddev=noise_std)
 
