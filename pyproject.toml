@@ -71,7 +71,8 @@ show-fixes = true
 
 lint.select = ["ALL"]
 lint.ignore = ["PTH", "S113", "S311", "NPY002",
-    "FBT002", "FBT001", "PLR0913", "TD003", "TD004", "TD002", "FIX002", "DTZ001", "I001"]
+    "FBT002", "FBT001", "PLR0913", "TD003",
+    "TD004", "TD002", "FIX002", "DTZ001", "I001", "PT001"]
 
 [tool.ruff.lint.per-file-ignores]
 # Part of configuration, not a package.
