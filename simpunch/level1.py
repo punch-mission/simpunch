@@ -14,14 +14,17 @@ from ndcube import NDCollection, NDCube
 from prefect import flow, task
 from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
-from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits, write_ndcube_to_fits
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_pc_matrix
+from punchbowl.data import (NormalizedMetadata, get_base_file_name,
+                            load_ndcube_from_fits, write_ndcube_to_fits)
+from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
+                                calculate_pc_matrix)
 from sunpy.coordinates import sun
 from tqdm import tqdm
 
 from simpunch.level2 import add_starfield_clear, add_starfield_polarized
 from simpunch.util import update_spacecraft_location
 
+CURRENT_DIR = os.path.dirname(__file__)
 
 def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int, time: astropy.time.Time) -> WCS:
     """Generate the spacecraft world coordinate system."""
@@ -198,9 +201,9 @@ def remix_polarization(input_data: NDCube) -> NDCube:
 def add_distortion(input_data: NDCube) -> NDCube:
     """Add a distortion model to the WCS."""
     filename_distortion = (
-        "simpunch/data/distortion_NFI.fits"
+        os.path.join(CURRENT_DIR, "data/distortion_NFI.fits")
         if input_data.meta["OBSCODE"].value == "4"
-        else "simpunch/data/distortion_WFI.fits"
+        else os.path.join(CURRENT_DIR, "data/distortion_WFI.fits")
     )
 
     with fits.open(filename_distortion) as hdul:

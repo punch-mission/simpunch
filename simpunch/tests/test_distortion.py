@@ -4,12 +4,13 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from simpunch.level1 import add_distortion
 from ndcube import NDCube
 from punchbowl.data import NormalizedMetadata
 
+from simpunch.level1 import add_distortion
 
-@pytest.fixture
+
+@pytest.fixture()
 def sample_ndcube() -> NDCube:
     def _sample_ndcube(shape: tuple, code:str = "PM1", level:str = "0") -> NDCube:
         data = np.random.random(shape).astype(np.float32)
@@ -34,6 +35,18 @@ def sample_ndcube() -> NDCube:
 def test_distortion(sample_ndcube: NDCube) -> None:
     """Test distortion addition."""
     input_data = sample_ndcube((2048,2048))
+    original_wcs = input_data.wcs.copy()
+
     distorted_data = add_distortion(input_data)
 
     assert isinstance(distorted_data, NDCube)
+    assert distorted_data.wcs.has_distortion
+    assert (distorted_data.wcs.wcs.cdelt == original_wcs.wcs.cdelt).all()
+    assert (distorted_data.wcs.wcs.crpix == original_wcs.wcs.crpix).all()
+    assert (distorted_data.wcs.wcs.crval == original_wcs.wcs.crval).all()
+
+    original_coord = original_wcs.pixel_to_world(0, 0)
+    distorted_coord = distorted_data.wcs.pixel_to_world(0, 0)
+
+    assert original_coord.Tx.value != distorted_coord.Tx.value
+    assert original_coord.Ty.value != distorted_coord.Ty.value
