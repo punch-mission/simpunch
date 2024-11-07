@@ -9,10 +9,10 @@ import astropy.time
 import astropy.units as u
 import numpy as np
 import solpolpy
+from astropy.modeling.models import Gaussian2D
 from astropy.table import QTable
 from astropy.wcs import WCS
 from ndcube import NDCollection, NDCube
-from astropy.modeling.models import Gaussian2D
 from photutils.datasets import make_model_image, make_noise_image
 from prefect import flow, task
 from prefect.futures import wait
@@ -226,6 +226,8 @@ def generate_l2_ptm(input_file: str, path_output: str) -> None:
     for key in output_header:
         if (key in input_pdata.meta) and output_header[key] == "" and key not in  ("COMMENT", "HISTORY"):
             output_meta[key].value = input_pdata.meta[key].value
+    output_meta["DESCRPTN"] = "Simulated " + output_meta["DESCRPTN"].value
+    output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value
 
     output_data = remix_polarization(input_pdata)
     output_data = add_fcorona(output_data)
@@ -249,6 +251,7 @@ def generate_l2_ctm(input_file: str, path_output: str) -> None:
     product_level = "2"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
     output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
+
     output_wcs = input_pdata.wcs
 
     # Synchronize overlapping metadata keys
@@ -256,6 +259,8 @@ def generate_l2_ctm(input_file: str, path_output: str) -> None:
     for key in output_header:
         if (key in input_pdata.meta) and output_header[key] == "" and key not in ("COMMENT", "HISTORY"):
             output_meta[key].value = input_pdata.meta[key].value
+    output_meta["DESCRPTN"] = "Simulated " + output_meta["DESCRPTN"].value
+    output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value
 
     output_data = add_fcorona(input_pdata)
 

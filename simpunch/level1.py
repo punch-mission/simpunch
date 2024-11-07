@@ -239,6 +239,9 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     product_level = "1"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
     output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
+    output_meta["DESCRPTN"] = "Simulated " + output_meta["DESCRPTN"].value
+    output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value
+
     output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage, input_pdata.meta.astropy_time)
 
     # Synchronize overlapping metadata keys
@@ -327,6 +330,8 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
     output_cdata = NDCube(data=output_data.data[:, :].astype(np.float32), wcs=output_cwcs, meta=output_cmeta)
 
     output_cdata.meta["TYPECODE"] = "CR"
+    output_cdata.meta["DESCRPTN"] = "Simulated" + output_cdata.meta["DESCRPTN"].value
+    output_cdata.meta["TITLE"] = "Simulated " + output_cdata.meta["TITLE"].value
 
     output_cdata.meta["POLAR"] = 9999
 
