@@ -165,6 +165,8 @@ def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
     pdata.meta["DATE-END"] = tstring_end
     pdata.meta["DATE-AVG"] = tstring_avg
     pdata.meta["DATE"] = (time_obs + time_delta + timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%S.000")
+    pdata.meta["DESCRPTN"] = "Simulated " + pdata.meta["DESCRPTN"].value
+    pdata.meta["TITLE"] = "Simulated " + pdata.meta["TITLE"].value
 
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
@@ -204,6 +206,8 @@ def generate_l3_ctm(input_tb: str,
     pdata.meta["DATE-END"] = tstring_end
     pdata.meta["DATE-AVG"] = tstring_avg
     pdata.meta["DATE"] = (time_obs + time_delta + timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%S.000")
+    pdata.meta["DESCRPTN"] = "Simulated " + pdata.meta["DESCRPTN"].value
+    pdata.meta["TITLE"] = "Simulated " + pdata.meta["TITLE"].value
 
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)

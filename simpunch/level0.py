@@ -179,6 +179,9 @@ def generate_l0_pmzp(input_file: NDCube,
     # Set output dtype
     # TODO - also check this in the output data w/r/t BITPIX
     output_data.data[output_data.data > 2**10-1] = 2**10-1
+    output_data.meta["DESCRPTN"] = "Simulated " + output_data.meta["DESCRPTN"].value
+    output_data.meta["TITLE"] = "Simulated " + output_data.meta["TITLE"].value
+
     write_data = NDCube(data=output_data.data[:, :].astype(np.int32),
                         uncertainty=None,
                         meta=output_data.meta,
@@ -245,6 +248,9 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
 
     output_data.data[output_data.data > 2**10-1] = 2**10-1
+    output_data.meta["DESCRPTN"] = "Simulated " + output_data.meta["DESCRPTN"].value
+    output_data.meta["TITLE"] = "Simulated " + output_data.meta["TITLE"].value
+
     write_data = NDCube(data=output_data.data[:, :].astype(np.int32),
                         uncertainty=None,
                         meta=output_data.meta,
