@@ -123,15 +123,13 @@ def generate_starfield(wcs: WCS,
     sources["y_mean"] = stars["y_pix"]
     sources["x_stddev"] = np.ones(len(stars)) * sigma
     sources["y_stddev"] = np.ones(len(stars)) * sigma
-    sources["flux"] = flux_set * np.power(10, -0.4 * (star_mags - mag_set))
+    sources["amplitude"] = flux_set * np.power(10, -0.4 * (star_mags - mag_set))
     sources["theta"] = np.zeros(len(stars))
 
-
     model = Gaussian2D()
-    model_shape = (25,25)
+    model_shape = (25, 25)
 
-    fake_image = make_model_image(img_shape, model, sources, model_shape=model_shape,
-                                  x_name="x_mean", y_name="y_mean")
+    fake_image = make_model_image(img_shape, model, sources, model_shape=model_shape, x_name="x_mean", y_name="y_mean")
     if noise_mean is not None and noise_std is not None:  # we only add noise if it's specified
         fake_image += make_noise_image(img_shape, "gaussian", mean=noise_mean, stddev=noise_std)
 
@@ -145,7 +143,7 @@ def add_starfield_polarized(input_data: NDCube) -> NDCube:
                                                            input_data.data.shape)
 
     starfield, stars = generate_starfield(wcs_stellar_input, input_data.data[0, :, :].shape, flux_set=2.0384547E-9,
-                                          fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
+                                          fwhm=3, dimmest_magnitude=12, noise_mean=None, noise_std=None)
 
     starfield_data = np.zeros(input_data.data.shape)
     for i in range(starfield_data.shape[0]):
@@ -163,7 +161,7 @@ def add_starfield_clear(input_data: NDCube) -> NDCube:
                                                            input_data.data.shape)
 
     starfield, stars = generate_starfield(wcs_stellar_input, input_data.data[:, :].shape, flux_set=2.0384547E-9,
-                                          fwhm=3, dimmest_magnitude=12, noise_mean=0, noise_std=0)
+                                          fwhm=3, dimmest_magnitude=12, noise_mean=None, noise_std=None)
 
     starfield_data = np.zeros(input_data.data.shape)
     starfield_data[:, :] = starfield * (np.logical_not(np.isclose(input_data.data[:, :], 0, atol=1E-18)))

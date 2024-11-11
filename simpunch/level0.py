@@ -106,6 +106,7 @@ def starfield_misalignment(input_data: NDCube,
                            cr_offset_scale: float = 0.1,
                            pc_offset_scale: float = 0.1) -> NDCube:
     """Offset the pointing in an image to simulate spacecraft uncertainty."""
+    original_wcs = input_data.wcs.copy()
     cr_offsets = np.random.normal(0, cr_offset_scale, 2)
     input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
 
@@ -114,7 +115,7 @@ def starfield_misalignment(input_data: NDCube,
     new_pc = calculate_pc_matrix(current_crota + pc_offset, input_data.wcs.wcs.cdelt)
     input_data.wcs.wcs.pc = new_pc
 
-    return input_data
+    return input_data, original_wcs
 
 
 @task
@@ -140,7 +141,7 @@ def generate_l0_pmzp(input_file: NDCube,
             output_meta[key] = input_data.meta[key].value
 
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
-    output_data = starfield_misalignment(input_data)
+    output_data, original_wcs = starfield_misalignment(input_data)
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
 
@@ -193,6 +194,7 @@ def generate_l0_pmzp(input_file: NDCube,
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + ".fits")
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_transient.fits", transient)
+    original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
 
 @task
 def generate_l0_cr(input_file: NDCube, path_output: str,
@@ -215,7 +217,7 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
             output_meta[key] = input_data.meta[key].value
 
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
-    output_data = starfield_misalignment(input_data)
+    output_data, original_wcs = starfield_misalignment(input_data)
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
     output_data = add_stray_light(output_data)
@@ -262,9 +264,10 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + ".fits")
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_transient.fits", transient)
+    original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
 
 @flow(log_prints=True,
-      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 8, "threads_per_worker": 2},
+      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
 ))
 def generate_l0_all(datadir: str, psf_model_path: str,
                     wfi_vignetting_model_path: str, nfi_vignetting_model_path: str,

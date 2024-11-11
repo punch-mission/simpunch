@@ -4,9 +4,10 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from simpunch.level2 import add_starfield_clear
 from ndcube import NDCube
 from punchbowl.data import NormalizedMetadata
+
+from simpunch.level2 import add_starfield_clear
 
 
 @pytest.fixture

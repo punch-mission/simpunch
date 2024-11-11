@@ -1,5 +1,6 @@
 # ruff: noqa
 from importlib.metadata import version as get_version
+
 from packaging.version import Version
 
 # Configuration file for the Sphinx documentation builder.
