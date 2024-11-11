@@ -21,7 +21,7 @@ from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
 from sunpy.coordinates import sun
 from tqdm import tqdm
 
-from simpunch.level2 import add_starfield_clear, add_starfield_polarized
+from simpunch.level2 import add_starfield_clear
 from simpunch.util import update_spacecraft_location
 
 CURRENT_DIR = os.path.dirname(__file__)
@@ -256,8 +256,6 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     # Quality marking
     output_data = mark_quality(output_data)
 
-    output_data = add_starfield_polarized(output_data)
-
     # Polarization remixing
     output_data = remix_polarization(output_data)
 
@@ -286,6 +284,10 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_mdata = add_distortion(output_mdata)
     output_zdata = add_distortion(output_zdata)
     output_pdata = add_distortion(output_pdata)
+
+    output_mdata = add_starfield_clear(output_mdata)
+    output_zdata = add_starfield_clear(output_zdata)
+    output_pdata = add_starfield_clear(output_pdata)
 
     output_pdata = update_spacecraft_location(output_pdata, output_pdata.meta.astropy_time)
     output_mdata = update_spacecraft_location(output_mdata, output_mdata.meta.astropy_time)
@@ -320,6 +322,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 
     # Quality marking
     output_data = mark_quality(output_data)
+    output_data = add_distortion(output_data)
 
     output_data = add_starfield_clear(output_data)
 
@@ -335,8 +338,6 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 
     output_cdata.meta["POLAR"] = 9999
 
-    # Add distortion
-    output_cdata = add_distortion(output_cdata)
 
     output_cdata = update_spacecraft_location(output_cdata, output_cdata.meta.astropy_time)
 
