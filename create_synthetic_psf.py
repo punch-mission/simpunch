@@ -65,4 +65,4 @@ backward_corrector = ArrayPSFTransform.construct(initial, synthetic, alpha=3.0, 
 backward_corrector.save(Path("synthetic_backward_psf.fits"))
 
 forward_corrector = ArrayPSFTransform.construct(synthetic, initial, alpha=3.0, epsilon=0.2)
-forward_corrector.save("synthetic_forward_psf.fits")
+forward_corrector.save(Path("synthetic_forward_psf.fits"))
