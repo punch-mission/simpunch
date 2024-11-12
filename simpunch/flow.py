@@ -16,8 +16,8 @@ from simpunch.level3 import generate_l3_all
 def generate_flow(gamera_directory: str,
                   output_directory: str,
                   psf_model_path: str,
-                  wfi_vignetting_model_path: str,
-                  nfi_vignetting_model_path: str,
+                  wfi_quartic_model_path: str,
+                  nfi_quartic_model_path: str,
                   num_repeats: int = 1,
                   start_time: datetime | None = None,
                   transient_probability: float = 0.03,
@@ -34,8 +34,8 @@ def generate_flow(gamera_directory: str,
         generate_l1_all(gamera_directory)
         generate_l0_all(gamera_directory,
                         psf_model_path,
-                        wfi_vignetting_model_path,
-                        nfi_vignetting_model_path,
+                        wfi_quartic_model_path,
+                        nfi_quartic_model_path,
                         transient_probability=transient_probability)
 
         # duplicate the psf model to all required versions
