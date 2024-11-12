@@ -1,10 +1,5 @@
 # ruff: noqa
-from datetime import datetime
-
 from astropy.io.fits import CompImageHDU, HDUList, PrimaryHDU
-from astropy.wcs import WCS
-from ndcube import NDCube
-from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import load_ndcube_from_fits
 from punchbowl.level1.quartic_fit import create_constant_quartic_coefficients
 
@@ -20,11 +15,5 @@ nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 wfi_quartic[:, :, -2] /= wfi_vignette
 nfi_quartic[:, :, -2] /= nfi_vignette
 
-meta = NormalizedMetadata.load_template("FQ1", "1")
-meta['DATE-OBS'] = str(datetime.now())
-
-wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
-nfi_cube = NDCube(data=nfi_quartic, meta=meta, wcs=WCS(naxis=3))
-
-HDUList(PrimaryHDU(), CompImageHDU(wfi_quartic)).writeto("wfi_quartic_coeffs.fits")
-HDUList(PrimaryHDU(), CompImageHDU(nfi_quartic)).writeto("nfi_quartic_coeffs.fits")
+HDUList(PrimaryHDU(), CompImageHDU(data=wfi_quartic)).writeto("wfi_quartic_coeffs.fits")
+HDUList(PrimaryHDU(), CompImageHDU(data=nfi_quartic)).writeto("nfi_quartic_coeffs.fits")
