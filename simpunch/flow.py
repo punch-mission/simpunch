@@ -62,7 +62,7 @@ def generate_flow(gamera_directory: str,
         for file_path in sorted(glob.glob(os.path.join(gamera_directory, "synthetic_l0/*v[0-9].fits")),
                                 key=lambda s: os.path.basename(s)[13:27]):
             file_name = os.path.basename(file_path)
-            level = "0"
+            level = file_name[7]
             file_type = file_name[9:11]
             observatory = file_name[11]
             year = file_name[13:17]
