@@ -279,8 +279,8 @@ def generate_l0_all(datadir: str, psf_model_path: str,
     print(f"Outputting to {outdir}")
 
     # Parse list of level 1 model data
-    files_l1 = glob.glob(datadir + "/synthetic_l1/*L1_P*.fits")
-    files_cr = glob.glob(datadir + "/synthetic_l1/*CR*.fits")
+    files_l1 = glob.glob(datadir + "/synthetic_l1/*L1_P*_v1.fits")
+    files_cr = glob.glob(datadir + "/synthetic_l1/*CR*_v1.fits")
     print(f"Generating based on {len(files_l1)} files.")
     files_l1.sort()
 
