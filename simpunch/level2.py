@@ -8,8 +8,11 @@ import os
 import astropy.time
 import astropy.units as u
 import numpy as np
-import reproject
 import solpolpy
+import scipy
+import scipy.ndimage
+import reproject
+
 from astropy.modeling.models import Gaussian2D
 from astropy.table import QTable
 from astropy.wcs import WCS
@@ -22,6 +25,7 @@ from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, get_p_angle
 from tqdm import tqdm
+from math import ceil, floor
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
@@ -40,10 +44,10 @@ def get_fcorona_parameters(date_obs: astropy.time.Time) -> dict[str, float]:
 
 
 def generate_fcorona(shape: (int, int),
-                     tilt_angle: float = 3*u.deg,
+                     tilt_angle: float = 3 * u.deg,
                      a: float = 600.,
                      b: float = 300.,
-                     tilt_offset: tuple[float] = (0,0)) -> np.ndarray:
+                     tilt_offset: tuple[float] = (0, 0)) -> np.ndarray:
     """Generate an F corona model."""
     fcorona = np.zeros(shape)
 
@@ -80,7 +84,7 @@ def generate_fcorona(shape: (int, int),
         for i in np.arange(fcorona.shape[0]):
             fcorona[i, :, :] = fcorona_profile[:, :]
     else:
-        fcorona[:,:] = fcorona_profile[:,:]
+        fcorona[:, :] = fcorona_profile[:, :]
 
     return fcorona
 
@@ -136,74 +140,60 @@ def generate_starfield(wcs: WCS,
 
     return fake_image, sources
 
-def generate_dummy_polarization(shape = [1800,900],
-                                map_scale = 0.0225,
-                                pol_factor = 0.5):
-    xcoord = np.linspace(-pol_factor, pol_factor, shape[0])
-    ycoord = np.linspace(-pol_factor, pol_factor, shape[1])
-    X, Y = np.meshgrid(xcoord, ycoord)
-    Z = pol_factor-(X**2+Y**2)
+
+def generate_dummy_polarization(map_scale: float = 0.225,
+                                pol_factor: float = 0.5) -> NDCube:
+    """Create a synthetic polarization map"""
+    shape = [int(floor(180 / map_scale)), int(floor(360 / map_scale))]
+    xcoord = np.linspace(-pol_factor, pol_factor, shape[1])
+    ycoord = np.linspace(-pol_factor, pol_factor, shape[0])
+    xin, yin = np.meshgrid(xcoord, ycoord)
+    zin = pol_factor - (xin ** 2 + yin ** 2)
 
     wcs_sky = WCS(naxis=2)
-    wcs_sky.wcs.crpix = [shape[0]/2 + .5, shape[1]/2 + .5]
-    wcs_sky.wcs.cdelt = np.array([-map_scale, map_scale])
+    wcs_sky.wcs.crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
+    wcs_sky.wcs.cdelt = np.array([map_scale, map_scale])
     wcs_sky.wcs.crval = [180.0, 0.0]
     wcs_sky.wcs.ctype = ["RA---CAR", "DEC--CAR"]
-    wcs_sky.wcs.cunit = "deg", "deg"
+    wcs_sky.wcs.cunit = 'deg', 'deg'
 
-    dummy = NDCube(data=Z, wcs=wcs_sky)
-    return dummy
-# def add_starfield_polarized(input_data: NDCube) -> NDCube:
-#     """Add synthetic starfield."""
-#     wcs_stellar_input = calculate_celestial_wcs_from_helio(input_data.wcs,
-#                                                            input_data.meta.astropy_time,
-#                                                            input_data.data.shape)
-#
-#     starfield, stars = generate_starfield(wcs_stellar_input, input_data.data[0, :, :].shape, flux_set=2.0384547E-9,
-#                                           fwhm=3, dimmest_magnitude=12, noise_mean=None, noise_std=None)
-#
-#     starfield_data = np.zeros(input_data.data.shape)
-#     for i in range(starfield_data.shape[0]):
-#         starfield_data[i, :, :] = starfield * (np.logical_not(np.isclose(input_data.data[i, :, :], 0, atol=1E-18)))
-#
-#     input_data.data[...] = input_data.data[...] + starfield_data
-#
-#     return input_data
+    return NDCube(data=zin, wcs=wcs_sky)
 
-def add_starfield_polarized(input_collection: NDCollection, polfactor=[0.2, 0.3, 0.5]) -> NDCollection:
-    """Add synthetic starfield."""
-    input_data = input_collection["0.0 deg"]
+
+def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (0.2, 0.3, 0.5)) -> NDCollection:
+    """Add synthetic polarized starfield."""
+    input_data = input_collection['0.0 deg']
     wcs_stellar_input = calculate_celestial_wcs_from_helio(input_data.wcs,
                                                            input_data.meta.astropy_time,
                                                            input_data.data.shape)
 
     starfield, stars = generate_starfield(wcs_stellar_input, input_data.data.shape,
-                                          flux_set=2.0384547E-9, fwhm=3, dimmest_magnitude=12, noise_mean=None, noise_std=None)
+                                          flux_set=2.0384547E-9, fwhm=3, dimmest_magnitude=12,
+                                          noise_mean=None, noise_std=None)
 
     starfield_data = np.zeros(input_data.data.shape)
     starfield_data[:, :] = starfield * (np.logical_not(np.isclose(input_data.data, 0, atol=1E-18)))
 
     # Converting the input data polarization to celestial basis
-    mzp_angles = ([input_cube.meta["POLAR"] for label, input_cube in input_collection.items() if label != "alpha"] * u.degree)
-    cel_north_off = get_p_angle(time=input_collection["0.0 deg"].meta["DATE-OBS"])
-    new_angles = mzp_angles - cel_north_off # or +? confirm!
+    mzp_angles = ([input_cube.meta['POLAR'] for label, input_cube in input_collection.items() if
+                   label != 'alpha'] * u.degree)
+    cel_north_off = get_p_angle(time=input_collection['0.0 deg'].meta['DATE-OBS'])
+    new_angles = mzp_angles - cel_north_off  # or +? confirm!
 
-    input_data_cel = solpolpy.resolve(input_collection, "npol", out_angles=new_angles)
-    valid_keys = [key for key in input_data_cel.keys() if key != "alpha"]
+    input_data_cel = solpolpy.resolve(input_collection, 'npol', out_angles=new_angles)
+    valid_keys = [key for key in input_data_cel if key != 'alpha']
 
     for k, key in enumerate(valid_keys):
         dummy_polarmap = generate_dummy_polarization(pol_factor=polfactor[k])
-        # Exctract ROI corresponding to input wcs
+        # Extract ROI corresponding to input wcs
         polar_roi = reproject.reproject_adaptive(
-                (dummy_polarmap.data, dummy_polarmap.wcs), wcs_stellar_input, input_data.data.shape,
-                roundtrip_coords=False, return_footprint=False, x_cyclic=True,
-                conserve_flux=True, center_jacobian=True, despike_jacobian=True)
+            (dummy_polarmap.data, dummy_polarmap.wcs), wcs_stellar_input, input_data.data.shape,
+            roundtrip_coords=False, return_footprint=False, x_cyclic=True,
+            conserve_flux=True, center_jacobian=True, despike_jacobian=True)
 
         input_data_cel[key].data[...] = input_data_cel[key].data + polar_roi * starfield_data
 
-    output_data = solpolpy.resolve(input_data_cel, "MZP") # solar MZP
-
-    return output_data
+    return solpolpy.resolve(input_data_cel, 'MZP')  # solar MZP
 
 def add_starfield_clear(input_data: NDCube) -> NDCube:
     """Add synthetic starfield."""
@@ -257,6 +247,7 @@ def remix_polarization(input_data: NDCube) -> NDCube:
 
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
+
 @task
 def generate_l2_ptm(input_file: str, path_output: str) -> None:
     """Generate level 2 PTM synthetic data."""
@@ -273,7 +264,7 @@ def generate_l2_ptm(input_file: str, path_output: str) -> None:
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(output_wcs)
     for key in output_header:
-        if (key in input_pdata.meta) and output_header[key] == "" and key not in  ("COMMENT", "HISTORY"):
+        if (key in input_pdata.meta) and output_header[key] == "" and key not in ("COMMENT", "HISTORY"):
             output_meta[key].value = input_pdata.meta[key].value
     output_meta["DESCRPTN"] = "Simulated " + output_meta["DESCRPTN"].value
     output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value

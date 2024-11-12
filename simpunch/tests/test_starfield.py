@@ -31,6 +31,7 @@ def sample_ndcube() -> NDCube:
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 
+@pytest.fixture
 def sample_ndcollection() -> NDCollection:
     input_data = sample_ndcube((2048, 2048))
     sample_collection = NDCollection(

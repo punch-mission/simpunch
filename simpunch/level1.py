@@ -293,9 +293,9 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
         aligned_axes="all")
 
     output_mzp = add_starfield_polarized(output_collection)
-    output_mdata = output_mzp["-60.0 deg"]
-    output_zdata = output_mzp["0.0 deg"]
-    output_pdata = output_mzp["60.0 deg"]
+    output_mdata = output_mzp["M"]
+    output_zdata = output_mzp["Z"]
+    output_pdata = output_mzp["P"]
 
     output_pdata = update_spacecraft_location(output_pdata, output_pdata.meta.astropy_time)
     output_mdata = update_spacecraft_location(output_mdata, output_mdata.meta.astropy_time)
