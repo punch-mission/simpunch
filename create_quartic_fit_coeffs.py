@@ -27,5 +27,5 @@ meta['DATE-OBS'] = str(datetime.now())
 wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
 nfi_cube = NDCube(data=nfi_quartic, meta=meta, wcs=WCS(naxis=3))
 
-write_ndcube_to_fits(wfi_cube.data, "wfi_quartic_coeffs.fits")
-write_ndcube_to_fits(nfi_cube.data, "nfi_quartic_coeffs.fits")
+write_ndcube_to_fits(wfi_cube, "wfi_quartic_coeffs.fits")
+write_ndcube_to_fits(nfi_cube, "nfi_quartic_coeffs.fits")
