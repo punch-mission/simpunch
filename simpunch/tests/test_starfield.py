@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube, NDCollection
+from ndcube import NDCollection, NDCube
 from punchbowl.data import NormalizedMetadata
 
 from simpunch.level2 import add_starfield_clear, add_starfield_polarized
