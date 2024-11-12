@@ -33,7 +33,16 @@ def sample_ndcube() -> NDCube:
 
 @pytest.fixture
 def sample_ndcollection() -> NDCollection:
-    input_data = sample_ndcube((2048, 2048))
+    shape = (2048, 2048)
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.1, 0.1
+    wcs.wcs.crpix = 0, 0
+    wcs.wcs.crval = 1, 1
+    wcs.wcs.cname = "HPC lon", "HPC lat"
+
+    input_data = NDCube(np.random.random(shape).astype(np.float32),  wcs=wcs)
     return NDCollection(
             [("-60.0 deg", input_data),
              ("0.0 deg", input_data),
