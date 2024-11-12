@@ -21,7 +21,7 @@ nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 wfi_quartic[-2, :, :] /= wfi_vignette
 nfi_quartic[-2, :, :] /= nfi_vignette
 
-meta = NormalizedMetadata.load_template("FQ1", "0")
+meta = NormalizedMetadata.load_template("FQ1", "1")
 meta['DATE-OBS'] = str(datetime.now())
 
 wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
