@@ -18,7 +18,7 @@ nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 wfi_quartic[:, :, -2] /= wfi_vignette.data
 nfi_quartic[:, :, -2] /= nfi_vignette.data
 
-meta = NormalizedMetadata.load_template("0", "FQ1")
+meta = NormalizedMetadata.load_template("FQ1", "1")
 
 wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
 nfi_cube = NDCube(data=nfi_quartic, meta=meta, wcs=WCS(naxis=3))
