@@ -9,11 +9,11 @@ nfi_vignetting_model_path = "./build_3_review_files/PUNCH_L1_GM4_20240819045110_
 wfi_vignette = load_ndcube_from_fits(wfi_vignetting_model_path).data[...] + 1E-8
 nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path).data[...] + 1E-8
 
-wfi_quartic = create_constant_quartic_coefficients((2048, 2048))
-nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
+wfi_quartic = create_constant_quartic_coefficients((2048, 2048)).T
+nfi_quartic = create_constant_quartic_coefficients((2048, 2048)).T
 
-wfi_quartic[:, :, -2] /= wfi_vignette
-nfi_quartic[:, :, -2] /= nfi_vignette
+wfi_quartic[-2, :, :] /= wfi_vignette
+nfi_quartic[-2, :, :] /= nfi_vignette
 
-HDUList([PrimaryHDU(), ImageHDU(data=wfi_quartic)]).writeto("wfi_quartic_coeffs.fits")
-HDUList([PrimaryHDU(), ImageHDU(data=nfi_quartic)]).writeto("nfi_quartic_coeffs.fits")
+HDUList([PrimaryHDU(), CompImageHDU(data=wfi_quartic)]).writeto("wfi_quartic_coeffs.fits")
+HDUList([PrimaryHDU(), CompImageHDU(data=nfi_quartic)]).writeto("nfi_quartic_coeffs.fits")
