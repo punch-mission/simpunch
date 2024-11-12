@@ -44,6 +44,12 @@ def generate_flow(gamera_directory: str,
                 new_name = 	f"PUNCH_L0_{type_code}{obs_code}_{time_str}_v1.fits"
                 shutil.copy(psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
 
+        # duplicate the quartic model
+        type_code = "FQ"
+        for obs_code in ["1", "2", "3", "4"]:
+            new_name = 	f"PUNCH_L0_{type_code}{obs_code}_{time_str}_v1.fits"
+            shutil.copy(psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
+
     if update_database:
         from punchpipe import __version__
         from punchpipe.controlsegment.db import File
