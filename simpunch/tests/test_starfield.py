@@ -34,12 +34,11 @@ def sample_ndcube() -> NDCube:
 @pytest.fixture
 def sample_ndcollection() -> NDCollection:
     input_data = sample_ndcube((2048, 2048))
-    sample_collection = NDCollection(
+    return NDCollection(
             [("-60.0 deg", input_data),
              ("0.0 deg", input_data),
              ("60.0 deg", input_data)],
             aligned_axes="all")
-    return sample_collection
 
 def test_starfield(sample_ndcube: NDCube) -> None:
     """Test starfield generation."""

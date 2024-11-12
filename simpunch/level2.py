@@ -140,7 +140,7 @@ def generate_starfield(wcs: WCS,
 
 def generate_dummy_polarization(map_scale: float = 0.225,
                                 pol_factor: float = 0.5) -> NDCube:
-    """Create a synthetic polarization map"""
+    """Create a synthetic polarization map."""
     shape = [int(floor(180 / map_scale)), int(floor(360 / map_scale))]
     xcoord = np.linspace(-pol_factor, pol_factor, shape[1])
     ycoord = np.linspace(-pol_factor, pol_factor, shape[0])
