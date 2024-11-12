@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
+from ndcube import NDCube, NDCollection
 from punchbowl.data import NormalizedMetadata
 
-from simpunch.level2 import add_starfield_clear
+from simpunch.level2 import add_starfield_clear, add_starfield_polarized
 
 
 @pytest.fixture
@@ -31,6 +31,14 @@ def sample_ndcube() -> NDCube:
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 
+def sample_ndcollection() -> NDCollection:
+    input_data = sample_ndcube((2048, 2048))
+    sample_collection = NDCollection(
+            [("-60.0 deg", input_data),
+             ("0.0 deg", input_data),
+             ("60.0 deg", input_data)],
+            aligned_axes="all")
+    return sample_collection
 
 def test_starfield(sample_ndcube: NDCube) -> None:
     """Test starfield generation."""
@@ -39,3 +47,11 @@ def test_starfield(sample_ndcube: NDCube) -> None:
     output_data = add_starfield_clear(input_data)
 
     assert isinstance(output_data, NDCube)
+
+def test_polarized_starfield(sample_ndcollection: NDCollection) -> None:
+    """Test polarized starfield generation."""
+    input_data = sample_ndcollection()
+
+    output_data = add_starfield_polarized(input_data)
+
+    assert isinstance(output_data, NDCollection)
