@@ -25,9 +25,9 @@ from simpunch.util import update_spacecraft_location, write_array_to_fits
 
 def perform_photometric_uncalibration(input_data: NDCube, coefficient_array: np.ndarray) -> NDCube:
     """Undo quartic fit calibration."""
-    num_coefficients = coefficient_array.shape[2]
+    num_coefficients = coefficient_array.shape[0]
     new_data = np.sum(
-        [coefficient_array[..., i] / np.power(input_data.data, num_coefficients - i - 1)
+        [coefficient_array[i, ...] / np.power(input_data.data, num_coefficients - i - 1)
          for i in range(num_coefficients)], axis=0)
     input_data.data[...] = new_data[...]
     return input_data
