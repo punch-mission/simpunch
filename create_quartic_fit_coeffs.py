@@ -26,5 +26,5 @@ meta['DATE-OBS'] = str(datetime.now())
 wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
 nfi_cube = NDCube(data=nfi_quartic, meta=meta, wcs=WCS(naxis=3))
 
-HDUList(PrimaryHDU(), CompImageHDU(wfi_cube)).writeto("wfi_quartic_coeffs.fits")
-HDUList(PrimaryHDU(), CompImageHDU(nfi_cube)).writeto("nfi_quartic_coeffs.fits")
+HDUList(PrimaryHDU(), CompImageHDU(wfi_quartic)).writeto("wfi_quartic_coeffs.fits")
+HDUList(PrimaryHDU(), CompImageHDU(nfi_quartic)).writeto("nfi_quartic_coeffs.fits")
