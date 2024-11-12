@@ -21,7 +21,7 @@ from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
 from sunpy.coordinates import sun
 from tqdm import tqdm
 
-from simpunch.level2 import add_starfield_clear
+from simpunch.level2 import add_starfield_clear, add_starfield_polarized
 from simpunch.util import update_spacecraft_location
 
 CURRENT_DIR = os.path.dirname(__file__)
@@ -285,9 +285,17 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_zdata = add_distortion(output_zdata)
     output_pdata = add_distortion(output_pdata)
 
-    output_mdata = add_starfield_clear(output_mdata)
-    output_zdata = add_starfield_clear(output_zdata)
-    output_pdata = add_starfield_clear(output_pdata)
+    # Add polarized starfield
+    output_collection = NDCollection(
+        [("-60.0 deg", output_mdata),
+         ("0.0 deg", output_zdata),
+         ("60.0 deg", output_pdata)],
+        aligned_axes="all")
+
+    output_mzp = add_starfield_polarized(output_collection)
+    output_mdata = output_mzp["-60.0 deg"]
+    output_zdata = output_mzp["0.0 deg"]
+    output_pdata = output_mzp["60.0 deg"]
 
     output_pdata = update_spacecraft_location(output_pdata, output_pdata.meta.astropy_time)
     output_mdata = update_spacecraft_location(output_mdata, output_mdata.meta.astropy_time)
