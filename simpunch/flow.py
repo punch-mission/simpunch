@@ -4,6 +4,7 @@ import os
 import shutil
 from datetime import datetime
 
+from asyncpg.pgproto.pgproto import timedelta
 from prefect import flow
 
 from simpunch.level0 import generate_l0_all
@@ -25,7 +26,7 @@ def generate_flow(gamera_directory: str,
                   update_database: bool = True) -> None:
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
-        start_time = datetime.now()  # noqa: DTZ005
+        start_time = datetime.now() - timedelta(days=3) # noqa: DTZ005
     time_str = start_time.strftime("%Y%m%d%H%M%S")
 
     if generate_new:
