@@ -30,7 +30,10 @@ def generate_flow(gamera_directory: str,
     generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
     generate_l2_all(gamera_directory)
     generate_l1_all(gamera_directory)
-    generate_l0_all(gamera_directory, psf_model_path, wfi_vignetting_model_path, nfi_vignetting_model_path,
+    generate_l0_all(gamera_directory,
+                    psf_model_path,
+                    wfi_vignetting_model_path,
+                    nfi_vignetting_model_path,
                     transient_probability=transient_probability)
 
     # duplicate the psf model to all required versions
@@ -64,7 +67,7 @@ def generate_flow(gamera_directory: str,
             shutil.copy(file_path, os.path.join(output_dir, file_name))
 
             db_entry = File(
-                level=0,
+                level=level,
                 file_type=file_type,
                 observatory=observatory,
                 file_version=version,
