@@ -2,7 +2,7 @@
 
 from astropy.wcs import WCS
 from ndcube import NDCube
-from punchbowl.data import write_ndcube_to_fits
+from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import load_ndcube_from_fits
 from punchbowl.level1.quartic_fit import create_constant_quartic_coefficients
 
@@ -18,9 +18,10 @@ nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 wfi_quartic[:, :, -2] /= wfi_vignette.data
 nfi_quartic[:, :, -2] /= nfi_vignette.data
 
+meta = NormalizedMetadata.load_template("0", "FQ1")
 
-wfi_cube = NDCube(data=wfi_quartic, meta={"DSATVAL": 1E8}, wcs=WCS(naxis=3))
-nfi_cube = NDCube(data=nfi_quartic, meta={"DSATVAL": 1E8}, wcs=WCS(naxis=5))
+wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
+nfi_cube = NDCube(data=nfi_quartic, meta=meta, wcs=WCS(naxis=3))
 
 write_ndcube_to_fits(wfi_cube, "wfi_quartic_coeffs.fits", skip_stats=True)
 write_ndcube_to_fits(nfi_cube, "nfi_quartic_coeffs.fits", skip_stats=True)
