@@ -8,11 +8,8 @@ import os
 import astropy.time
 import astropy.units as u
 import numpy as np
-import solpolpy
-import scipy
-import scipy.ndimage
 import reproject
-
+import solpolpy
 from astropy.modeling.models import Gaussian2D
 from astropy.table import QTable
 from astropy.wcs import WCS
@@ -152,7 +149,7 @@ def generate_dummy_polarization(shape = [1800,900],
     wcs_sky.wcs.cdelt = np.array([-map_scale, map_scale])
     wcs_sky.wcs.crval = [180.0, 0.0]
     wcs_sky.wcs.ctype = ["RA---CAR", "DEC--CAR"]
-    wcs_sky.wcs.cunit = 'deg', 'deg'
+    wcs_sky.wcs.cunit = "deg", "deg"
 
     dummy = NDCube(data=Z, wcs=wcs_sky)
     return dummy
@@ -175,7 +172,7 @@ def generate_dummy_polarization(shape = [1800,900],
 
 def add_starfield_polarized(input_collection: NDCollection, polfactor=[0.2, 0.3, 0.5]) -> NDCollection:
     """Add synthetic starfield."""
-    input_data = input_collection['0.0 deg']
+    input_data = input_collection["0.0 deg"]
     wcs_stellar_input = calculate_celestial_wcs_from_helio(input_data.wcs,
                                                            input_data.meta.astropy_time,
                                                            input_data.data.shape)
@@ -187,12 +184,12 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor=[0.2, 0.3,
     starfield_data[:, :] = starfield * (np.logical_not(np.isclose(input_data.data, 0, atol=1E-18)))
 
     #Converting the input data polarization to celestial basis
-    mzp_angles = ([input_cube.meta['POLAR'] for label, input_cube in input_collection.items() if label != 'alpha'] * u.degree)
-    cel_north_off = get_p_angle(time=input_collection['0.0 deg'].meta['DATE-OBS'])
+    mzp_angles = ([input_cube.meta["POLAR"] for label, input_cube in input_collection.items() if label != "alpha"] * u.degree)
+    cel_north_off = get_p_angle(time=input_collection["0.0 deg"].meta["DATE-OBS"])
     new_angles = mzp_angles - cel_north_off # or +? confirm!
 
-    input_data_cel = solpolpy.resolve(input_collection, 'npol', out_angles=new_angles)
-    valid_keys = [key for key in input_data_cel.keys() if key != 'alpha']
+    input_data_cel = solpolpy.resolve(input_collection, "npol", out_angles=new_angles)
+    valid_keys = [key for key in input_data_cel.keys() if key != "alpha"]
 
     for k, key in enumerate(valid_keys):
         dummy_polarmap = generate_dummy_polarization(pol_factor=polfactor[k])
@@ -204,7 +201,7 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor=[0.2, 0.3,
 
         input_data_cel[key].data[...] = input_data_cel[key].data + polar_roi * starfield_data
 
-    output_data = solpolpy.resolve(input_data_cel, 'MZP') #solar MZP
+    output_data = solpolpy.resolve(input_data_cel, "MZP") #solar MZP
 
     return output_data
 
