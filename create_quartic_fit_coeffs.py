@@ -1,4 +1,5 @@
 # ruff: noqa
+from datetime import datetime
 
 from astropy.wcs import WCS
 from ndcube import NDCube
@@ -19,6 +20,7 @@ wfi_quartic[:, :, -2] /= wfi_vignette.data
 nfi_quartic[:, :, -2] /= nfi_vignette.data
 
 meta = NormalizedMetadata.load_template("FQ1", "1")
+meta['DATE-OBS'] = str(datetime.now())
 
 wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
 nfi_cube = NDCube(data=nfi_quartic, meta=meta, wcs=WCS(naxis=3))
