@@ -21,26 +21,28 @@ def generate_flow(gamera_directory: str,
                   num_repeats: int = 1,
                   start_time: datetime | None = None,
                   transient_probability: float = 0.03,
+                  generate_new: bool = True,
                   update_database: bool = True) -> None:
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
         start_time = datetime.now()  # noqa: DTZ005
     time_str = start_time.strftime("%Y%m%d%H%M%S")
 
-    generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
-    generate_l2_all(gamera_directory)
-    generate_l1_all(gamera_directory)
-    generate_l0_all(gamera_directory,
-                    psf_model_path,
-                    wfi_vignetting_model_path,
-                    nfi_vignetting_model_path,
-                    transient_probability=transient_probability)
+    if generate_new:
+        generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
+        generate_l2_all(gamera_directory)
+        generate_l1_all(gamera_directory)
+        generate_l0_all(gamera_directory,
+                        psf_model_path,
+                        wfi_vignetting_model_path,
+                        nfi_vignetting_model_path,
+                        transient_probability=transient_probability)
 
-    # duplicate the psf model to all required versions
-    for type_code in ["RM", "RZ", "RP", "RC"]:
-        for obs_code in ["1", "2", "3", "4"]:
-            new_name = 	f"PUNCH_L0_{type_code}{obs_code}_{time_str}_v1.fits"
-            shutil.copy(psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
+        # duplicate the psf model to all required versions
+        for type_code in ["RM", "RZ", "RP", "RC"]:
+            for obs_code in ["1", "2", "3", "4"]:
+                new_name = 	f"PUNCH_L0_{type_code}{obs_code}_{time_str}_v1.fits"
+                shutil.copy(psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
 
     if update_database:
         from punchpipe import __version__
