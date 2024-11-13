@@ -25,6 +25,7 @@ def generate_flow(gamera_directory: str,
                   num_repeats: int = 1,
                   start_time: datetime | None = None,
                   transient_probability: float = 0.03,
+                  shift_pointing: bool = False,
                   generate_new: bool = True,
                   update_database: bool = True) -> None:
     """Generate all the products in the reverse pipeline."""
@@ -39,6 +40,7 @@ def generate_flow(gamera_directory: str,
                         backward_psf_model_path,
                         wfi_quartic_backward_model_path,
                         nfi_quartic_backward_model_path,
+                        shift_pointing=shift_pointing,
                         transient_probability=transient_probability)
 
         model_time = start_time - timedelta(days=5)

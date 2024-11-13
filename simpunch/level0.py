@@ -114,7 +114,8 @@ def generate_l0_pmzp(input_file: NDCube,
                      psf_model: ArrayPSFTransform,
                      wfi_quartic_coefficients: np.ndarray,
                      nfi_quartic_coefficients: np.ndarray,
-                     transient_probability: float=0.03) -> None:
+                     transient_probability: float=0.03,
+                     shift_pointing: bool=False) -> None:
     """Generate level 0 polarized synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
 
@@ -134,7 +135,11 @@ def generate_l0_pmzp(input_file: NDCube,
             output_meta[key] = input_data.meta[key].value
 
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
-    output_data, original_wcs = starfield_misalignment(input_data)
+    if shift_pointing:
+        output_data, original_wcs = starfield_misalignment(input_data)
+    else:
+        output_data = input_data
+        original_wcs = input_data.wcs.copy()
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
 
@@ -189,7 +194,8 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
                    psf_model: ArrayPSFTransform,
                    wfi_quartic_coefficients: np.ndarray,
                    nfi_quartic_coefficients: np.ndarray,
-                   transient_probability: float = 0.03) -> None:
+                   transient_probability: float = 0.03,
+                   shift_pointing: bool=False) -> None:
     """Generate level 0 clear synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
 
@@ -209,7 +215,11 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
             output_meta[key] = input_data.meta[key].value
 
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
-    output_data, original_wcs = starfield_misalignment(input_data)
+    if shift_pointing:
+        output_data, original_wcs = starfield_misalignment(input_data)
+    else:
+        output_data = input_data
+        original_wcs = input_data.wcs.copy()
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
     output_data = add_stray_light(output_data)
@@ -262,7 +272,8 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
 ))
 def generate_l0_all(datadir: str, psf_model_path: str,
                     wfi_quartic_coeffs_path: str, nfi_quartic_coeffs_path: str,
-                    transient_probability: float = 0.03) -> None:
+                    transient_probability: float = 0.03,
+                    shift_pointing: bool = False) -> None:
     """Generate all level 0 synthetic data."""
     print(f"Running from {datadir}")
     outdir = os.path.join(datadir, "synthetic_l0/")
@@ -282,9 +293,9 @@ def generate_l0_all(datadir: str, psf_model_path: str,
     futures = []
     for file_l1 in tqdm(files_l1, total=len(files_l1)):
         futures.append(generate_l0_pmzp.submit(file_l1, outdir, psf_model, # noqa: PERF401
-                                  wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability))
+                                  wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability, shift_pointing))
 
     for file_cr in tqdm(files_cr, total=len(files_cr)):
         futures.append(generate_l0_cr.submit(file_cr, outdir, psf_model,  # noqa: PERF401
-                                    wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability))
+                                    wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability, shift_pointing))
     wait(futures)
