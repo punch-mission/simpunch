@@ -34,13 +34,13 @@ def sample_ndcube() -> NDCube:
 
 
 @pytest.fixture
-def sample_ndcollection():
+def sample_ndcollection() -> callable:
     def _create_sample_ndcollection(shape: tuple) -> NDCollection:
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = ["HPLN-ARC", "HPLT-ARC"]
         wcs.wcs.cunit = ["deg", "deg"]
         wcs.wcs.cdelt = [0.1, 0.1]
-        wcs.wcs.crpix = [shape[1] // 2, shape[0] // 2]  # Center pixel for the WCS
+        wcs.wcs.crpix = [shape[1] // 2, shape[0] // 2]
         wcs.wcs.crval = [1, 1]
         wcs.wcs.cname = ["HPC lon", "HPC lat"]
 
