@@ -4,6 +4,7 @@ import os
 import shutil
 from datetime import datetime
 
+from asyncpg.pgproto.pgproto import timedelta
 from prefect import flow
 
 from simpunch.level0 import generate_l0_all
@@ -16,31 +17,42 @@ from simpunch.level3 import generate_l3_all
 def generate_flow(gamera_directory: str,
                   output_directory: str,
                   psf_model_path: str,
-                  wfi_vignetting_model_path: str,
-                  nfi_vignetting_model_path: str,
+                  wfi_quartic_model_path: str,
+                  nfi_quartic_model_path: str,
                   num_repeats: int = 1,
                   start_time: datetime | None = None,
                   transient_probability: float = 0.03,
+                  generate_new: bool = True,
                   update_database: bool = True) -> None:
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
-        start_time = datetime.now()  # noqa: DTZ005
+        start_time = datetime.now() - timedelta(days=3) # noqa: DTZ005
     time_str = start_time.strftime("%Y%m%d%H%M%S")
 
-    generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
-    generate_l2_all(gamera_directory)
-    generate_l1_all(gamera_directory)
-    generate_l0_all(gamera_directory,
-                    psf_model_path,
-                    wfi_vignetting_model_path,
-                    nfi_vignetting_model_path,
-                    transient_probability=transient_probability)
+    if generate_new:
+        generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
+        generate_l2_all(gamera_directory)
+        generate_l1_all(gamera_directory)
+        generate_l0_all(gamera_directory,
+                        psf_model_path,
+                        wfi_quartic_model_path,
+                        nfi_quartic_model_path,
+                        transient_probability=transient_probability)
 
-    # duplicate the psf model to all required versions
-    for type_code in ["RM", "RZ", "RP", "RC"]:
-        for obs_code in ["1", "2", "3", "4"]:
-            new_name = 	f"PUNCH_L0_{type_code}{obs_code}_{time_str}_v1.fits"
-            shutil.copy(psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
+        # duplicate the psf model to all required versions
+        for type_code in ["RM", "RZ", "RP", "RC"]:
+            for obs_code in ["1", "2", "3", "4"]:
+                new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{time_str}_v1.fits"
+                shutil.copy(psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
+
+        # duplicate the quartic model
+        type_code = "FQ"
+        for obs_code in ["1", "2", "3"]:
+            new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{time_str}_v1.fits"
+            shutil.copy(wfi_quartic_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
+        obs_code = "4"
+        new_name = f"PUNCH_L1_{type_code}{obs_code}_{time_str}_v1.fits"
+        shutil.copy(nfi_quartic_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
 
     if update_database:
         from punchpipe import __version__
@@ -50,7 +62,7 @@ def generate_flow(gamera_directory: str,
         for file_path in sorted(glob.glob(os.path.join(gamera_directory, "synthetic_l0/*v[0-9].fits")),
                                 key=lambda s: os.path.basename(s)[13:27]):
             file_name = os.path.basename(file_path)
-            level = "0"
+            level = file_name[7]
             file_type = file_name[9:11]
             observatory = file_name[11]
             year = file_name[13:17]
