@@ -29,8 +29,7 @@ def generate_flow(gamera_directory: str,
                   update_database: bool = True) -> None:
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
-        start_time = datetime.now() - timedelta(days=3) # noqa: DTZ005
-    time_str = start_time.strftime("%Y%m%d%H%M%S")
+        start_time = datetime.now() # noqa: DTZ005
 
     if generate_new:
         generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
@@ -42,19 +41,22 @@ def generate_flow(gamera_directory: str,
                         nfi_quartic_backward_model_path,
                         transient_probability=transient_probability)
 
+        model_time = start_time - timedelta(days=3)
+        model_time_str = model_time.strftime("%Y%m%d%H%M%S")
+
         # duplicate the psf model to all required versions
         for type_code in ["RM", "RZ", "RP", "RC"]:
             for obs_code in ["1", "2", "3", "4"]:
-                new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{time_str}_v1.fits"
+                new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{model_time_str}_v1.fits"
                 shutil.copy(forward_psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
 
         # duplicate the quartic model
         type_code = "FQ"
         for obs_code in ["1", "2", "3"]:
-            new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{time_str}_v1.fits"
+            new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{model_time_str}_v1.fits"
             shutil.copy(wfi_quartic_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
         obs_code = "4"
-        new_name = f"PUNCH_L1_{type_code}{obs_code}_{time_str}_v1.fits"
+        new_name = f"PUNCH_L1_{type_code}{obs_code}_{model_time_str}_v1.fits"
         shutil.copy(nfi_quartic_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
 
     if update_database:
