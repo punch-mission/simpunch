@@ -41,7 +41,7 @@ def generate_flow(gamera_directory: str,
                         nfi_quartic_backward_model_path,
                         transient_probability=transient_probability)
 
-        model_time = start_time - timedelta(days=3)
+        model_time = start_time - timedelta(days=5)
         model_time_str = model_time.strftime("%Y%m%d%H%M%S")
 
         # duplicate the psf model to all required versions
