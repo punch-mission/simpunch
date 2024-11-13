@@ -62,9 +62,6 @@ coords = calculate_covering((img_size, img_size), psf_size)
 initial = baked_in_initial_psf.as_array_psf(coords, psf_size)
 synthetic = synthetic_psf.as_array_psf(coords, psf_size)
 
-synthetic.visualize_psfs()
-plt.show()
-
 backward_corrector = ArrayPSFTransform.construct(initial, synthetic, alpha=3.0, epsilon=0.2)
 backward_corrector.save(Path("synthetic_backward_psf.fits"))
 
