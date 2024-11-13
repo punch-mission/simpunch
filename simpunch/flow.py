@@ -16,7 +16,8 @@ from simpunch.level3 import generate_l3_all
 @flow(log_prints=True)
 def generate_flow(gamera_directory: str,
                   output_directory: str,
-                  psf_model_path: str,
+                  forward_psf_model_path: str,
+                  backward_psf_model_path: str,
                   wfi_quartic_backward_model_path: str,
                   nfi_quartic_backward_model_path: str,
                   wfi_quartic_model_path: str,
@@ -36,7 +37,7 @@ def generate_flow(gamera_directory: str,
         generate_l2_all(gamera_directory)
         generate_l1_all(gamera_directory)
         generate_l0_all(gamera_directory,
-                        psf_model_path,
+                        backward_psf_model_path,
                         wfi_quartic_backward_model_path,
                         nfi_quartic_backward_model_path,
                         transient_probability=transient_probability)
@@ -45,7 +46,7 @@ def generate_flow(gamera_directory: str,
         for type_code in ["RM", "RZ", "RP", "RC"]:
             for obs_code in ["1", "2", "3", "4"]:
                 new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{time_str}_v1.fits"
-                shutil.copy(psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
+                shutil.copy(forward_psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
 
         # duplicate the quartic model
         type_code = "FQ"
