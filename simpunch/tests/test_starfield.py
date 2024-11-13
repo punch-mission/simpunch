@@ -50,7 +50,7 @@ def sample_ndcollection():
             [("-60.0 deg", input_data),
              ("0.0 deg", input_data),
              ("60.0 deg", input_data)],
-            aligned_axes="all"
+            aligned_axes="all",
         )
     return _create_sample_ndcollection
 
