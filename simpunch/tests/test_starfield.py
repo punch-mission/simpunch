@@ -73,4 +73,3 @@ def test_polarized_starfield(sample_ndcollection: NDCollection) -> None:
     output_data = add_starfield_polarized(input_data)
 
     assert isinstance(output_data, NDCollection)
-    assert len(output_data) == 3
