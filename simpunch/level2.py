@@ -172,7 +172,7 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     starfield_data[:, :] = starfield * (np.logical_not(np.isclose(input_data.data, 0, atol=1E-18)))
 
     # Converting the input data polarization to celestial basis
-    mzp_angles = u.Quantity([input_cube.meta["POLAR"] for label, input_cube in input_collection.items() if
+    mzp_angles = u.Quantity([input_cube.meta["POLAR"].value for label, input_cube in input_collection.items() if
                    label != "alpha"], unit=u.degree)
     cel_north_off = get_p_angle(time=input_collection["0.0 deg"].meta["DATE-OBS"])
     new_angles = mzp_angles - cel_north_off  # or +? confirm!
