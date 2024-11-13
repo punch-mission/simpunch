@@ -18,8 +18,8 @@ nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path).data[...] + 1E-8
 wfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 
-wfi_quartic[-2, :, :] /= wfi_vignette
-nfi_quartic[-2, :, :] /= nfi_vignette
+wfi_quartic[-2, :, :] = 1/wfi_vignette
+nfi_quartic[-2, :, :] = 1/nfi_vignette
 
 meta = NormalizedMetadata.load_template("FQ1", "1")
 meta['DATE-OBS'] = str(datetime.now())
