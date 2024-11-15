@@ -4,13 +4,14 @@ import os
 import shutil
 from datetime import datetime
 
+import numpy as np
 from asyncpg.pgproto.pgproto import timedelta
 from prefect import flow
 
 from simpunch.level0 import generate_l0_all
 from simpunch.level1 import generate_l1_all
 from simpunch.level2 import generate_l2_all
-from simpunch.level3 import generate_l3_all
+from simpunch.level3 import generate_l3_all_fixed
 
 
 @flow(log_prints=True)
@@ -31,11 +32,22 @@ def generate_flow(gamera_directory: str,
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
         start_time = datetime.now() # noqa: DTZ005
+        start_time = datetime(2024, 11, 13, 15, 20, 23)
 
     if generate_new:
-        #generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
-        #generate_l2_all(gamera_directory)
-        #generate_l1_all(gamera_directory)
+        time_delta = timedelta(days=1)
+        files_tb = sorted(glob.glob(gamera_directory + "/synthetic_cme/*_TB.fits"))
+        files_pb = sorted(glob.glob(gamera_directory + "/synthetic_cme/*_PB.fits"))
+
+        previous_month = np.arange(1, -30, -1) * time_delta + start_time
+        generate_l3_all_fixed(gamera_directory, previous_month, files_pb[0], files_tb[0])
+
+        next_month = np.arange(1, 30) * time_delta + start_time
+        generate_l3_all_fixed(gamera_directory, next_month, files_pb[-1], files_tb[-1])
+
+        # generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
+        generate_l2_all(gamera_directory)
+        generate_l1_all(gamera_directory)
         generate_l0_all(gamera_directory,
                         backward_psf_model_path,
                         wfi_quartic_backward_model_path,
@@ -43,7 +55,7 @@ def generate_flow(gamera_directory: str,
                         shift_pointing=shift_pointing,
                         transient_probability=transient_probability)
 
-        model_time = start_time - timedelta(days=5)
+        model_time = start_time - timedelta(days=35)
         model_time_str = model_time.strftime("%Y%m%d%H%M%S")
 
         # duplicate the psf model to all required versions

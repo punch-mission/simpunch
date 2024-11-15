@@ -7,7 +7,7 @@ from random import random
 import astropy.units as u
 import numpy as np
 from ndcube import NDCube
-from prefect import flow, task, unmapped
+from prefect import flow, task
 from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
@@ -17,7 +17,6 @@ from punchbowl.data.wcs import calculate_pc_matrix, extract_crota_from_wcs
 from punchbowl.level1.initial_uncertainty import compute_noise
 from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayPSFTransform
-from tqdm import tqdm
 
 from simpunch.spike import generate_spike_image
 from simpunch.util import update_spacecraft_location, write_array_to_fits
@@ -296,15 +295,7 @@ def generate_l0_all(datadir: str, psf_model_path: str,
     #wfi_quartic_coeffs = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
     #nfi_quartic_coeffs = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
 
-    futures = generate_l0_pmzp.map(files_l1, outdir, psf_model_path, wfi_quartic_coeffs_path, nfi_quartic_coeffs_path, transient_probability, shift_pointing)
-    wait(futures)
-    #for file_l1 in tqdm(files_l1, total=len(files_l1)):
-    #    futures.append(generate_l0_pmzp.submit(file_l1, outdir, psf_model, # noqa: PERF401
-    #                              wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability, shift_pointing))
-
-
-    #for file_cr in tqdm(files_cr, total=len(files_cr)):
-    #    futures.append(generate_l0_cr.submit(file_cr, outdir, psf_model,  # noqa: PERF401
-    #                                wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability, shift_pointing))
-    futures = generate_l0_cr.map(files_cr, outdir, psf_model_path, wfi_quartic_coeffs_path, nfi_quartic_coeffs_path, transient_probability, shift_pointing)
+    futures = []
+    futures.extend(generate_l0_pmzp.map(files_l1, outdir, psf_model_path, wfi_quartic_coeffs_path, nfi_quartic_coeffs_path, transient_probability, shift_pointing))
+    futures.extend(generate_l0_cr.map(files_cr, outdir, psf_model_path, wfi_quartic_coeffs_path, nfi_quartic_coeffs_path, transient_probability, shift_pointing))
     wait(futures)

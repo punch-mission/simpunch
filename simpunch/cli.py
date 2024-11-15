@@ -1,6 +1,5 @@
 """Command line interface."""
 
-import click
 import toml
 from prefect import serve
 
@@ -28,6 +27,7 @@ def automate():
 def load_configuration(configuration_path: str) -> dict:
     """Load a configuration file."""
     return toml.load(configuration_path)
+
 
 if __name__ == "__main__":
     generate("/home/marcus.hughes/build4/punch190_simpunch_config.toml")
