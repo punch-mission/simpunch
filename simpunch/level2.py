@@ -21,8 +21,8 @@ from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, get_p_angle
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, get_p_angle
 from tqdm import tqdm
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
@@ -211,9 +211,9 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     mzp_data_sol = solpolpy.resolve(input_data_cel, "MZP", offset_angle = 0*u.degree)  # solar MZP
 ### WCS is in celestial here?
     valid_keys = [key for key in mzp_data_sol if key != "alpha"]
-    mzp_data_sol[valid_keys[0]].meta.update(POLAR= int(mzp_data_sol[valid_keys[0]].meta['POLAR'].value))
-    mzp_data_sol[valid_keys[1]].meta.update(POLAR = int(mzp_data_sol[valid_keys[1]].meta['POLAR'].value))
-    mzp_data_sol[valid_keys[2]].meta.update(POLAR = int(mzp_data_sol[valid_keys[2]].meta['POLAR'].value))
+    mzp_data_sol[valid_keys[0]].meta.update(POLAR= int(mzp_data_sol[valid_keys[0]].meta["POLAR"].value))
+    mzp_data_sol[valid_keys[1]].meta.update(POLAR = int(mzp_data_sol[valid_keys[1]].meta["POLAR"].value))
+    mzp_data_sol[valid_keys[2]].meta.update(POLAR = int(mzp_data_sol[valid_keys[2]].meta["POLAR"].value))
 
     meta_a = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[0]].meta)
     meta_b = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[1]].meta)
