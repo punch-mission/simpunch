@@ -22,6 +22,7 @@ from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, get_p_angle
+from punchbowl.data.meta import NormalizedMetadata
 from tqdm import tqdm
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
@@ -159,7 +160,7 @@ def generate_dummy_polarization(map_scale: float = 0.225,
 
 def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (0.2, 0.3, 0.5)) -> NDCollection:
     """Add synthetic polarized starfield."""
-    input_data = input_collection["0.0 deg"]
+    input_data = input_collection["Z"]
     wcs_stellar_input = calculate_celestial_wcs_from_helio(input_data.wcs,
                                                            input_data.meta.astropy_time,
                                                            input_data.data.shape)
@@ -172,12 +173,30 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     starfield_data[:, :] = starfield * (np.logical_not(np.isclose(input_data.data, 0, atol=1E-18)))
 
     # Converting the input data polarization to celestial basis
-    mzp_angles = u.Quantity([input_cube.meta["POLAR"].value for label, input_cube in input_collection.items() if
-                   label != "alpha"], unit=u.degree)
-    cel_north_off = get_p_angle(time=input_collection["0.0 deg"].meta["DATE-OBS"])
-    new_angles = mzp_angles - cel_north_off  # or +? confirm!
+    mzp_angles = ([input_cube.meta["POLAR"].value for label, input_cube in input_collection.items() if
+                   label != "alpha"])*u.degree
+    cel_north_off = get_p_angle(time=input_collection["Z"].meta["DATE-OBS"].value)
+    new_angles = (mzp_angles + cel_north_off).value*u.degree  # or +? confirm!
 
-    input_data_cel = solpolpy.resolve(input_collection, "npol", out_angles=new_angles)
+    valid_keys = [key for key in input_collection if key != "alpha"]
+
+    meta_a = dict(NormalizedMetadata.to_fits_header(input_collection[valid_keys[0]].meta,
+                                               wcs = input_collection[valid_keys[0]].wcs))
+    meta_b = dict(NormalizedMetadata.to_fits_header(input_collection[valid_keys[1]].meta,
+                                               wcs = input_collection[valid_keys[1]].wcs))
+    meta_c = dict(NormalizedMetadata.to_fits_header(input_collection[valid_keys[2]].meta,
+                                               wcs = input_collection[valid_keys[2]].wcs))
+
+    data_collection = NDCollection(
+        [(str(valid_keys[0]), NDCube(data=input_collection[valid_keys[0]].data,
+                                     meta = meta_a, wcs=input_collection[valid_keys[0]].wcs)),
+         (str(valid_keys[1]), NDCube(data=input_collection[valid_keys[1]].data,
+                                     meta = meta_b, wcs=input_collection[valid_keys[1]].wcs)),
+         (str(valid_keys[2]), NDCube(data=input_collection[valid_keys[2]].data,
+                                     meta = meta_c, wcs=input_collection[valid_keys[2]].wcs))],
+        aligned_axes="all")
+
+    input_data_cel = solpolpy.resolve(data_collection, "npol", offset_angle = 0*u.degree, out_angles=new_angles)
     valid_keys = [key for key in input_data_cel if key != "alpha"]
 
     for k, key in enumerate(valid_keys):
@@ -187,11 +206,29 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
             (dummy_polarmap.data, dummy_polarmap.wcs), wcs_stellar_input, input_data.data.shape,
             roundtrip_coords=False, return_footprint=False, x_cyclic=True,
             conserve_flux=True, center_jacobian=True, despike_jacobian=True)
-
         input_data_cel[key].data[...] = input_data_cel[key].data + polar_roi * starfield_data
 
-    return solpolpy.resolve(input_data_cel, "MZP")  # solar MZP
+    mzp_data_sol = solpolpy.resolve(input_data_cel, "MZP", offset_angle = 0*u.degree)  # solar MZP
+### WCS is in celestial here?
+    valid_keys = [key for key in mzp_data_sol if key != "alpha"]
+    mzp_data_sol[valid_keys[0]].meta.update(POLAR= int(mzp_data_sol[valid_keys[0]].meta['POLAR'].value))
+    mzp_data_sol[valid_keys[1]].meta.update(POLAR = int(mzp_data_sol[valid_keys[1]].meta['POLAR'].value))
+    mzp_data_sol[valid_keys[2]].meta.update(POLAR = int(mzp_data_sol[valid_keys[2]].meta['POLAR'].value))
 
+    meta_a = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[0]].meta)
+    meta_b = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[1]].meta)
+    meta_c = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[2]].meta)
+
+    input_data_sol = NDCollection(
+        [(str(valid_keys[0]), NDCube(data=mzp_data_sol[valid_keys[0]].data,
+                                     meta = meta_a, wcs=mzp_data_sol[valid_keys[0]].wcs)),
+         (str(valid_keys[1]), NDCube(data=mzp_data_sol[valid_keys[1]].data,
+                                     meta = meta_b, wcs=mzp_data_sol[valid_keys[1]].wcs)),
+         (str(valid_keys[2]), NDCube(data=mzp_data_sol[valid_keys[2]].data,
+                                     meta = meta_c, wcs=mzp_data_sol[valid_keys[2]].wcs))],
+        aligned_axes="all")
+
+    return input_data_sol
 def add_starfield_clear(input_data: NDCube) -> NDCube:
     """Add synthetic starfield."""
     wcs_stellar_input = calculate_celestial_wcs_from_helio(input_data.wcs,

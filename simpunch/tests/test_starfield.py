@@ -61,9 +61,9 @@ def sample_ndcollection() -> callable:
         input_data_p = NDCube(np.random.random(shape).astype(np.float32), wcs=wcs, meta=metap)
 
         return NDCollection(
-            [("-60.0 deg", input_data_m),
-             ("0.0 deg", input_data_z),
-             ("60.0 deg", input_data_p)],
+            [("M", input_data_m),
+             ("Z", input_data_z),
+             ("P", input_data_p)],
             aligned_axes="all",
         )
     return _create_sample_ndcollection
@@ -81,7 +81,7 @@ def test_starfield(sample_ndcube: NDCube) -> None:
 
 def test_polarized_starfield(sample_ndcollection: NDCollection) -> None:
     """Test polarized starfield generation."""
-    shape = (2048, 2048)
+    shape = (128, 128)
     input_data = sample_ndcollection(shape)
 
     output_data = add_starfield_polarized(input_data)
