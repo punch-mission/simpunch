@@ -288,12 +288,9 @@ def generate_l0_all(datadir: str, psf_model_path: str,
     # Parse list of level 1 model data
     files_l1 = glob.glob(datadir + "/synthetic_l1/*L1_P*_v1.fits")
     files_cr = glob.glob(datadir + "/synthetic_l1/*CR*_v1.fits")
-    print(f"Generating based on {len(files_l1)} files.")
+    print(f"Generating based on {len(files_l1)+len(files_cr)} files.")
     files_l1.sort()
-
-    #psf_model = ArrayPSFTransform.load(Path(psf_model_path))
-    #wfi_quartic_coeffs = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
-    #nfi_quartic_coeffs = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
+    files_cr.sort()
 
     futures = []
     futures.extend(generate_l0_pmzp.map(files_l1, outdir, psf_model_path, wfi_quartic_coeffs_path, nfi_quartic_coeffs_path, transient_probability, shift_pointing))
