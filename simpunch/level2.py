@@ -223,7 +223,7 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     meta_b = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[1]].meta)
     meta_c = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[2]].meta)
 
-    input_data_sol = NDCollection(
+    return NDCollection(
         [(str(valid_keys[0]), NDCube(data=mzp_data_sol[valid_keys[0]].data,
                                      meta = meta_a, wcs=mzp_data_sol[valid_keys[0]].wcs)),
          (str(valid_keys[1]), NDCube(data=mzp_data_sol[valid_keys[1]].data,
@@ -232,7 +232,6 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
                                      meta = meta_c, wcs=mzp_data_sol[valid_keys[2]].wcs))],
         aligned_axes="all")
 
-    return input_data_sol
 def add_starfield_clear(input_data: NDCube) -> NDCube:
     """Add synthetic starfield."""
     wcs_stellar_input = calculate_celestial_wcs_from_helio(input_data.wcs,
