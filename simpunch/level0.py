@@ -7,7 +7,7 @@ from random import random
 import astropy.units as u
 import numpy as np
 from ndcube import NDCube
-from prefect import flow, task
+from prefect import flow, task, unmapped
 from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
@@ -111,13 +111,16 @@ def starfield_misalignment(input_data: NDCube,
 @task
 def generate_l0_pmzp(input_file: NDCube,
                      path_output: str,
-                     psf_model: ArrayPSFTransform,
-                     wfi_quartic_coefficients: np.ndarray,
-                     nfi_quartic_coefficients: np.ndarray,
+                     psf_model_path: str, #  ArrayPSFTransform,
+                     wfi_quartic_coeffs_path: str, # np.ndarray,
+                     nfi_quartic_coeffs_path: str, # np.ndarray,
                      transient_probability: float=0.03,
                      shift_pointing: bool=False) -> None:
     """Generate level 0 polarized synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
+    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
+    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
@@ -191,13 +194,16 @@ def generate_l0_pmzp(input_file: NDCube,
 
 @task
 def generate_l0_cr(input_file: NDCube, path_output: str,
-                   psf_model: ArrayPSFTransform,
-                   wfi_quartic_coefficients: np.ndarray,
-                   nfi_quartic_coefficients: np.ndarray,
+                   psf_model_path: str, # ArrayPSFTransform,
+                   wfi_quartic_coeffs_path: str, # np.ndarray,
+                   nfi_quartic_coeffs_path: str, # np.ndarray,
                    transient_probability: float = 0.03,
                    shift_pointing: bool=False) -> None:
     """Generate level 0 clear synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
+    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
+    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
@@ -268,7 +274,7 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
 
 @flow(log_prints=True,
-      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
+      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 32, "threads_per_worker": 2},
 ))
 def generate_l0_all(datadir: str, psf_model_path: str,
                     wfi_quartic_coeffs_path: str, nfi_quartic_coeffs_path: str,
@@ -286,16 +292,19 @@ def generate_l0_all(datadir: str, psf_model_path: str,
     print(f"Generating based on {len(files_l1)} files.")
     files_l1.sort()
 
-    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
-    wfi_quartic_coeffs = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
-    nfi_quartic_coeffs = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
+    #psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    #wfi_quartic_coeffs = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
+    #nfi_quartic_coeffs = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
 
-    futures = []
-    for file_l1 in tqdm(files_l1, total=len(files_l1)):
-        futures.append(generate_l0_pmzp.submit(file_l1, outdir, psf_model, # noqa: PERF401
-                                  wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability, shift_pointing))
+    futures = generate_l0_pmzp.map(files_l1, outdir, psf_model_path, wfi_quartic_coeffs_path, nfi_quartic_coeffs_path, transient_probability, shift_pointing)
+    wait(futures)
+    #for file_l1 in tqdm(files_l1, total=len(files_l1)):
+    #    futures.append(generate_l0_pmzp.submit(file_l1, outdir, psf_model, # noqa: PERF401
+    #                              wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability, shift_pointing))
 
-    for file_cr in tqdm(files_cr, total=len(files_cr)):
-        futures.append(generate_l0_cr.submit(file_cr, outdir, psf_model,  # noqa: PERF401
-                                    wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability, shift_pointing))
+
+    #for file_cr in tqdm(files_cr, total=len(files_cr)):
+    #    futures.append(generate_l0_cr.submit(file_cr, outdir, psf_model,  # noqa: PERF401
+    #                                wfi_quartic_coeffs, nfi_quartic_coeffs, transient_probability, shift_pointing))
+    futures = generate_l0_cr.map(files_cr, outdir, psf_model_path, wfi_quartic_coeffs_path, nfi_quartic_coeffs_path, transient_probability, shift_pointing)
     wait(futures)
