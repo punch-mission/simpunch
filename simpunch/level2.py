@@ -187,9 +187,9 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     meta_c = dict(NormalizedMetadata.to_fits_header(input_collection[valid_keys[2]].meta,
                                                wcs = input_collection[valid_keys[2]].wcs))
 
-    meta_a['POLAR'] = meta_a['POLAR'] * u.degree
-    meta_b['POLAR'] = meta_b['POLAR'] * u.degree
-    meta_c['POLAR'] = meta_c['POLAR'] * u.degree
+    meta_a["POLAR"] = meta_a["POLAR"] * u.degree
+    meta_b["POLAR"] = meta_b["POLAR"] * u.degree
+    meta_c["POLAR"] = meta_c["POLAR"] * u.degree
 
     data_collection = NDCollection(
         [(str(valid_keys[0]), NDCube(data=input_collection[valid_keys[0]].data,
