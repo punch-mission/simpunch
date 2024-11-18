@@ -293,6 +293,10 @@ def generate_l0_all(datadir: str, psf_model_path: str,
     files_cr.sort()
 
     futures = []
-    futures.extend(generate_l0_pmzp.map(files_l1, outdir, psf_model_path, wfi_quartic_coeffs_path, nfi_quartic_coeffs_path, transient_probability, shift_pointing))
-    futures.extend(generate_l0_cr.map(files_cr, outdir, psf_model_path, wfi_quartic_coeffs_path, nfi_quartic_coeffs_path, transient_probability, shift_pointing))
+    futures.extend(generate_l0_pmzp.map(files_l1, outdir, psf_model_path,
+                                        wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
+                                        transient_probability, shift_pointing))
+    futures.extend(generate_l0_cr.map(files_cr, outdir, psf_model_path,
+                                      wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
+                                      transient_probability, shift_pointing))
     wait(futures)

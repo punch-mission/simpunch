@@ -11,7 +11,7 @@ from prefect import flow
 from simpunch.level0 import generate_l0_all
 from simpunch.level1 import generate_l1_all
 from simpunch.level2 import generate_l2_all
-from simpunch.level3 import generate_l3_all_fixed
+from simpunch.level3 import generate_l3_all, generate_l3_all_fixed
 
 
 @flow(log_prints=True)
@@ -45,7 +45,7 @@ def generate_flow(gamera_directory: str,
         next_month = np.linspace(1, 30, int(timedelta(days=30)/time_delta)) * time_delta + start_time
         generate_l3_all_fixed(gamera_directory, next_month, files_pb[-1], files_tb[-1])
 
-        # generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
+        generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
         generate_l2_all(gamera_directory)
         generate_l1_all(gamera_directory)
         generate_l0_all(gamera_directory,
@@ -75,8 +75,8 @@ def generate_flow(gamera_directory: str,
 
     if update_database:
         from punchpipe import __version__
-        from punchpipe.controlsegment.db import File
-        from punchpipe.controlsegment.util import get_database_session
+        from punchpipe.control.db import File
+        from punchpipe.control.util import get_database_session
         db_session = get_database_session()
         for file_path in sorted(glob.glob(os.path.join(gamera_directory, "synthetic_l0/*v[0-9].fits")),
                                 key=lambda s: os.path.basename(s)[13:27]):
