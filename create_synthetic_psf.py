@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import numpy as np
+from matplotlib import pyplot as plt
 from regularizepsf import (ArrayPSFTransform, simple_functional_psf,
                            varied_functional_psf)
 from regularizepsf.util import calculate_covering
@@ -53,7 +54,7 @@ def target_psf(row,
 @varied_functional_psf(target_psf)
 def synthetic_psf(row, col):
     return {"tail_angle": -np.arctan2(row - img_size//2, col - img_size//2),
-            "tail_separation": np.sqrt((row - img_size//2) ** 2 + (col - img_size//2) ** 2)/500 * 2 + 1E-3,
+            "tail_separation": np.sqrt((row - img_size//2) ** 2 + (col - img_size//2) ** 2)/1200 * 2 + 1E-3,
             "core_sigma_x": initial_sigma,
             "core_sigma_y": initial_sigma}
 

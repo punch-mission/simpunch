@@ -20,7 +20,6 @@ from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
-from tqdm import tqdm
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
@@ -271,7 +270,7 @@ def generate_l2_ctm(input_file: str, path_output: str) -> None:
 
 
 @flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2},
+    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
 ))
 def generate_l2_all(datadir: str) -> None:
     """Generate all level 2 synthetic data.
@@ -292,11 +291,6 @@ def generate_l2_all(datadir: str) -> None:
     files_ptm.sort()
 
     futures = []
-    # Run individual generators
-    for file_ptm in tqdm(files_ptm):
-        futures.append(generate_l2_ptm.submit(file_ptm, outdir))  # noqa: PERF401
-
-    for file_ctm in tqdm(files_ctm):
-        futures.append(generate_l2_ctm.submit(file_ctm, outdir))  # noqa: PERF401
-
+    futures.extend(generate_l2_ptm.map(files_ptm, outdir))
+    futures.extend(generate_l2_ctm.map(files_ctm, outdir))
     wait(futures)

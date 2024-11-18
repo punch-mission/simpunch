@@ -215,7 +215,7 @@ def generate_l3_ctm(input_tb: str,
 
 
 @flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2},
+    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
 ))
 def generate_l3_all(datadir: str, start_time: datetime, num_repeats: int = 1) -> None:
     """Generate all level 3 synthetic data."""
@@ -247,4 +247,25 @@ def generate_l3_all(datadir: str, start_time: datetime, num_repeats: int = 1) ->
             in tqdm(enumerate(zip(files_tb, files_pb, times_obs, strict=False)), total=len(files_tb)):
         runs.append(generate_l3_ptm.submit(file_tb, file_pb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
         runs.append(generate_l3_ctm.submit(file_tb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
+    wait(runs)
+
+
+@flow(log_prints=True, task_runner=DaskTaskRunner(
+    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
+))
+def generate_l3_all_fixed(datadir: str, times: list[datetime], file_pb: str, file_tb: str) -> None:
+    """Generate level 3 synthetic data at specified times with a fixed GAMERA model."""
+    # Set file output path
+    print(f"Running from {datadir}")
+    outdir = os.path.join(datadir, "synthetic_l3/")
+    os.makedirs(outdir, exist_ok=True)
+    print(f"Outputting to {outdir}")
+
+    rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
+
+    runs = []
+    for i, time_obs in tqdm(enumerate(times), total=len(times)):
+        runs.append(generate_l3_ptm.submit(file_tb, file_pb, outdir, time_obs, timedelta(minutes=4),
+                                           rotation_indices[i % 8]))
+        runs.append(generate_l3_ctm.submit(file_tb, outdir, time_obs, timedelta(minutes=4), rotation_indices[i % 8]))
     wait(runs)
