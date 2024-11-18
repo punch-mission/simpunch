@@ -17,16 +17,19 @@ from punchbowl.data.wcs import calculate_pc_matrix, extract_crota_from_wcs
 from punchbowl.level1.initial_uncertainty import compute_noise
 from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayPSFTransform
-from tqdm import tqdm
 
 from simpunch.spike import generate_spike_image
 from simpunch.util import update_spacecraft_location, write_array_to_fits
 
 
-def perform_photometric_uncalibration(input_data: NDCube) -> NDCube:
+def perform_photometric_uncalibration(input_data: NDCube, coefficient_array: np.ndarray) -> NDCube:
     """Undo quartic fit calibration."""
+    num_coefficients = coefficient_array.shape[0]
+    new_data = np.nansum(
+        [coefficient_array[i, ...] * np.power(input_data.data, num_coefficients - i - 1)
+         for i in range(num_coefficients)], axis=0)
+    input_data.data[...] = new_data[...]
     return input_data
-
 
 def add_spikes(input_data: NDCube) -> (NDCube, np.ndarray):
     """Add spikes to images."""
@@ -53,20 +56,6 @@ def apply_streaks(input_data: NDCube,
     streak_matrix = create_streak_matrix(input_data.data.shape[0],
                                          exposure_time, readout_line_time, reset_line_time)
     input_data.data[:, :] = streak_matrix @ input_data.data[:, :] / exposure_time
-    return input_data
-
-
-def uncorrect_vignetting(input_data: NDCube,
-                         wfi_vignetting_model_path: str, nfi_vignetting_model_path: str) -> None:
-    """Apply the vignetting function."""
-    if int(input_data.meta["OBSCODE"].value) == 4:  # noqa: PLR2004
-        vignetting_function_path = Path(nfi_vignetting_model_path)
-    else:
-        vignetting_function_path = Path(wfi_vignetting_model_path)
-    cube = load_ndcube_from_fits(vignetting_function_path)
-
-    input_data.data[:, :] *= cube.data[:, :]
-
     return input_data
 
 
@@ -121,18 +110,25 @@ def starfield_misalignment(input_data: NDCube,
 @task
 def generate_l0_pmzp(input_file: NDCube,
                      path_output: str,
-                     psf_model: ArrayPSFTransform,
-                     wfi_vignetting_model_path: str,
-                     nfi_vignetting_model_path: str,
-                     transient_probability: float=0.03) -> None:
+                     psf_model_path: str, #  ArrayPSFTransform,
+                     wfi_quartic_coeffs_path: str, # np.ndarray,
+                     nfi_quartic_coeffs_path: str, # np.ndarray,
+                     transient_probability: float=0.03,
+                     shift_pointing: bool=False) -> None:
     """Generate level 0 polarized synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
+    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
+    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
     product_level = "0"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
     output_meta["DATE-OBS"] = str(input_data.meta.datetime)
+
+    quartic_coefficients = wfi_quartic_coefficients \
+        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coefficients
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(input_data.wcs)
@@ -141,20 +137,19 @@ def generate_l0_pmzp(input_file: NDCube,
             output_meta[key] = input_data.meta[key].value
 
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
-    output_data, original_wcs = starfield_misalignment(input_data)
+    if shift_pointing:
+        output_data, original_wcs = starfield_misalignment(input_data)
+    else:
+        output_data = input_data
+        original_wcs = input_data.wcs.copy()
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
 
     # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data)
-
     output_data = add_deficient_pixels(output_data)
-
-    output_data = uncorrect_vignetting(output_data, wfi_vignetting_model_path, nfi_vignetting_model_path)
-
     output_data = apply_streaks(output_data)
-
-    output_data = perform_photometric_uncalibration(output_data)
+    output_data = perform_photometric_uncalibration(output_data, quartic_coefficients)
 
     if input_data.meta["OBSCODE"].value == "4":
         scaling = {"gain": 4.9 * u.photon / u.DN,
@@ -198,17 +193,25 @@ def generate_l0_pmzp(input_file: NDCube,
 
 @task
 def generate_l0_cr(input_file: NDCube, path_output: str,
-                   psf_model: ArrayPSFTransform,
-                   wfi_vignetting_model_path: str, nfi_vignetting_model_path: str,
-                   transient_probability: float = 0.03) -> None:
+                   psf_model_path: str, # ArrayPSFTransform,
+                   wfi_quartic_coeffs_path: str, # np.ndarray,
+                   nfi_quartic_coeffs_path: str, # np.ndarray,
+                   transient_probability: float = 0.03,
+                   shift_pointing: bool=False) -> None:
     """Generate level 0 clear synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
+    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
+    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
     product_level = "0"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
     output_meta["DATE-OBS"] = str(input_data.meta.datetime)
+
+    quartic_coefficients = wfi_quartic_coefficients \
+        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coefficients
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(input_data.wcs)
@@ -217,14 +220,17 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
             output_meta[key] = input_data.meta[key].value
 
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
-    output_data, original_wcs = starfield_misalignment(input_data)
+    if shift_pointing:
+        output_data, original_wcs = starfield_misalignment(input_data)
+    else:
+        output_data = input_data
+        original_wcs = input_data.wcs.copy()
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
     output_data = add_stray_light(output_data)
     output_data = add_deficient_pixels(output_data)
-    output_data = uncorrect_vignetting(output_data, wfi_vignetting_model_path, nfi_vignetting_model_path)
     output_data = apply_streaks(output_data)
-    output_data = perform_photometric_uncalibration(output_data)
+    output_data = perform_photometric_uncalibration(output_data, quartic_coefficients)
 
     if input_data.meta["OBSCODE"].value == "4":
         scaling = {"gain": 4.9 * u.photon / u.DN,
@@ -267,11 +273,12 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
 
 @flow(log_prints=True,
-      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
+      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 32, "threads_per_worker": 2},
 ))
 def generate_l0_all(datadir: str, psf_model_path: str,
-                    wfi_vignetting_model_path: str, nfi_vignetting_model_path: str,
-                    transient_probability: float = 0.03) -> None:
+                    wfi_quartic_coeffs_path: str, nfi_quartic_coeffs_path: str,
+                    transient_probability: float = 0.03,
+                    shift_pointing: bool = False) -> None:
     """Generate all level 0 synthetic data."""
     print(f"Running from {datadir}")
     outdir = os.path.join(datadir, "synthetic_l0/")
@@ -279,19 +286,17 @@ def generate_l0_all(datadir: str, psf_model_path: str,
     print(f"Outputting to {outdir}")
 
     # Parse list of level 1 model data
-    files_l1 = glob.glob(datadir + "/synthetic_l1/*L1_P*.fits")
-    files_cr = glob.glob(datadir + "/synthetic_l1/*CR*.fits")
-    print(f"Generating based on {len(files_l1)} files.")
+    files_l1 = glob.glob(datadir + "/synthetic_l1/*L1_P*_v1.fits")
+    files_cr = glob.glob(datadir + "/synthetic_l1/*CR*_v1.fits")
+    print(f"Generating based on {len(files_l1)+len(files_cr)} files.")
     files_l1.sort()
-
-    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    files_cr.sort()
 
     futures = []
-    for file_l1 in tqdm(files_l1, total=len(files_l1)):
-        futures.append(generate_l0_pmzp.submit(file_l1, outdir, psf_model, # noqa: PERF401
-                                  wfi_vignetting_model_path, nfi_vignetting_model_path, transient_probability))
-
-    for file_cr in tqdm(files_cr, total=len(files_cr)):
-        futures.append(generate_l0_cr.submit(file_cr, outdir, psf_model,  # noqa: PERF401
-                                    wfi_vignetting_model_path, nfi_vignetting_model_path, transient_probability))
+    futures.extend(generate_l0_pmzp.map(files_l1, outdir, psf_model_path,
+                                        wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
+                                        transient_probability, shift_pointing))
+    futures.extend(generate_l0_cr.map(files_cr, outdir, psf_model_path,
+                                      wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
+                                      transient_probability, shift_pointing))
     wait(futures)

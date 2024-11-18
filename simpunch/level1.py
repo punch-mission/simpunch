@@ -281,9 +281,9 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_pdata.meta["POLAR"] = 60
 
     # Add distortion
-    output_mdata = add_distortion(output_mdata)
-    output_zdata = add_distortion(output_zdata)
-    output_pdata = add_distortion(output_pdata)
+    # output_mdata = add_distortion(output_mdata) # noqa: ERA001
+    # output_zdata = add_distortion(output_zdata) # noqa: ERA001
+    # output_pdata = add_distortion(output_pdata) # noqa: ERA001
 
     # Add polarized starfield
     output_collection = NDCollection(
@@ -330,7 +330,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 
     # Quality marking
     output_data = mark_quality(output_data)
-    output_data = add_distortion(output_data)
+    # output_data = add_distortion(output_data)  # noqa: ERA001
 
     output_data = add_starfield_clear(output_data)
 
@@ -346,7 +346,6 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 
     output_cdata.meta["POLAR"] = 9999
 
-
     output_cdata = update_spacecraft_location(output_cdata, output_cdata.meta.astropy_time)
 
     # Write out
@@ -354,7 +353,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 
 
 @flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 8, "threads_per_worker": 2},
+    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
 ))
 def generate_l1_all(datadir: str) -> None:
     """Generate all level 1 synthetic data.
