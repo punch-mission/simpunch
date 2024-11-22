@@ -272,14 +272,14 @@ def generate_l2_ctm(input_file: str, path_output: str) -> None:
 @flow(log_prints=True, task_runner=DaskTaskRunner(
     cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
 ))
-def generate_l2_all(datadir: str) -> None:
+def generate_l2_all(datadir: str, outdir: str) -> None:
     """Generate all level 2 synthetic data.
 
     L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM
     """
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, "synthetic_l2/")
+    outdir = os.path.join(outdir, "synthetic_l2/")
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 

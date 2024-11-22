@@ -32,7 +32,6 @@ def generate_flow(gamera_directory: str,
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
         start_time = datetime.now() # noqa: DTZ005
-        start_time = datetime(2024, 11, 13, 15, 20, 23)
 
     if generate_new:
         time_delta = timedelta(days=0.25)
@@ -45,10 +44,11 @@ def generate_flow(gamera_directory: str,
         next_month = np.linspace(1, 30, int(timedelta(days=30)/time_delta)) * time_delta + start_time
         generate_l3_all_fixed(gamera_directory, next_month, files_pb[-1], files_tb[-1])
 
-        generate_l3_all(gamera_directory, start_time, num_repeats=num_repeats)
-        generate_l2_all(gamera_directory)
-        generate_l1_all(gamera_directory)
+        generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats)
+        generate_l2_all(gamera_directory, output_directory)
+        generate_l1_all(gamera_directory, output_directory)
         generate_l0_all(gamera_directory,
+                        output_directory,
                         backward_psf_model_path,
                         wfi_quartic_backward_model_path,
                         nfi_quartic_backward_model_path,
@@ -62,23 +62,23 @@ def generate_flow(gamera_directory: str,
         for type_code in ["RM", "RZ", "RP", "RC"]:
             for obs_code in ["1", "2", "3", "4"]:
                 new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{model_time_str}_v1.fits"
-                shutil.copy(forward_psf_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
+                shutil.copy(forward_psf_model_path, os.path.join(output_directory, f"synthetic_l0/{new_name}"))
 
         # duplicate the quartic model
         type_code = "FQ"
         for obs_code in ["1", "2", "3"]:
             new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{model_time_str}_v1.fits"
-            shutil.copy(wfi_quartic_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
+            shutil.copy(wfi_quartic_model_path, os.path.join(output_directory, f"synthetic_l0/{new_name}"))
         obs_code = "4"
         new_name = f"PUNCH_L1_{type_code}{obs_code}_{model_time_str}_v1.fits"
-        shutil.copy(nfi_quartic_model_path, os.path.join(gamera_directory, f"synthetic_l0/{new_name}"))
+        shutil.copy(nfi_quartic_model_path, os.path.join(output_directory, f"synthetic_l0/{new_name}"))
 
     if update_database:
         from punchpipe import __version__
         from punchpipe.control.db import File
         from punchpipe.control.util import get_database_session
         db_session = get_database_session()
-        for file_path in sorted(glob.glob(os.path.join(gamera_directory, "synthetic_l0/*v[0-9].fits")),
+        for file_path in sorted(glob.glob(os.path.join(output_directory, "synthetic_l0/*v[0-9].fits")),
                                 key=lambda s: os.path.basename(s)[13:27]):
             file_name = os.path.basename(file_path)
             level = file_name[7]

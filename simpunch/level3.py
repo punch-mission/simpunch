@@ -253,11 +253,11 @@ def generate_l3_all(datadir: str, start_time: datetime, num_repeats: int = 1) ->
 @flow(log_prints=True, task_runner=DaskTaskRunner(
     cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
 ))
-def generate_l3_all_fixed(datadir: str, times: list[datetime], file_pb: str, file_tb: str) -> None:
+def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file_pb: str, file_tb: str) -> None:
     """Generate level 3 synthetic data at specified times with a fixed GAMERA model."""
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, "synthetic_l3/")
+    outdir = os.path.join(outdir, "synthetic_l3/")
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 

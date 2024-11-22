@@ -347,14 +347,14 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 @flow(log_prints=True, task_runner=DaskTaskRunner(
     cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
 ))
-def generate_l1_all(datadir: str) -> None:
+def generate_l1_all(datadir: str, outdir: str) -> None:
     """Generate all level 1 synthetic data.
 
     L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM
     """
     # Set file output path
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, "synthetic_l1/")
+    outdir = os.path.join(outdir, "synthetic_l1/")
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
