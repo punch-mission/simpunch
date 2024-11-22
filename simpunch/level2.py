@@ -2,10 +2,10 @@
 
 PTM - PUNCH Level-2 Polarized (MZP) Mosaic
 """
+import copy
 import glob
 import os
 from math import floor
-import copy
 
 import astropy.time
 import astropy.units as u

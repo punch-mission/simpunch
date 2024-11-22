@@ -282,9 +282,9 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_pdata.meta["POLAR"] = 60
 
     # Add distortion
-    output_mdata = add_distortion(output_mdata)  # noqa: ERA001
-    output_zdata = add_distortion(output_zdata)  # noqa: ERA001
-    output_pdata = add_distortion(output_pdata)  # noqa: ERA001
+    output_mdata = add_distortion(output_mdata)
+    output_zdata = add_distortion(output_zdata)
+    output_pdata = add_distortion(output_pdata)
 
     # Add polarized starfield
     output_collection = NDCollection(
