@@ -47,14 +47,20 @@ def sample_ndcollection() -> callable:
         metaz = NormalizedMetadata.load_template("PZ1", "1")
         metaz["DATE-OBS"] = str(datetime(2024, 2, 22, 16, 0, 1))
         metaz["FILEVRSN"] = "1"
+        metaz["POLAROFF"] = 1.0
+        metaz["POLARREF"] = "Solar"
 
         metam = NormalizedMetadata.load_template("PM1", "1")
         metam["DATE-OBS"] = str(datetime(2024, 2, 22, 16, 0, 1))
         metam["FILEVRSN"] = "1"
+        metam["POLAROFF"] = 1.0
+        metam["POLARREF"] = "Solar"
 
         metap = NormalizedMetadata.load_template("PP1", "1")
         metap["DATE-OBS"] = str(datetime(2024, 2, 22, 16, 0, 1))
         metap["FILEVRSN"] = "1"
+        metap["POLAROFF"] = 1.0
+        metap["POLARREF"] = "Solar"
 
         input_data_z = NDCube(np.random.random(shape).astype(np.float32), wcs=wcs, meta=metaz)
         input_data_m = NDCube(np.random.random(shape).astype(np.float32), wcs=wcs, meta=metam)

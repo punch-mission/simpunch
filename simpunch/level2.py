@@ -5,6 +5,7 @@ PTM - PUNCH Level-2 Polarized (MZP) Mosaic
 import glob
 import os
 from math import floor
+import copy
 
 import astropy.time
 import astropy.units as u
@@ -21,7 +22,7 @@ from prefect.futures import wait
 from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, get_p_angle
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, get_p_angle, extract_crota_from_wcs
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
@@ -174,7 +175,8 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     mzp_angles = ([input_cube.meta["POLAR"].value for label, input_cube in input_collection.items() if
                    label != "alpha"])*u.degree
     cel_north_off = get_p_angle(time=input_collection["Z"].meta["DATE-OBS"].value)
-    new_angles = (mzp_angles + cel_north_off).value*u.degree  # or +? confirm!
+    new_angles = (mzp_angles + cel_north_off).value*u.degree
+    # check - or + ? confirm!
 
     valid_keys = [key for key in input_collection if key != "alpha"]
 
@@ -198,7 +200,7 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
                                      meta = meta_c, wcs=input_collection[valid_keys[2]].wcs))],
         aligned_axes="all")
 
-    input_data_cel = solpolpy.resolve(data_collection, "npol", offset_angle = 0*u.degree, out_angles=new_angles)
+    input_data_cel = solpolpy.resolve(data_collection, "npol", reference_angle = 0*u.degree, out_angles=new_angles)
     valid_keys = [key for key in input_data_cel if key != "alpha"]
 
     for k, key in enumerate(valid_keys):
@@ -210,24 +212,23 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
             conserve_flux=True, center_jacobian=True, despike_jacobian=True)
         input_data_cel[key].data[...] = input_data_cel[key].data + polar_roi * starfield_data
 
-    mzp_data_sol = solpolpy.resolve(input_data_cel, "MZP", offset_angle = 0*u.degree)  # solar MZP
+    mzp_data_instru = solpolpy.resolve(input_data_cel, "mzpinstru", reference_angle = 0*u.degree)  # Instrument MZP
 ### WCS is in celestial here?
-    valid_keys = [key for key in mzp_data_sol if key != "alpha"]
-    mzp_data_sol[valid_keys[0]].meta.update(POLAR= int(mzp_data_sol[valid_keys[0]].meta["POLAR"].value))
-    mzp_data_sol[valid_keys[1]].meta.update(POLAR = int(mzp_data_sol[valid_keys[1]].meta["POLAR"].value))
-    mzp_data_sol[valid_keys[2]].meta.update(POLAR = int(mzp_data_sol[valid_keys[2]].meta["POLAR"].value))
-
-    meta_a = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[0]].meta)
-    meta_b = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[1]].meta)
-    meta_c = NormalizedMetadata.from_fits_header(mzp_data_sol[valid_keys[2]].meta)
+    valid_keys = [key for key in mzp_data_instru if key != "alpha"]
+    out_meta = {"M": copy.deepcopy(input_collection['M'].meta),
+                "Z": copy.deepcopy(input_collection['Z'].meta),
+                "P": copy.deepcopy(input_collection['P'].meta)}
+    for out_pol, meta_item in out_meta.items():
+        for key, kind in zip(["POLAR", "POLARREF", "POLAROFF"], [int, str, float]):
+            if isinstance(mzp_data_instru[out_pol].meta[key], u.Quantity):
+                meta_item[key] = kind(mzp_data_instru[out_pol].meta[key].value)
+            else:
+                meta_item[key] = kind(mzp_data_instru[out_pol].meta[key])
 
     return NDCollection(
-        [(str(valid_keys[0]), NDCube(data=mzp_data_sol[valid_keys[0]].data,
-                                     meta = meta_a, wcs=mzp_data_sol[valid_keys[0]].wcs)),
-         (str(valid_keys[1]), NDCube(data=mzp_data_sol[valid_keys[1]].data,
-                                     meta = meta_b, wcs=mzp_data_sol[valid_keys[1]].wcs)),
-         (str(valid_keys[2]), NDCube(data=mzp_data_sol[valid_keys[2]].data,
-                                     meta = meta_c, wcs=mzp_data_sol[valid_keys[2]].wcs))],
+        [(str(key), NDCube(data=mzp_data_instru[key].data,
+                          meta = out_meta[key],
+                          wcs=mzp_data_instru[key].wcs)) for key in valid_keys],
         aligned_axes="all")
 
 def add_starfield_clear(input_data: NDCube) -> NDCube:
@@ -255,7 +256,7 @@ def remix_polarization(input_data: NDCube) -> NDCube:
          ("pB", NDCube(data=input_data.data[1], wcs=input_data.wcs))],
         aligned_axes="all")
 
-    resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=False)
+    resolved_data_collection = solpolpy.resolve(data_collection, "mzpsolar", imax_effect=False)
 
     # Repack data
     data_list = []
