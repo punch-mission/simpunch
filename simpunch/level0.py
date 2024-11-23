@@ -275,13 +275,15 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
 @flow(log_prints=True,
       task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 32, "threads_per_worker": 2},
 ))
-def generate_l0_all(datadir: str, psf_model_path: str,
+def generate_l0_all(datadir: str,
+                    outputdir: str,
+                    psf_model_path: str,
                     wfi_quartic_coeffs_path: str, nfi_quartic_coeffs_path: str,
                     transient_probability: float = 0.03,
                     shift_pointing: bool = False) -> None:
     """Generate all level 0 synthetic data."""
     print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, "synthetic_l0/")
+    outdir = os.path.join(outputdir, "synthetic_l0/")
     os.makedirs(outdir, exist_ok=True)
     print(f"Outputting to {outdir}")
 
