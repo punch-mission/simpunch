@@ -11,7 +11,6 @@ dependencies = [
     "pandas",
     "matplotlib",
     "regularizepsf",
-    "click",
     "prefect[dask, sqlalchemy]",
     "punchbowl",
     "toml",
