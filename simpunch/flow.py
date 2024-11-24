@@ -4,14 +4,13 @@ import os
 import shutil
 from datetime import datetime
 
-import numpy as np
 from asyncpg.pgproto.pgproto import timedelta
 from prefect import flow
 
 from simpunch.level0 import generate_l0_all
 from simpunch.level1 import generate_l1_all
 from simpunch.level2 import generate_l2_all
-from simpunch.level3 import generate_l3_all, generate_l3_all_fixed
+from simpunch.level3 import generate_l3_all
 
 
 @flow(log_prints=True)
@@ -38,11 +37,11 @@ def generate_flow(gamera_directory: str,
         files_tb = sorted(glob.glob(gamera_directory + "/synthetic_cme/*_TB.fits"))
         files_pb = sorted(glob.glob(gamera_directory + "/synthetic_cme/*_PB.fits"))
 
-        previous_month = np.linspace(1, -30, int(timedelta(days=30)/time_delta)) * time_delta + start_time
-        generate_l3_all_fixed(gamera_directory, previous_month, files_pb[0], files_tb[0])
-
-        next_month = np.linspace(1, 30, int(timedelta(days=30)/time_delta)) * time_delta + start_time
-        generate_l3_all_fixed(gamera_directory, next_month, files_pb[-1], files_tb[-1])
+        # previous_month = np.linspace(1, -30, int(timedelta(days=30)/time_delta)) * time_delta + start_time
+        # generate_l3_all_fixed(gamera_directory, previous_month, files_pb[0], files_tb[0])
+        #
+        # next_month = np.linspace(1, 30, int(timedelta(days=30)/time_delta)) * time_delta + start_time
+        # generate_l3_all_fixed(gamera_directory, next_month, files_pb[-1], files_tb[-1])
 
         generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats)
         generate_l2_all(gamera_directory, output_directory)
