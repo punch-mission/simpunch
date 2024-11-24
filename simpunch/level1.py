@@ -293,6 +293,12 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
          ("60.0 deg", output_pdata)],
         aligned_axes="all")
 
+    output_collection = NDCollection(
+        [("M", output_mdata),
+         ("Z", output_zdata),
+         ("P", output_pdata)],
+        aligned_axes="all")
+
     output_mzp = add_starfield_polarized(output_collection)
     output_mdata = output_mzp["M"]
     output_zdata = output_mzp["Z"]
