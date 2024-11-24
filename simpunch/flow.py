@@ -54,15 +54,15 @@ def generate_flow(gamera_directory: str,
                         shift_pointing=shift_pointing,
                         transient_probability=transient_probability)
 
-        # model_time = start_time - timedelta(days=35)
-        # model_time_str = model_time.strftime("%Y%m%d%H%M%S")
-        #
-        # # duplicate the psf model to all required versions
-        # for type_code in ["RM", "RZ", "RP", "RC"]:
-        #     for obs_code in ["1", "2", "3", "4"]:
-        #         new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{model_time_str}_v1.fits"
-        #         shutil.copy(forward_psf_model_path, os.path.join(output_directory, f"synthetic_l0/{new_name}"))
-        #
+        model_time = start_time - timedelta(days=35)
+        model_time_str = model_time.strftime("%Y%m%d%H%M%S")
+
+        # duplicate the psf model to all required versions
+        for type_code in ["RM", "RZ", "RP", "RC"]:
+            for obs_code in ["1", "2", "3", "4"]:
+                new_name = 	f"PUNCH_L1_{type_code}{obs_code}_{model_time_str}_v1.fits"
+                shutil.copy(forward_psf_model_path, os.path.join(output_directory, f"synthetic_l0/{new_name}"))
+
         # # duplicate the quartic model
         # type_code = "FQ"
         # for obs_code in ["1", "2", "3"]:
