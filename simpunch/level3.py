@@ -217,7 +217,7 @@ def generate_l3_ctm(input_tb: str,
 @flow(log_prints=True, task_runner=DaskTaskRunner(
     cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
 ))
-def generate_l3_all(datadir: str, start_time: datetime, num_repeats: int = 1) -> None:
+def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1) -> None:
     """Generate all level 3 synthetic data."""
     # Set file output path
     print(f"Running from {datadir}")
