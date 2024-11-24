@@ -21,10 +21,11 @@ from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
 from sunpy.coordinates import sun
 from tqdm import tqdm
 
-from simpunch.level2 import add_starfield_clear
+from simpunch.level2 import add_starfield_clear, add_starfield_polarized
 from simpunch.util import update_spacecraft_location
 
 CURRENT_DIR = os.path.dirname(__file__)
+
 
 def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int, time: astropy.time.Time) -> WCS:
     """Generate the spacecraft world coordinate system."""
@@ -46,7 +47,7 @@ def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int, time: astro
         out_wcs.wcs.cdelt = 88 / 3600 * 0.9, 88 / 3600 * 0.9
 
         out_wcs.wcs.pc = calculate_pc_matrix(angle_wfi, out_wcs.wcs.cdelt)
-        out_wcs.wcs.set_pv([(2, 1, (-sun.earth_distance(time)/sun.constants.radius).decompose().value)])
+        out_wcs.wcs.set_pv([(2, 1, (-sun.earth_distance(time) / sun.constants.radius).decompose().value)])
 
         out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
         out_wcs.wcs.cunit = "deg", "deg"
@@ -133,16 +134,16 @@ def deproject_clear(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: 
 
     if adaptive_reprojection:
         reprojected_data[:, :] = reproject.reproject_adaptive((input_data.data[:, :],
-                                                                  reconstructed_wcs),
-                                                                 output_wcs,
-                                                                 (2048, 2048),
-                                                                 roundtrip_coords=False, return_footprint=False,
-                                                                 kernel="Gaussian", boundary_mode="ignore")
+                                                               reconstructed_wcs),
+                                                              output_wcs,
+                                                              (2048, 2048),
+                                                              roundtrip_coords=False, return_footprint=False,
+                                                              kernel="Gaussian", boundary_mode="ignore")
     else:
         reprojected_data[:, :] = reproject.reproject_interp((input_data.data[:, :],
-                                                                reconstructed_wcs),
-                                                               output_wcs, (2048, 2048),
-                                                               roundtrip_coords=False, return_footprint=False)
+                                                             reconstructed_wcs),
+                                                            output_wcs, (2048, 2048),
+                                                            roundtrip_coords=False, return_footprint=False)
 
     reprojected_data[np.isnan(reprojected_data)] = 0
 
@@ -159,8 +160,8 @@ def remix_polarization(input_data: NDCube) -> NDCube:
     # Unpack data into a NDCollection object
     w = WCS(naxis=2)
     data_collection = NDCollection([("M", NDCube(data=input_data.data[0], wcs=w, meta={})),
-                                     ("Z", NDCube(data=input_data.data[1], wcs=w, meta={})),
-                                      ("P", NDCube(data=input_data.data[2], wcs=w, meta={}))])
+                                    ("Z", NDCube(data=input_data.data[1], wcs=w, meta={})),
+                                    ("P", NDCube(data=input_data.data[2], wcs=w, meta={}))])
 
     data_collection["M"].meta["POLAR"] = -60. * u.degree
     data_collection["Z"].meta["POLAR"] = 0. * u.degree
@@ -168,7 +169,7 @@ def remix_polarization(input_data: NDCube) -> NDCube:
 
     # TODO - Remember that this needs to be the instrument frame MZP, not the mosaic frame
     resolved_data_collection = solpolpy.resolve(data_collection, "npol",
-                                                out_angles=[-60, 0, 60]*u.deg, imax_effect=False)
+                                                out_angles=[-60, 0, 60] * u.deg, imax_effect=False)
 
     # Repack data
     data_list = []
@@ -281,13 +282,21 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_pdata.meta["POLAR"] = 60
 
     # Add distortion
-    # output_mdata = add_distortion(output_mdata) # noqa: ERA001
-    # output_zdata = add_distortion(output_zdata) # noqa: ERA001
-    # output_pdata = add_distortion(output_pdata) # noqa: ERA001
+    output_mdata = add_distortion(output_mdata)
+    output_zdata = add_distortion(output_zdata)
+    output_pdata = add_distortion(output_pdata)
 
-    output_mdata = add_starfield_clear(output_mdata)
-    output_zdata = add_starfield_clear(output_zdata)
-    output_pdata = add_starfield_clear(output_pdata)
+    # Add polarized starfield
+    output_collection = NDCollection(
+        [("-60.0 deg", output_mdata),
+         ("0.0 deg", output_zdata),
+         ("60.0 deg", output_pdata)],
+        aligned_axes="all")
+
+    output_mzp = add_starfield_polarized(output_collection)
+    output_mdata = output_mzp["M"]
+    output_zdata = output_mzp["Z"]
+    output_pdata = output_mzp["P"]
 
     output_pdata = update_spacecraft_location(output_pdata, output_pdata.meta.astropy_time)
     output_mdata = update_spacecraft_location(output_mdata, output_mdata.meta.astropy_time)
