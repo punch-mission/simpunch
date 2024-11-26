@@ -3,11 +3,15 @@ from pathlib import Path
 
 import numpy as np
 from matplotlib import pyplot as plt
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from regularizepsf import (ArrayPSFTransform, simple_functional_psf,
                            varied_functional_psf)
 from regularizepsf.util import calculate_covering
 
-psf_size = 64  # size of the PSF model to use in pixels
+from simpunch.level1 import generate_spacecraft_wcs
+from simpunch.level2 import generate_starfield
+
+psf_size = 32  # size of the PSF model to use in pixels
 initial_sigma = 3.1 / 2.355
 img_size = 2048
 
@@ -54,7 +58,7 @@ def target_psf(row,
 @varied_functional_psf(target_psf)
 def synthetic_psf(row, col):
     return {"tail_angle": -np.arctan2(row - img_size//2, col - img_size//2),
-            "tail_separation": np.sqrt((row - img_size//2) ** 2 + (col - img_size//2) ** 2)/1200 * 2 + 1E-3,
+            "tail_separation": np.sqrt((row - img_size//2) ** 2 + (col - img_size//2) ** 2)/1200 * 1.5 + 1E-3,
             "core_sigma_x": initial_sigma,
             "core_sigma_y": initial_sigma}
 
@@ -62,8 +66,27 @@ coords = calculate_covering((img_size, img_size), psf_size)
 initial = baked_in_initial_psf.as_array_psf(coords, psf_size)
 synthetic = synthetic_psf.as_array_psf(coords, psf_size)
 
-backward_corrector = ArrayPSFTransform.construct(initial, synthetic, alpha=3.0, epsilon=0.2)
+backward_corrector = ArrayPSFTransform.construct(initial, synthetic, alpha=1.25, epsilon=0.4)
 backward_corrector.save(Path("synthetic_backward_psf.fits"))
 
-forward_corrector = ArrayPSFTransform.construct(synthetic, initial, alpha=3.0, epsilon=0.2)
+forward_corrector = ArrayPSFTransform.construct(synthetic, initial, alpha=1.25, epsilon=0.4)
 forward_corrector.save(Path("synthetic_forward_psf.fits"))
+
+# import astropy.time
+# wcs_helio = generate_spacecraft_wcs("1", 0, astropy.time.Time.now())
+# wcs_stellar_input = calculate_celestial_wcs_from_helio(wcs_helio,
+#                                                        astropy.time.Time.now(),
+#                                                        (2048, 2048))
+# starfield, _ = generate_starfield(wcs_stellar_input, (2048, 2048),
+#                                           flux_set=30*2.0384547E-9, fwhm=3, dimmest_magnitude=12,
+#                                           noise_mean=1E-10, noise_std=1E-11)
+# # starfield += np.nanpercentile(starfield, 1)
+# distorted = backward_corrector.apply(starfield, pad_mode='mean')
+# forward_result = forward_corrector.apply(distorted, pad_mode='mean')
+#
+# fig, axs = plt.subplots(ncols=3, sharex=True, sharey=True)
+# axs[0].imshow(np.sign(starfield) * np.log10(np.abs(starfield)), vmin=-10, vmax=-9)
+# axs[1].imshow(np.sign(distorted) * np.log10(np.abs(distorted)), vmin=-10, vmax=-9)
+# axs[2].imshow(np.sign(forward_result) * np.log10(np.abs(forward_result)), vmin=-10, vmax=-9)
+# # ax.imshow(distorted)
+# plt.show()
