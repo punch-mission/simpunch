@@ -175,8 +175,8 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     mzp_angles = ([input_cube.meta["POLAR"].value for label, input_cube in input_collection.items() if
                    label != "alpha"]) * u.degree
     cel_north_off = get_p_angle(time=input_collection["Z"].meta["DATE-OBS"].value)
-    new_angles = (mzp_angles + cel_north_off).value * u.degree
-    # check - or + ? confirm!
+    new_angles = (mzp_angles - cel_north_off).value * u.degree
+    # p-angle is measured from celestial north to solar north measured eastward.
 
     valid_keys = [key for key in input_collection if key != "alpha"]
 
@@ -213,7 +213,7 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
         input_data_cel[key].data[...] = input_data_cel[key].data + polar_roi * starfield_data
 
     mzp_data_instru = solpolpy.resolve(input_data_cel, "mzpinstru", reference_angle=0 * u.degree)  # Instrument MZP
-    ### WCS is in celestial here?
+
     valid_keys = [key for key in mzp_data_instru if key != "alpha"]
     out_meta = {"M": copy.deepcopy(input_collection["M"].meta),
                 "Z": copy.deepcopy(input_collection["Z"].meta),

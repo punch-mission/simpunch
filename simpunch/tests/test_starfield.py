@@ -62,9 +62,9 @@ def sample_ndcollection() -> callable:
         metap["POLAROFF"] = 1.0
         metap["POLARREF"] = "Solar"
 
-        input_data_z = NDCube(np.random.random(shape).astype(np.float32), wcs=wcs, meta=metaz)
-        input_data_m = NDCube(np.random.random(shape).astype(np.float32), wcs=wcs, meta=metam)
-        input_data_p = NDCube(np.random.random(shape).astype(np.float32), wcs=wcs, meta=metap)
+        input_data_z = NDCube(np.ones(shape).astype(np.float32), wcs=wcs, meta=metaz)
+        input_data_m = NDCube(np.ones(shape).astype(np.float32), wcs=wcs, meta=metam)
+        input_data_p = NDCube(np.ones(shape).astype(np.float32), wcs=wcs, meta=metap)
 
         return NDCollection(
             [("M", input_data_m),
@@ -89,7 +89,8 @@ def test_polarized_starfield(sample_ndcollection: NDCollection) -> None:
     """Test polarized starfield generation."""
     shape = (128, 128)
     input_data = sample_ndcollection(shape)
-
-    output_data = add_starfield_polarized(input_data)
-
+    output_data = add_starfield_polarized(input_data, polfactor=(1, 1, 1))
+    expected_data = np.full((3, 128, 128), 1.0, dtype=np.float32)
     assert isinstance(output_data, NDCollection)
+    for k, i in zip(list(output_data.keys()), range(3), strict=False):
+        assert np.allclose(output_data[k].data, expected_data[i])
