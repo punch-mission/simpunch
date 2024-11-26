@@ -37,10 +37,12 @@ def generate_flow(gamera_directory: str,
         files_tb = sorted(glob.glob(gamera_directory + "/synthetic_cme/*_TB.fits"))
         files_pb = sorted(glob.glob(gamera_directory + "/synthetic_cme/*_PB.fits"))
 
-        previous_month = np.linspace(1, -30, int(timedelta(days=30)/time_delta)) * time_delta + start_time
+        previous_month = [start_time + timedelta(days=td)
+                          for td in np.linspace(1, -30, int(timedelta(days=30)/time_delta))]
         generate_l3_all_fixed(gamera_directory, output_directory, previous_month, files_pb[0], files_tb[0])
 
-        next_month = np.linspace(1, 30, int(timedelta(days=30)/time_delta)) * time_delta + start_time
+        next_month = [start_time + timedelta(days=td)
+                          for td in np.linspace(1, 30, int(timedelta(days=30)/time_delta))]
         generate_l3_all_fixed(gamera_directory, output_directory, next_month, files_pb[-1], files_tb[-1])
 
         generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats)
