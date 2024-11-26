@@ -273,7 +273,7 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
 
 @flow(log_prints=True,
-      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 128, "threads_per_worker": 2},
+      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
 ))
 def generate_l0_all(datadir: str,
                     outputdir: str,
