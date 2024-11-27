@@ -165,7 +165,7 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
                                                            input_data.data.shape)
 
     starfield, stars = generate_starfield(wcs_stellar_input, input_data.data.shape,
-                                          flux_set=2.0384547E-9, fwhm=3, dimmest_magnitude=12,
+                                          flux_set=10*2.0384547E-9, fwhm=3, dimmest_magnitude=12,
                                           noise_mean=None, noise_std=None)
 
     starfield_data = np.zeros(input_data.data.shape)
@@ -176,7 +176,6 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
                    label != "alpha"]) * u.degree
     cel_north_off = get_p_angle(time=input_collection["Z"].meta["DATE-OBS"].value)
     new_angles = (mzp_angles + cel_north_off).value * u.degree
-    # check - or + ? confirm!
 
     valid_keys = [key for key in input_collection if key != "alpha"]
 
@@ -213,7 +212,7 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
         input_data_cel[key].data[...] = input_data_cel[key].data + polar_roi * starfield_data
 
     mzp_data_instru = solpolpy.resolve(input_data_cel, "mzpinstru", reference_angle=0 * u.degree)  # Instrument MZP
-    ### WCS is in celestial here?
+
     valid_keys = [key for key in mzp_data_instru if key != "alpha"]
     out_meta = {"M": copy.deepcopy(input_collection["M"].meta),
                 "Z": copy.deepcopy(input_collection["Z"].meta),
@@ -238,8 +237,10 @@ def add_starfield_clear(input_data: NDCube) -> NDCube:
                                                            input_data.meta.astropy_time,
                                                            input_data.data.shape)
 
-    starfield, stars = generate_starfield(wcs_stellar_input, input_data.data[:, :].shape, flux_set=2.0384547E-9,
-                                          fwhm=3, dimmest_magnitude=12, noise_mean=None, noise_std=None)
+    starfield, stars = generate_starfield(wcs_stellar_input, input_data.data[:, :].shape,
+                                          flux_set=10*2.0384547E-9,
+                                          fwhm=3, dimmest_magnitude=12,
+                                          noise_mean=None, noise_std=None)
 
     starfield_data = np.zeros(input_data.data.shape)
     starfield_data[:, :] = starfield * (np.logical_not(np.isclose(input_data.data[:, :], 0, atol=1E-18)))
@@ -350,7 +351,7 @@ def generate_l2_ctm(input_file: str, path_output: str) -> None:
 
 
 @flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
+    cluster_kwargs={"n_workers": 128, "threads_per_worker": 2},
 ))
 def generate_l2_all(datadir: str, outdir: str) -> None:
     """Generate all level 2 synthetic data.

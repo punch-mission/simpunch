@@ -273,7 +273,7 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
 
 @flow(log_prints=True,
-      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 32, "threads_per_worker": 2},
+      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
 ))
 def generate_l0_all(datadir: str,
                     outputdir: str,
@@ -295,10 +295,14 @@ def generate_l0_all(datadir: str,
     files_cr.sort()
 
     futures = []
-    futures.extend(generate_l0_pmzp.map(files_l1, outdir, psf_model_path,
+    for file_l1 in files_l1:
+        futures.append(generate_l0_pmzp.submit(file_l1, outdir, psf_model_path,  # noqa: PERF401
                                         wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
                                         transient_probability, shift_pointing))
-    futures.extend(generate_l0_cr.map(files_cr, outdir, psf_model_path,
+
+    for file_cr in files_cr:
+        futures.append(generate_l0_cr.submit(file_cr, outdir, psf_model_path,  # noqa: PERF401
                                       wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
                                       transient_probability, shift_pointing))
+
     wait(futures)
