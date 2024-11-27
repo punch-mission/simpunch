@@ -8,6 +8,9 @@ import numpy as np
 from prefect import flow
 
 from simpunch.level0 import generate_l0_all
+from simpunch.level1 import generate_l1_all
+from simpunch.level2 import generate_l2_all
+from simpunch.level3 import generate_l3_all, generate_l3_all_fixed
 
 
 @flow(log_prints=True)
@@ -36,15 +39,15 @@ def generate_flow(gamera_directory: str,
 
         previous_month = [start_time + timedelta(days=td)
                           for td in np.linspace(1, -30, int(timedelta(days=30)/time_delta))]
-        #generate_l3_all_fixed(gamera_directory, output_directory, previous_month, files_pb[0], files_tb[0])
+        generate_l3_all_fixed(gamera_directory, output_directory, previous_month, files_pb[0], files_tb[0])
 
         next_month = [start_time + timedelta(days=td)
                           for td in np.linspace(1, 30, int(timedelta(days=30)/time_delta))]
-        #generate_l3_all_fixed(gamera_directory, output_directory, next_month, files_pb[-1], files_tb[-1])
+        generate_l3_all_fixed(gamera_directory, output_directory, next_month, files_pb[-1], files_tb[-1])
 
-        #generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats)
-        #generate_l2_all(gamera_directory, output_directory)
-        #generate_l1_all(gamera_directory, output_directory)
+        generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats)
+        generate_l2_all(gamera_directory, output_directory)
+        generate_l1_all(gamera_directory, output_directory)
         generate_l0_all(gamera_directory,
                         output_directory,
                         backward_psf_model_path,
