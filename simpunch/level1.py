@@ -251,13 +251,8 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
         if (key in input_pdata.meta) and output_header[key] == "" and key not in ("COMMENT", "HISTORY"):
             output_meta[key].value = input_pdata.meta[key].value
 
-    # Deproject to spacecraft frame
     output_data, output_wcs = deproject_polar(input_pdata, output_wcs)
-
-    # Quality marking
     output_data = mark_quality(output_data)
-
-    # Polarization remixing
     output_data = remix_polarization(output_data)
 
     output_mmeta = copy.deepcopy(output_meta)
@@ -268,7 +263,6 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_zwcs = copy.deepcopy(output_wcs)
     output_pwcs = copy.deepcopy(output_wcs)
 
-    # Package into NDCube objects
     output_mdata = NDCube(data=output_data.data[0, :, :].astype(np.float32), wcs=output_mwcs, meta=output_mmeta)
     output_zdata = NDCube(data=output_data.data[1, :, :].astype(np.float32), wcs=output_zwcs, meta=output_zmeta)
     output_pdata = NDCube(data=output_data.data[2, :, :].astype(np.float32), wcs=output_pwcs, meta=output_pmeta)
@@ -285,13 +279,6 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_mdata = add_distortion(output_mdata)
     output_zdata = add_distortion(output_zdata)
     output_pdata = add_distortion(output_pdata)
-
-    # Add polarized starfield
-    output_collection = NDCollection(
-        [("-60.0 deg", output_mdata),
-         ("0.0 deg", output_zdata),
-         ("60.0 deg", output_pdata)],
-        aligned_axes="all")
 
     output_collection = NDCollection(
         [("M", output_mdata),

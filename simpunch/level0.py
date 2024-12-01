@@ -249,10 +249,6 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
 
     output_data, spike_image = add_spikes(output_data)
 
-    # TODO - Sync up any final header data here
-
-    # Set output dtype
-    # TODO - also check this in the output data w/r/t BITPIX
     output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
 
     output_data.data[output_data.data > 2**10-1] = 2**10-1
