@@ -118,8 +118,8 @@ def generate_l0_pmzp(input_file: NDCube,
     """Generate level 0 polarized synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
-    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
-    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
+    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
+    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
@@ -201,8 +201,8 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     """Generate level 0 clear synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
-    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path).data
-    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path).data
+    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
+    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
