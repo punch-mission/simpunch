@@ -18,7 +18,7 @@ def read_hit_map(path: str) -> np.ndarray:
     num_spikes, width, height = map(int, line.split())
     table =  np.genfromtxt(path, skip_header=1)
     image = np.zeros((width, height), dtype=float)
-    image[table[:, 0].astype(int), table[:, 1].astype(int)] = table[:, 2] / np.percentile(table[:, 2], 80)
+    image[table[:, 0].astype(int), table[:, 1].astype(int)] = table[:, 2] / np.percentile(table[:, 2], 50)
     return image
 
 def load_spike_library() -> np.ndarray:
