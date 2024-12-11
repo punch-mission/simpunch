@@ -1,4 +1,5 @@
 """Generate synthetic level 0 data."""
+import copy
 import glob
 import os
 from pathlib import Path
@@ -95,7 +96,7 @@ def starfield_misalignment(input_data: NDCube,
                            cr_offset_scale: float = 0.1,
                            pc_offset_scale: float = 0.1) -> NDCube:
     """Offset the pointing in an image to simulate spacecraft uncertainty."""
-    original_wcs = input_data.wcs.copy()
+    original_wcs = copy.deepcopy(input_data.wcs)
     cr_offsets = np.random.normal(0, cr_offset_scale, 2)
     input_data.wcs.wcs.crval = input_data.wcs.wcs.crval + cr_offsets
 

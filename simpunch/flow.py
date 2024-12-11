@@ -27,13 +27,15 @@ def generate_flow(gamera_directory: str,
                   transient_probability: float = 0.03,
                   shift_pointing: bool = False,
                   generate_new: bool = True,
-                  update_database: bool = True) -> None:
+                  generate_full_day: bool = False,
+                  update_database: bool = True,
+                  surrounding_cadence: float = 1.0) -> None:
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
         start_time = datetime.now() # noqa: DTZ005
 
     if generate_new:
-        time_delta = timedelta(days=0.1)
+        time_delta = timedelta(days=surrounding_cadence)
         files_tb = sorted(glob.glob(gamera_directory + "/synthetic_cme/*_TB.fits"))
         files_pb = sorted(glob.glob(gamera_directory + "/synthetic_cme/*_PB.fits"))
 
@@ -45,7 +47,9 @@ def generate_flow(gamera_directory: str,
                           for td in np.linspace(1, 30, int(timedelta(days=30)/time_delta))]
         generate_l3_all_fixed(gamera_directory, output_directory, next_month, files_pb[-1], files_tb[-1])
 
-        generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats)
+        if generate_full_day:
+            generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats)
+
         generate_l2_all(gamera_directory, output_directory)
         generate_l1_all(gamera_directory, output_directory)
         generate_l0_all(gamera_directory,
