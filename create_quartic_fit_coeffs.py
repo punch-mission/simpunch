@@ -27,6 +27,7 @@ meta = NormalizedMetadata.load_template("FQ1", "1")
 meta['DATE-OBS'] = datetime.now().isoformat()
 meta['DATE-BEG'] = meta['DATE-OBS'].value
 meta['DATE-END'] = meta['DATE-BEG'].value
+meta['DATE-AVG'] = meta['DATE-BEG'].value
 meta['DATE'] = meta['DATE-END'].value
 
 wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
@@ -56,6 +57,7 @@ meta = NormalizedMetadata.load_template("FQ1", "1")
 meta['DATE-OBS'] = datetime.now().isoformat()
 meta['DATE-BEG'] = meta['DATE-OBS'].value
 meta['DATE-END'] = meta['DATE-BEG'].value
+meta['DATE-AVG'] = meta['DATE-BEG'].value
 meta['DATE'] = meta['DATE-END'].value
 
 wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
