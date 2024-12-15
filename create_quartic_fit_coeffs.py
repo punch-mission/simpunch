@@ -14,8 +14,8 @@ from punchbowl.level1.quartic_fit import create_constant_quartic_coefficients
 wfi_vignetting_model_path = "PUNCH_L1_GM1_20240817174727_v2.fits"
 nfi_vignetting_model_path = "PUNCH_L1_GM4_20240819045110_v1.fits"
 
-wfi_vignette = load_ndcube_from_fits(wfi_vignetting_model_path).data[...]
-nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path).data[...]
+wfi_vignette = load_ndcube_from_fits(wfi_vignetting_model_path, include_provenance=False).data[...]
+nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path, include_provenance=False).data[...]
 
 wfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
@@ -36,8 +36,8 @@ write_ndcube_to_fits(nfi_cube, "nfi_quartic_backward_coeffs.fits")
 wfi_vignetting_model_path = "PUNCH_L1_GM1_20240817174727_v2.fits"
 nfi_vignetting_model_path = "PUNCH_L1_GM4_20240819045110_v1.fits"
 
-wfi_vignette = load_ndcube_from_fits(wfi_vignetting_model_path).data[...]
-nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path).data[...]
+wfi_vignette = load_ndcube_from_fits(wfi_vignetting_model_path, include_provenance=False).data[...]
+nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path, include_provenance=False).data[...]
 
 wfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
