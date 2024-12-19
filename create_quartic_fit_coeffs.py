@@ -11,11 +11,11 @@ from punchbowl.data.io import load_ndcube_from_fits
 from punchbowl.level1.quartic_fit import create_constant_quartic_coefficients
 
 # backward
-wfi_vignetting_model_path = "./build_3_review_files/PUNCH_L1_GM1_20240817174727_v2.fits"
-nfi_vignetting_model_path = "./build_3_review_files/PUNCH_L1_GM4_20240819045110_v1.fits"
+wfi_vignetting_model_path = "PUNCH_L1_GM1_20240817174727_v2.fits"
+nfi_vignetting_model_path = "PUNCH_L1_GM4_20240819045110_v1.fits"
 
-wfi_vignette = load_ndcube_from_fits(wfi_vignetting_model_path).data[...]
-nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path).data[...]
+wfi_vignette = load_ndcube_from_fits(wfi_vignetting_model_path, include_provenance=False).data[...]
+nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path, include_provenance=False).data[...]
 
 wfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
@@ -24,7 +24,11 @@ wfi_quartic[-2, :, :] = wfi_vignette
 nfi_quartic[-2, :, :] = nfi_vignette
 
 meta = NormalizedMetadata.load_template("FQ1", "1")
-meta['DATE-OBS'] = str(datetime.now())
+meta['DATE-OBS'] = datetime.now().isoformat()
+meta['DATE-BEG'] = meta['DATE-OBS'].value
+meta['DATE-END'] = meta['DATE-BEG'].value
+meta['DATE-AVG'] = meta['DATE-BEG'].value
+meta['DATE'] = meta['DATE-END'].value
 
 wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
 nfi_cube = NDCube(data=nfi_quartic, meta=meta, wcs=WCS(naxis=3))
@@ -33,11 +37,11 @@ write_ndcube_to_fits(wfi_cube, "wfi_quartic_backward_coeffs.fits")
 write_ndcube_to_fits(nfi_cube, "nfi_quartic_backward_coeffs.fits")
 
 # forward
-wfi_vignetting_model_path = "./build_3_review_files/PUNCH_L1_GM1_20240817174727_v2.fits"
-nfi_vignetting_model_path = "./build_3_review_files/PUNCH_L1_GM4_20240819045110_v1.fits"
+wfi_vignetting_model_path = "PUNCH_L1_GM1_20240817174727_v2.fits"
+nfi_vignetting_model_path = "PUNCH_L1_GM4_20240819045110_v1.fits"
 
-wfi_vignette = load_ndcube_from_fits(wfi_vignetting_model_path).data[...]
-nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path).data[...]
+wfi_vignette = load_ndcube_from_fits(wfi_vignetting_model_path, include_provenance=False).data[...]
+nfi_vignette = load_ndcube_from_fits(nfi_vignetting_model_path, include_provenance=False).data[...]
 
 wfi_quartic = create_constant_quartic_coefficients((2048, 2048))
 nfi_quartic = create_constant_quartic_coefficients((2048, 2048))
@@ -50,7 +54,11 @@ nfi_quartic[np.isinf(nfi_quartic)] = 0
 nfi_quartic[np.isnan(nfi_quartic)] = 0
 
 meta = NormalizedMetadata.load_template("FQ1", "1")
-meta['DATE-OBS'] = str(datetime.now())
+meta['DATE-OBS'] = datetime.now().isoformat()
+meta['DATE-BEG'] = meta['DATE-OBS'].value
+meta['DATE-END'] = meta['DATE-BEG'].value
+meta['DATE-AVG'] = meta['DATE-BEG'].value
+meta['DATE'] = meta['DATE-END'].value
 
 wfi_cube = NDCube(data=wfi_quartic, meta=meta, wcs=WCS(naxis=3))
 nfi_cube = NDCube(data=nfi_quartic, meta=meta, wcs=WCS(naxis=3))

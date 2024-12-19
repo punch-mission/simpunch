@@ -126,7 +126,7 @@ def generate_l0_pmzp(input_file: NDCube,
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
     product_level = "0"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
-    output_meta["DATE-OBS"] = str(input_data.meta.datetime)
+    output_meta["DATE-OBS"] = input_data.meta.datetime.isoformat()
 
     quartic_coefficients = wfi_quartic_coefficients \
         if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coefficients
@@ -209,7 +209,7 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
     product_level = "0"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
-    output_meta["DATE-OBS"] = str(input_data.meta.datetime)
+    output_meta["DATE-OBS"] = input_data.meta.datetime.isoformat()
 
     quartic_coefficients = wfi_quartic_coefficients \
         if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coefficients
