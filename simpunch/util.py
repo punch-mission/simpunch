@@ -57,49 +57,54 @@ def write_array_to_fits(path: str, image: np.ndarray, overwrite: bool = True) ->
     hdul.close()
 
 
-def generate_stray_light(shape, instrument='WFI'):
+def generate_stray_light(shape: tuple, instrument:str="WFI")->tuple[np.ndarray, np.ndarray]:
     """
     Generate stray light arrays for B and pB channels for WFI and NFI instruments.
 
-    Parameters:
+    Parameters
+    ----------
     - shape: tuple, the shape of the output array (height, width).
     - instrument: str, either 'WFI' or 'NFI' specifying the formula to use.
 
-    Returns:
+    Returns
+    -------
     - strayarray_B: 2D numpy array, intensity for B channel.
     - strayarray_pB: 2D numpy array, intensity for pB channel.
     """
-
-    strayarray_B = np.zeros(shape)
-    strayarray_pB = np.zeros(shape)
+    strayarray_b = np.zeros(shape)
+    strayarray_pb = np.zeros(shape)
 
     y, x = np.indices(shape)
 
-    if instrument == 'WFI':
+    if instrument == "WFI":
         center = (1024, 0)
         a, b, c = [-11.22425753, -0.03322594, 0.78295454]  # from empirical model using STEREO data
         x -= center[1]
         y -= center[0]
         r = np.sqrt(x ** 2 + y ** 2)
         r = (r * (160 / shape[0])) + 20
-        intensity_func = lambda r, a, b, c: a + b * r ** c
-    elif instrument == 'NFI':
+        def intensity_func(r:float, a:float, b:float, c:float)->float:
+            return a + b * r ** c
+    elif instrument == "NFI":
         center = (1024, 1024)
         a, b, c = [3796.09, -1399.18, 0.0003]   # from empirical model using STEREO data
         x -= center[1]
         y -= center[0]
         r = np.sqrt(x ** 2 + y ** 2)
-        r = (r * (32 / center[0])) * (r > 5.6)
-        intensity_func = lambda r, a, b, c: a + b * np.exp(r ** c)
+        r_threshold = 5.6
+        r = (r * (32 / center[0])) * (r > r_threshold)
+        def intensity_func(r:float, a:float, b:float, c:float)->float:
+            return a + b * np.exp(r ** c)
     else:
-        raise ValueError("Instrument must be 'WFI' or 'NFI'")
+        msg = "Instrument must be 'WFI' or 'NFI'"
+        raise ValueError(msg)
 
     # Calculate intensity for B channel
-    intensity_B = intensity_func(r, a, b, c)
-    strayarray_B[:, :] = 10 ** intensity_B
+    intensity_b = intensity_func(r, a, b, c)
+    strayarray_b[:, :] = 10 ** intensity_b
 
     # Calculate intensity for pB channel (2 orders of magnitude less than B)
-    intensity_pB = intensity_func(r, a - 2, b, c)
-    strayarray_pB[:, :] = 10 ** intensity_pB
+    intensity_pb = intensity_func(r, a - 2, b, c)
+    strayarray_pb[:, :] = 10 ** intensity_pb
 
-    return strayarray_B, strayarray_pB
+    return strayarray_b, strayarray_pb
