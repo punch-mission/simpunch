@@ -33,7 +33,7 @@ def perform_photometric_uncalibration(input_data: NDCube, coefficient_array: np.
     return input_data
 
 
-def add_spikes(input_data: NDCube) -> (NDCube, np.ndarray):
+def add_spikes(input_data: NDCube) -> tuple[NDCube, np.ndarray]:
     """Add spikes to images."""
     spike_image = generate_spike_image(input_data.data.shape)
     input_data.data[...] += spike_image
@@ -68,11 +68,11 @@ def add_deficient_pixels(input_data: NDCube) -> NDCube:
 
 
 def add_stray_light(input_data: NDCube,
-                    inst='WFI',
-                    polar = 'mzp') -> NDCube:
+                    inst: str = "WFI",
+                    polar: str = "mzp") -> NDCube:
     """Add stray light to the image."""
     straydata = generate_stray_light(input_data.data.shape, instrument=inst)
-    if polar == 'mzp':
+    if polar == "mzp":
         input_data.data[:, :] = input_data.data[:, :] + straydata[1]
     else:
         input_data.data[:, :] = input_data.data[:, :] + straydata[0]
@@ -88,7 +88,7 @@ def uncorrect_psf(input_data: NDCube, psf_model: ArrayPSFTransform) -> NDCube:
 def add_transients(input_data: NDCube,
                    transient_area: int = 600 ** 2,
                    transient_probability: float = 0.03,
-                   transient_brightness_range: (float, float) = (0.6, 0.8)) -> NDCube:
+                   transient_brightness_range: tuple[float, float] = (0.6, 0.8)) -> NDCube:
     """Add a block of brighter transient data to simulate aurora."""
     transient_image = np.zeros_like(input_data.data)
     if random() < transient_probability:
@@ -156,11 +156,11 @@ def generate_l0_pmzp(input_file: NDCube,
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
 
-    inst = 'WFI' \
-        if input_data.meta["OBSCODE"].value != "4" else 'NFI'
+    inst = "WFI" \
+        if input_data.meta["OBSCODE"].value != "4" else "NFI"
 
     # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
-    output_data = add_stray_light(output_data, inst = inst, polar='mzp')
+    output_data = add_stray_light(output_data, inst = inst, polar="mzp")
     output_data = add_deficient_pixels(output_data)
     output_data = apply_streaks(output_data)
     output_data = perform_photometric_uncalibration(output_data, quartic_coefficients)
@@ -240,8 +240,8 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     else:
         output_data = input_data
         original_wcs = input_data.wcs.copy()
-    inst = 'WFI' \
-        if input_data.meta["OBSCODE"].value != "4" else 'NFI'
+    inst = "WFI" \
+        if input_data.meta["OBSCODE"].value != "4" else "NFI"
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
     output_data = add_stray_light(output_data, inst=inst)
