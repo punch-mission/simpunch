@@ -245,7 +245,7 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
         if input_data.meta["OBSCODE"].value != "4" else "NFI"
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
-    output_data = add_stray_light(output_data, inst=inst)
+    output_data = add_stray_light(output_data, inst=inst, polar="clear")
     output_data = add_deficient_pixels(output_data)
     output_data = apply_streaks(output_data)
     output_data = perform_photometric_uncalibration(output_data, quartic_coefficients)
