@@ -20,7 +20,8 @@ from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayPSFTransform
 
 from simpunch.spike import generate_spike_image
-from simpunch.util import update_spacecraft_location, write_array_to_fits, generate_stray_light
+from simpunch.util import (generate_stray_light, update_spacecraft_location,
+                           write_array_to_fits)
 
 
 def perform_photometric_uncalibration(input_data: NDCube, coefficient_array: np.ndarray) -> NDCube:
