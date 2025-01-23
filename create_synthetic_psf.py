@@ -1,6 +1,7 @@
 # ruff: noqa
 from pathlib import Path
 
+import astropy.time
 import numpy as np
 from matplotlib import pyplot as plt
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
@@ -8,6 +9,7 @@ from regularizepsf import (ArrayPSFTransform, simple_functional_psf,
                            varied_functional_psf)
 from regularizepsf.util import calculate_covering
 
+from create_projected_psf import gen_projected_psf_from_image
 from simpunch.level1 import generate_spacecraft_wcs
 from simpunch.level2 import generate_starfield
 
@@ -66,10 +68,17 @@ coords = calculate_covering((img_size, img_size), psf_size)
 initial = baked_in_initial_psf.as_array_psf(coords, psf_size)
 synthetic = synthetic_psf.as_array_psf(coords, psf_size)
 
+wcs_helio = generate_spacecraft_wcs("1", 0, astropy.time.Time.now())
+wcs_stellar_input = calculate_celestial_wcs_from_helio(wcs_helio,
+                                                       astropy.time.Time.now(),
+                                                       (img_size, img_size))
+corrected_psf = gen_projected_psf_from_image(
+        wcs_stellar_input, psf_width=psf_size, star_gaussian_sigma=initial_sigma)
+
 backward_corrector = ArrayPSFTransform.construct(initial, synthetic, alpha=3.7, epsilon=0.15)
 backward_corrector.save(Path("synthetic_backward_psf.fits"))
 
-forward_corrector = ArrayPSFTransform.construct(synthetic, initial, alpha=3.7, epsilon=0.15)
+forward_corrector = ArrayPSFTransform.construct(synthetic, corrected_psf, alpha=0.7, epsilon=0.515)
 forward_corrector.save(Path("synthetic_forward_psf.fits"))
 
 # import astropy.time
