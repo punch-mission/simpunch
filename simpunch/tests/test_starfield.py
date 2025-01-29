@@ -7,7 +7,7 @@ from astropy.wcs import WCS
 from ndcube import NDCollection, NDCube
 from punchbowl.data import NormalizedMetadata
 
-from simpunch.level2 import add_starfield_clear, add_starfield_polarized
+from simpunch.level1 import add_starfield_clear, add_starfield_polarized
 
 
 @pytest.fixture

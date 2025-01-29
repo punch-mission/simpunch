@@ -10,8 +10,7 @@ from regularizepsf import (ArrayPSFTransform, simple_functional_psf,
 from regularizepsf.util import calculate_covering
 
 from create_projected_psf import gen_projected_psf_from_image
-from simpunch.level1 import generate_spacecraft_wcs
-from simpunch.level2 import generate_starfield
+from simpunch.level1 import generate_spacecraft_wcs, generate_starfield
 
 psf_size = 64  # size of the PSF model to use in pixels
 initial_sigma = 3.3 / 2.355
