@@ -4,7 +4,6 @@ import glob
 import os
 from math import floor
 
-import astropy.time
 import astropy.units as u
 import numpy as np
 import reproject
@@ -22,7 +21,6 @@ from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
                                 calculate_pc_matrix, get_p_angle)
-from sunpy.coordinates import sun
 from tqdm import tqdm
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
@@ -32,7 +30,7 @@ from simpunch.util import update_spacecraft_location
 CURRENT_DIR = os.path.dirname(__file__)
 
 
-def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int, time: astropy.time.Time) -> WCS:
+def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int) -> WCS:
     """Generate the spacecraft world coordinate system."""
     angle_step = 30
 
@@ -47,15 +45,15 @@ def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int, time: astro
         out_wcs_shape = [2048, 2048]
         out_wcs = WCS(naxis=2)
 
-        out_wcs.wcs.crpix = (1024.5, 150)
-        out_wcs.wcs.crval = (0.0, 0.0)
-        out_wcs.wcs.cdelt = 88 / 3600 * 0.9, 88 / 3600 * 0.9
-
-        out_wcs.wcs.pc = calculate_pc_matrix(angle_wfi, out_wcs.wcs.cdelt)
-        out_wcs.wcs.set_pv([(2, 1, (-sun.earth_distance(time) / sun.constants.radius).decompose().value)])
-
+        out_wcs.wcs.crpix = out_wcs_shape[1] / 2 - 0.5, out_wcs_shape[0] / 2 - 0.5
+        out_wcs.wcs.crval = (24.75 * np.sin(angle_wfi * u.deg) + (0.5 * np.sin(angle_wfi * u.deg)),
+                             24.75 * np.cos(angle_wfi * u.deg) - (0.5 * np.cos(angle_wfi * u.deg)))
+        out_wcs.wcs.cdelt = 0.02, 0.02
+        out_wcs.wcs.lonpole = angle_wfi
         out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
         out_wcs.wcs.cunit = "deg", "deg"
+        out_wcs.wcs.set_pv([(2, 1, 0.5)])
+
     elif spacecraft_id == "4":
         angle_nfi = (0 + angle_step * rotation_stage) % 360 * u.deg
         out_wcs_shape = [2048, 2048]
@@ -248,7 +246,7 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_meta["DESCRPTN"] = "Simulated " + output_meta["DESCRPTN"].value
     output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value
 
-    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage, input_pdata.meta.astropy_time)
+    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(output_wcs)
@@ -316,7 +314,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
     product_level = "1"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
     output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
-    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage, input_pdata.meta.astropy_time)
+    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(output_wcs)

@@ -67,7 +67,7 @@ coords = calculate_covering((img_size, img_size), psf_size)
 initial = baked_in_initial_psf.as_array_psf(coords, psf_size)
 synthetic = synthetic_psf.as_array_psf(coords, psf_size)
 
-wcs_helio = generate_spacecraft_wcs("1", 0, astropy.time.Time.now())
+wcs_helio = generate_spacecraft_wcs("1", 0)
 wcs_stellar_input = calculate_celestial_wcs_from_helio(wcs_helio,
                                                        astropy.time.Time.now(),
                                                        (img_size, img_size))

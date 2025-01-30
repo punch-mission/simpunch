@@ -4,7 +4,6 @@ from datetime import datetime
 
 import numpy as np
 from astropy.io import fits
-from astropy.time import Time
 from astropy.wcs import WCS, DistortionLookupTable
 
 from simpunch.level1 import generate_spacecraft_wcs
@@ -22,7 +21,7 @@ for spacecraft_id in ["1", "2", "3", "4"]:
             else os.path.join(CURRENT_DIR, "simpunch/data/distortion_WFI.fits")
         )
 
-    spacecraft_wcs = generate_spacecraft_wcs(spacecraft_id, 0, Time.now())
+    spacecraft_wcs = generate_spacecraft_wcs(spacecraft_id, 0)
 
     with fits.open(filename_distortion) as hdul:
         err_x = hdul[1].data
