@@ -46,8 +46,8 @@ def generate_spacecraft_wcs(spacecraft_id: str, rotation_stage: int) -> WCS:
         out_wcs = WCS(naxis=2)
 
         out_wcs.wcs.crpix = out_wcs_shape[1] / 2 - 0.5, out_wcs_shape[0] / 2 - 0.5
-        out_wcs.wcs.crval = (24.75 * np.sin(angle_wfi * u.deg) + (0.5 * np.sin(angle_wfi * u.deg)),
-                             24.75 * np.cos(angle_wfi * u.deg) - (0.5 * np.cos(angle_wfi * u.deg)))
+        out_wcs.wcs.crval = (24.75 * np.sin(angle_wfi) + (0.5 * np.sin(angle_wfi)),
+                             24.75 * np.cos(angle_wfi) - (0.5 * np.cos(angle_wfi)))
         out_wcs.wcs.cdelt = 0.02, 0.02
         out_wcs.wcs.lonpole = angle_wfi
         out_wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
