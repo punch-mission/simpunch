@@ -9,9 +9,8 @@ import astropy.units as u
 import numpy as np
 from dask.distributed import Client, wait
 from ndcube import NDCube
-from prefect import flow, task
+from prefect import flow
 from prefect.futures import wait
-from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
@@ -285,10 +284,7 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_transient.fits", transient)
     original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
 
-
-@flow(log_prints=True,
-      task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
-                                 ))
+@flow
 def generate_l0_all(datadir: str,
                     outputdir: str,
                     psf_model_path: str,

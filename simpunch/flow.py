@@ -13,7 +13,7 @@ from simpunch.level2 import generate_l2_all
 from simpunch.level3 import generate_l3_all, generate_l3_all_fixed
 
 
-@flow(log_prints=True)
+@flow
 def generate_flow(gamera_directory: str,
                   output_directory: str,
                   forward_psf_model_path: str,

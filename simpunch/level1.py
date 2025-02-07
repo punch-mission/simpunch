@@ -15,9 +15,8 @@ from astropy.wcs import WCS, DistortionLookupTable
 from dask.distributed import Client, wait
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_model_image, make_noise_image
-from prefect import flow, task
+from prefect import flow
 from prefect.futures import wait
-from prefect_dask import DaskTaskRunner
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
@@ -346,10 +345,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
     # Write out
     write_ndcube_to_fits(output_cdata, path_output + get_base_file_name(output_cdata) + ".fits")
 
-
-@flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
-))
+@flow
 def generate_l1_all(datadir: str, outdir: str) -> None:
     """Generate all level 1 synthetic data.
 

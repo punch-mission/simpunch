@@ -18,8 +18,7 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
 from dask.distributed import Client, wait
 from ndcube import NDCube
-from prefect import flow, task
-from prefect_dask import DaskTaskRunner
+from prefect import flow
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import get_base_file_name
 from tqdm import tqdm
@@ -211,10 +210,7 @@ def generate_l3_ctm(input_tb: str,
     pdata = generate_uncertainty(pdata)
     write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + ".fits")
 
-
-@flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
-))
+@flow
 def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1) -> None:
     """Generate all level 3 synthetic data."""
     # Set file output path
@@ -248,10 +244,7 @@ def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats
         runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
     wait(runs)
 
-
-@flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
-))
+@flow
 def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file_pb: str, file_tb: str) -> None:
     """Generate level 3 synthetic data at specified times with a fixed GAMERA model."""
     # Set file output path
