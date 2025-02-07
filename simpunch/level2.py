@@ -7,6 +7,7 @@ import os
 
 import astropy.time
 import astropy.units as u
+from dask.distributed import Client, wait
 import numpy as np
 import solpolpy
 from ndcube import NDCollection, NDCube
@@ -125,7 +126,6 @@ def remix_polarization(input_data: NDCube) -> NDCube:
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
-@task
 def generate_l2_ptm(input_file: str, path_output: str) -> None:
     """Generate level 2 PTM synthetic data."""
     # Read in the input data
@@ -157,7 +157,6 @@ def generate_l2_ptm(input_file: str, path_output: str) -> None:
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
 
 
-@task
 def generate_l2_ctm(input_file: str, path_output: str) -> None:
     """Generate level 2 CTM synthetic data."""
     # Read in the input data
@@ -210,7 +209,8 @@ def generate_l2_all(datadir: str, outdir: str) -> None:
     print(f"Generating based on {len(files_ctm)} CTM files.")
     files_ptm.sort()
 
+    client = Client()
     futures = []
-    futures.extend(generate_l2_ptm.map(files_ptm, outdir))
-    futures.extend(generate_l2_ctm.map(files_ctm, outdir))
+    futures.extend(client.map(generate_l2_ptm, files_ptm, outdir))
+    futures.extend(client.map(generate_l2_ctm, files_ctm, outdir))
     wait(futures)

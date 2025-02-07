@@ -12,6 +12,7 @@ from astropy.io import fits
 from astropy.modeling.functional_models import Gaussian2D
 from astropy.table import QTable
 from astropy.wcs import WCS, DistortionLookupTable
+from dask.distributed import Client, wait
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_model_image, make_noise_image
 from prefect import flow, task
@@ -232,7 +233,6 @@ def add_distortion(input_data: NDCube) -> NDCube:
     return input_data
 
 
-@task
 def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None:
     """Generate level 1 polarized synthetic data."""
     input_pdata = load_ndcube_from_fits(input_file)
@@ -303,7 +303,6 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
 
 
-@task
 def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None:
     """Generate level 1 clear synthetic data."""
     input_pdata = load_ndcube_from_fits(input_file)
@@ -368,20 +367,21 @@ def generate_l1_all(datadir: str, outdir: str) -> None:
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
+    client = Client()
     futures = []
     for i, file_ptm in tqdm(enumerate(files_ptm), total=len(files_ptm)):
         rotation_stage = int((i % 16) / 2)
-        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, "1"))
-        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, "2"))
-        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, "3"))
-        futures.append(generate_l1_pmzp.submit(file_ptm, outdir, rotation_stage, "4"))
+        futures.append(client.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, "1"))
+        futures.append(client.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, "2"))
+        futures.append(client.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, "3"))
+        futures.append(client.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, "4"))
 
     for i, file_ctm in tqdm(enumerate(files_ctm), total=len(files_ctm)):
         rotation_stage = int((i % 16) / 2)
-        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, "1"))
-        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, "2"))
-        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, "3"))
-        futures.append(generate_l1_cr.submit(file_ctm, outdir, rotation_stage, "4"))
+        futures.append(client.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, "1"))
+        futures.append(client.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, "2"))
+        futures.append(client.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, "3"))
+        futures.append(client.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, "4"))
 
     wait(futures)
 

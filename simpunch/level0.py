@@ -7,6 +7,7 @@ from random import random
 
 import astropy.units as u
 import numpy as np
+from dask.distributed import Client, wait
 from ndcube import NDCube
 from prefect import flow, task
 from prefect.futures import wait
@@ -119,7 +120,6 @@ def starfield_misalignment(input_data: NDCube,
     return input_data, original_wcs
 
 
-@task
 def generate_l0_pmzp(input_file: NDCube,
                      path_output: str,
                      psf_model_path: str,  # ArrayPSFTransform,
@@ -207,7 +207,6 @@ def generate_l0_pmzp(input_file: NDCube,
     original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
 
 
-@task
 def generate_l0_cr(input_file: NDCube, path_output: str,
                    psf_model_path: str,  # ArrayPSFTransform,
                    wfi_quartic_coeffs_path: str,  # np.ndarray,
@@ -309,14 +308,15 @@ def generate_l0_all(datadir: str,
     files_l1.sort()
     files_cr.sort()
 
+    client = Client()
     futures = []
     for file_l1 in files_l1:
-        futures.append(generate_l0_pmzp.submit(file_l1, outdir, psf_model_path,  # noqa: PERF401
+        futures.append(client.submit(generate_l0_pmzp, file_l1, outdir, psf_model_path,  # noqa: PERF401
                                                wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
                                                transient_probability, shift_pointing))
 
     for file_cr in files_cr:
-        futures.append(generate_l0_cr.submit(file_cr, outdir, psf_model_path,  # noqa: PERF401
+        futures.append(client.submit(generate_l0_cr, file_cr, outdir, psf_model_path,  # noqa: PERF401
                                              wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
                                              transient_probability, shift_pointing))
 
