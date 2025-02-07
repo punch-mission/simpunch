@@ -232,7 +232,7 @@ def add_distortion(input_data: NDCube) -> NDCube:
     return input_data
 
 
-def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None:
+def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> bool:
     """Generate level 1 polarized synthetic data."""
     input_pdata = load_ndcube_from_fits(input_file)
 
@@ -300,9 +300,9 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + ".fits")
     write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + ".fits")
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
+    return True
 
-
-def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> None:
+def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> bool:
     """Generate level 1 clear synthetic data."""
     input_pdata = load_ndcube_from_fits(input_file)
 
@@ -344,9 +344,10 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 
     # Write out
     write_ndcube_to_fits(output_cdata, path_output + get_base_file_name(output_cdata) + ".fits")
+    return True
 
 @flow
-def generate_l1_all(datadir: str, outdir: str) -> None:
+def generate_l1_all(datadir: str, outdir: str) -> bool:
     """Generate all level 1 synthetic data.
 
     L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM
@@ -380,7 +381,7 @@ def generate_l1_all(datadir: str, outdir: str) -> None:
         futures.append(client.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, "4"))
 
     wait(futures)
-
+    return True
 
 def generate_starfield(wcs: WCS,
                        img_shape: (int, int),

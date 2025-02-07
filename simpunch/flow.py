@@ -29,7 +29,7 @@ def generate_flow(gamera_directory: str,
                   generate_new: bool = True,
                   generate_full_day: bool = False,
                   update_database: bool = True,
-                  surrounding_cadence: float = 1.0) -> None:
+                  surrounding_cadence: float = 1.0) -> bool:
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
         start_time = datetime.now() # noqa: DTZ005
@@ -114,3 +114,5 @@ def generate_flow(gamera_directory: str,
             )
             db_session.add(db_entry)
             db_session.commit()
+
+    return True

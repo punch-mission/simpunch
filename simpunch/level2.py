@@ -125,7 +125,7 @@ def remix_polarization(input_data: NDCube) -> NDCube:
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
 
-def generate_l2_ptm(input_file: str, path_output: str) -> None:
+def generate_l2_ptm(input_file: str, path_output: str) -> bool:
     """Generate level 2 PTM synthetic data."""
     # Read in the input data
     input_pdata = load_ndcube_from_fits(input_file)
@@ -154,9 +154,10 @@ def generate_l2_ptm(input_file: str, path_output: str) -> None:
 
     # Write out
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
+    return True
 
 
-def generate_l2_ctm(input_file: str, path_output: str) -> None:
+def generate_l2_ctm(input_file: str, path_output: str) -> bool:
     """Generate level 2 CTM synthetic data."""
     # Read in the input data
     input_pdata = load_ndcube_from_fits(input_file)
@@ -185,10 +186,11 @@ def generate_l2_ctm(input_file: str, path_output: str) -> None:
 
     # Write out
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
+    return True
 
 
 @flow
-def generate_l2_all(datadir: str, outdir: str) -> None:
+def generate_l2_all(datadir: str, outdir: str) -> bool:
     """Generate all level 2 synthetic data.
 
     L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM
@@ -211,3 +213,4 @@ def generate_l2_all(datadir: str, outdir: str) -> None:
     futures.extend(client.map(generate_l2_ptm, files_ptm, outdir))
     futures.extend(client.map(generate_l2_ctm, files_ctm, outdir))
     wait(futures)
+    return True

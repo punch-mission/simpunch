@@ -133,7 +133,7 @@ def assemble_punchdata_clear(input_tb: str, wcs: WCS,
 
 
 def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
-                    time_obs: datetime, time_delta: timedelta, rotation_stage: int) -> None:
+                    time_obs: datetime, time_delta: timedelta, rotation_stage: int) -> bool:
     """Generate PTM - PUNCH Level-3 Polarized Mosaic."""
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
@@ -169,13 +169,13 @@ def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
     write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + ".fits")
-
+    return True
 
 def generate_l3_ctm(input_tb: str,
                     path_output: str,
                     time_obs: datetime,
                     time_delta: timedelta,
-                    rotation_stage: int) -> None:
+                    rotation_stage: int) -> bool:
     """Generate CTM - PUNCH Level-3 Clear Mosaic."""
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
@@ -209,9 +209,10 @@ def generate_l3_ctm(input_tb: str,
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
     write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + ".fits")
+    return True
 
 @flow
-def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1) -> None:
+def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1) -> bool:
     """Generate all level 3 synthetic data."""
     # Set file output path
     print(f"Running from {datadir}")
@@ -243,9 +244,10 @@ def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats
         runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
         runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
     wait(runs)
+    return True
 
 @flow
-def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file_pb: str, file_tb: str) -> None:
+def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file_pb: str, file_tb: str) -> bool:
     """Generate level 3 synthetic data at specified times with a fixed GAMERA model."""
     # Set file output path
     print(f"Running from {datadir}")
@@ -262,3 +264,4 @@ def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file
                                            rotation_indices[i % 8]))
         runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, timedelta(minutes=4), rotation_indices[i % 8]))
     wait(runs)
+    return True

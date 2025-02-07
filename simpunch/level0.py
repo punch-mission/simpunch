@@ -125,7 +125,7 @@ def generate_l0_pmzp(input_file: NDCube,
                      wfi_quartic_coeffs_path: str,  # np.ndarray,
                      nfi_quartic_coeffs_path: str,  # np.ndarray,
                      transient_probability: float = 0.03,
-                     shift_pointing: bool = False) -> None:
+                     shift_pointing: bool = False) -> bool:
     """Generate level 0 polarized synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
@@ -204,14 +204,14 @@ def generate_l0_pmzp(input_file: NDCube,
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_transient.fits", transient)
     original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
-
+    return True
 
 def generate_l0_cr(input_file: NDCube, path_output: str,
                    psf_model_path: str,  # ArrayPSFTransform,
                    wfi_quartic_coeffs_path: str,  # np.ndarray,
                    nfi_quartic_coeffs_path: str,  # np.ndarray,
                    transient_probability: float = 0.03,
-                   shift_pointing: bool = False) -> None:
+                   shift_pointing: bool = False) -> bool:
     """Generate level 0 clear synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
@@ -283,6 +283,7 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
     write_array_to_fits(path_output + get_base_file_name(output_data) + "_transient.fits", transient)
     original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
+    return True
 
 @flow
 def generate_l0_all(datadir: str,
@@ -290,7 +291,7 @@ def generate_l0_all(datadir: str,
                     psf_model_path: str,
                     wfi_quartic_coeffs_path: str, nfi_quartic_coeffs_path: str,
                     transient_probability: float = 0.03,
-                    shift_pointing: bool = False) -> None:
+                    shift_pointing: bool = False) -> bool:
     """Generate all level 0 synthetic data."""
     print(f"Running from {datadir}")
     outdir = os.path.join(outputdir, "synthetic_l0/")
@@ -317,3 +318,4 @@ def generate_l0_all(datadir: str,
                                              transient_probability, shift_pointing))
 
     wait(futures)
+    return True
