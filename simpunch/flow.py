@@ -30,7 +30,7 @@ def generate_flow(gamera_directory: str,
                   generate_full_day: bool = False,
                   update_database: bool = True,
                   surrounding_cadence: float = 1.0,
-                  n_workers: int = 8) -> bool:
+                  n_workers: int = 64) -> bool:
     """Generate all the products in the reverse pipeline."""
     if start_time is None:
         start_time = datetime.now() # noqa: DTZ005
@@ -49,7 +49,7 @@ def generate_flow(gamera_directory: str,
         generate_l3_all_fixed(gamera_directory, output_directory, next_month, files_pb[-1], files_tb[-1], n_workers=n_workers)
 
         if generate_full_day:
-            generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats)
+            generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats, n_workers=n_workers)
 
         generate_l2_all(gamera_directory, output_directory, n_workers=n_workers)
         generate_l1_all(gamera_directory, output_directory, n_workers=n_workers)
