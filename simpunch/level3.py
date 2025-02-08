@@ -237,7 +237,7 @@ def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats
 
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
 
-    client = Client()
+    client = Client(n_workers=64)
     runs = []
     for i, (file_tb, file_pb, time_obs) \
             in tqdm(enumerate(zip(files_tb, files_pb, times_obs, strict=False)), total=len(files_tb)):
@@ -257,7 +257,7 @@ def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file
 
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
 
-    client = Client()
+    client = Client(n_workers=64)
     runs = []
     for i, time_obs in tqdm(enumerate(times), total=len(times)):
         runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, timedelta(minutes=4),

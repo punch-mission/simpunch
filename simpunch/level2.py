@@ -208,7 +208,7 @@ def generate_l2_all(datadir: str, outdir: str) -> bool:
     print(f"Generating based on {len(files_ctm)} CTM files.")
     files_ptm.sort()
 
-    client = Client()
+    client = Client(n_workers=64)
     futures = []
     for file_ptm in files_ptm:
         futures.append(client.submit(generate_l2_ptm, file_ptm, outdir))

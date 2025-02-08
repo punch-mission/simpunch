@@ -364,7 +364,7 @@ def generate_l1_all(datadir: str, outdir: str) -> bool:
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
-    client = Client()
+    client = Client(n_workers=64)
     futures = []
     for i, file_ptm in tqdm(enumerate(files_ptm), total=len(files_ptm)):
         rotation_stage = int((i % 16) / 2)

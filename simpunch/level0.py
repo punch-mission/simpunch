@@ -305,7 +305,7 @@ def generate_l0_all(datadir: str,
     files_l1.sort()
     files_cr.sort()
 
-    client = Client()
+    client = Client(n_workers=64)
     futures = []
     for file_l1 in files_l1:
         futures.append(client.submit(generate_l0_pmzp, file_l1, outdir, psf_model_path,  # noqa: PERF401
