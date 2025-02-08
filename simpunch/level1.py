@@ -16,7 +16,6 @@ from dask.distributed import Client, wait
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_model_image, make_noise_image
 from prefect import flow
-from prefect.futures import wait
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
@@ -347,7 +346,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
     return True
 
 @flow
-def generate_l1_all(datadir: str, outdir: str) -> bool:
+def generate_l1_all(datadir: str, outdir: str, n_workers: int = None) -> bool:
     """Generate all level 1 synthetic data.
 
     L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM
@@ -364,7 +363,7 @@ def generate_l1_all(datadir: str, outdir: str) -> bool:
     print(f"Generating based on {len(files_ptm)} PTM files.")
     files_ptm.sort()
 
-    client = Client(n_workers=64)
+    client = Client(n_workers=n_workers)
     futures = []
     for i, file_ptm in tqdm(enumerate(files_ptm), total=len(files_ptm)):
         rotation_stage = int((i % 16) / 2)

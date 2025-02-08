@@ -12,7 +12,6 @@ import solpolpy
 from dask.distributed import Client, wait
 from ndcube import NDCollection, NDCube
 from prefect import flow
-from prefect.futures import wait
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 
@@ -190,7 +189,7 @@ def generate_l2_ctm(input_file: str, path_output: str) -> bool:
 
 
 @flow
-def generate_l2_all(datadir: str, outdir: str) -> bool:
+def generate_l2_all(datadir: str, outdir: str, n_workers: int = None) -> bool:
     """Generate all level 2 synthetic data.
 
     L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM
@@ -208,7 +207,7 @@ def generate_l2_all(datadir: str, outdir: str) -> bool:
     print(f"Generating based on {len(files_ctm)} CTM files.")
     files_ptm.sort()
 
-    client = Client(n_workers=64)
+    client = Client(n_workers=n_workers)
     futures = []
     for file_ptm in files_ptm:
         futures.append(client.submit(generate_l2_ptm, file_ptm, outdir))

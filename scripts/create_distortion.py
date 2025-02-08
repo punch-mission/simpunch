@@ -16,9 +16,9 @@ now_str = now.strftime("%Y%m%d%H%M%S")
 for spacecraft_id in ["1", "2", "3", "4"]:
 
     filename_distortion = (
-            os.path.join(CURRENT_DIR, "simpunch/data/distortion_NFI.fits")
+            os.path.join(CURRENT_DIR, "../simpunch/data/distortion_NFI.fits")
             if spacecraft_id == "4"
-            else os.path.join(CURRENT_DIR, "simpunch/data/distortion_WFI.fits")
+            else os.path.join(CURRENT_DIR, "../simpunch/data/distortion_WFI.fits")
         )
 
     spacecraft_wcs = generate_spacecraft_wcs(spacecraft_id, 0)

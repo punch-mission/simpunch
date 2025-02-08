@@ -212,7 +212,7 @@ def generate_l3_ctm(input_tb: str,
     return True
 
 @flow
-def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1) -> bool:
+def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1, n_workers: int = None) -> bool:
     """Generate all level 3 synthetic data."""
     # Set file output path
     print(f"Running from {datadir}")
@@ -237,7 +237,7 @@ def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats
 
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
 
-    client = Client(n_workers=64)
+    client = Client(n_workers=n_workers)
     runs = []
     for i, (file_tb, file_pb, time_obs) \
             in tqdm(enumerate(zip(files_tb, files_pb, times_obs, strict=False)), total=len(files_tb)):
@@ -247,7 +247,7 @@ def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats
     return True
 
 @flow
-def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file_pb: str, file_tb: str) -> bool:
+def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file_pb: str, file_tb: str, n_workers: int = None) -> bool:
     """Generate level 3 synthetic data at specified times with a fixed GAMERA model."""
     # Set file output path
     print(f"Running from {datadir}")
@@ -257,7 +257,7 @@ def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file
 
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
 
-    client = Client(n_workers=64)
+    client = Client(n_workers=n_workers)
     runs = []
     for i, time_obs in tqdm(enumerate(times), total=len(times)):
         runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, timedelta(minutes=4),

@@ -10,7 +10,6 @@ import numpy as np
 from dask.distributed import Client, wait
 from ndcube import NDCube
 from prefect import flow
-from prefect.futures import wait
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
@@ -291,7 +290,8 @@ def generate_l0_all(datadir: str,
                     psf_model_path: str,
                     wfi_quartic_coeffs_path: str, nfi_quartic_coeffs_path: str,
                     transient_probability: float = 0.03,
-                    shift_pointing: bool = False) -> bool:
+                    shift_pointing: bool = False,
+                    n_workers: int = None) -> bool:
     """Generate all level 0 synthetic data."""
     print(f"Running from {datadir}")
     outdir = os.path.join(outputdir, "synthetic_l0/")
@@ -305,7 +305,7 @@ def generate_l0_all(datadir: str,
     files_l1.sort()
     files_cr.sort()
 
-    client = Client(n_workers=64)
+    client = Client(n_workers=n_workers)
     futures = []
     for file_l1 in files_l1:
         futures.append(client.submit(generate_l0_pmzp, file_l1, outdir, psf_model_path,  # noqa: PERF401
