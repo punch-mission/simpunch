@@ -210,7 +210,10 @@ def generate_l2_all(datadir: str, outdir: str) -> bool:
 
     client = Client()
     futures = []
-    futures.extend(client.map(generate_l2_ptm, files_ptm, outdir))
-    futures.extend(client.map(generate_l2_ctm, files_ctm, outdir))
+    for file_ptm in files_ptm:
+        futures.append(client.submit(generate_l2_ptm, file_ptm, outdir))
+
+    for file_ctm in files_ctm:
+        futures.append(client.submit(generate_l2_ctm, file_ctm, outdir))
     wait(futures)
     return True
