@@ -16,10 +16,9 @@ from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
+from dask.distributed import Client, wait
 from ndcube import NDCube
-from prefect import flow, task
-from prefect.futures import wait
-from prefect_dask import DaskTaskRunner
+from prefect import flow
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import get_base_file_name
 from tqdm import tqdm
@@ -133,9 +132,8 @@ def assemble_punchdata_clear(input_tb: str, wcs: WCS,
     return NDCube(data=datacube, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
 
-@task
 def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
-                    time_obs: datetime, time_delta: timedelta, rotation_stage: int) -> None:
+                    time_obs: datetime, time_delta: timedelta, rotation_stage: int) -> bool:
     """Generate PTM - PUNCH Level-3 Polarized Mosaic."""
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
@@ -171,14 +169,13 @@ def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
     write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + ".fits")
+    return True
 
-
-@task
 def generate_l3_ctm(input_tb: str,
                     path_output: str,
                     time_obs: datetime,
                     time_delta: timedelta,
-                    rotation_stage: int) -> None:
+                    rotation_stage: int) -> bool:
     """Generate CTM - PUNCH Level-3 Clear Mosaic."""
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
@@ -212,12 +209,10 @@ def generate_l3_ctm(input_tb: str,
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
     write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + ".fits")
+    return True
 
-
-@flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
-))
-def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1) -> None:
+@flow
+def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1, n_workers: int = 64) -> bool:
     """Generate all level 3 synthetic data."""
     # Set file output path
     print(f"Running from {datadir}")
@@ -242,18 +237,19 @@ def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats
 
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
 
+    client = Client(n_workers=n_workers)
     runs = []
     for i, (file_tb, file_pb, time_obs) \
             in tqdm(enumerate(zip(files_tb, files_pb, times_obs, strict=False)), total=len(files_tb)):
-        runs.append(generate_l3_ptm.submit(file_tb, file_pb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
-        runs.append(generate_l3_ctm.submit(file_tb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
+        runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta,
+                                  rotation_indices[i % 8]))
+        runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
     wait(runs)
+    return True
 
-
-@flow(log_prints=True, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 64, "threads_per_worker": 2},
-))
-def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file_pb: str, file_tb: str) -> None:
+@flow
+def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime],
+                          file_pb: str, file_tb: str, n_workers: int = 64) -> bool:
     """Generate level 3 synthetic data at specified times with a fixed GAMERA model."""
     # Set file output path
     print(f"Running from {datadir}")
@@ -263,9 +259,12 @@ def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file
 
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
 
+    client = Client(n_workers=n_workers)
     runs = []
     for i, time_obs in tqdm(enumerate(times), total=len(times)):
-        runs.append(generate_l3_ptm.submit(file_tb, file_pb, outdir, time_obs, timedelta(minutes=4),
+        runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, timedelta(minutes=4),
                                            rotation_indices[i % 8]))
-        runs.append(generate_l3_ctm.submit(file_tb, outdir, time_obs, timedelta(minutes=4), rotation_indices[i % 8]))
+        runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, timedelta(minutes=4),
+                                  rotation_indices[i % 8]))
     wait(runs)
+    return True
