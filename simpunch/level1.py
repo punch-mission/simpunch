@@ -346,7 +346,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
     return True
 
 @flow
-def generate_l1_all(datadir: str, outdir: str, n_workers: int = None) -> bool:
+def generate_l1_all(datadir: str, outdir: str, n_workers: int = 64) -> bool:
     """Generate all level 1 synthetic data.
 
     L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM

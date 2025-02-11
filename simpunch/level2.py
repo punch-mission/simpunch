@@ -189,7 +189,7 @@ def generate_l2_ctm(input_file: str, path_output: str) -> bool:
 
 
 @flow
-def generate_l2_all(datadir: str, outdir: str, n_workers: int = None) -> bool:
+def generate_l2_all(datadir: str, outdir: str, n_workers: int = 64) -> bool:
     """Generate all level 2 synthetic data.
 
     L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM
@@ -210,9 +210,9 @@ def generate_l2_all(datadir: str, outdir: str, n_workers: int = None) -> bool:
     client = Client(n_workers=n_workers)
     futures = []
     for file_ptm in files_ptm:
-        futures.append(client.submit(generate_l2_ptm, file_ptm, outdir))
+        futures.append(client.submit(generate_l2_ptm, file_ptm, outdir))  # noqa: PERF401
 
     for file_ctm in files_ctm:
-        futures.append(client.submit(generate_l2_ctm, file_ctm, outdir))
+        futures.append(client.submit(generate_l2_ctm, file_ctm, outdir))  # noqa: PERF401
     wait(futures)
     return True

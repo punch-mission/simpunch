@@ -212,7 +212,7 @@ def generate_l3_ctm(input_tb: str,
     return True
 
 @flow
-def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1, n_workers: int = None) -> bool:
+def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1, n_workers: int = 64) -> bool:
     """Generate all level 3 synthetic data."""
     # Set file output path
     print(f"Running from {datadir}")
@@ -241,13 +241,15 @@ def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats
     runs = []
     for i, (file_tb, file_pb, time_obs) \
             in tqdm(enumerate(zip(files_tb, files_pb, times_obs, strict=False)), total=len(files_tb)):
-        runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
+        runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta,
+                                  rotation_indices[i % 8]))
         runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
     wait(runs)
     return True
 
 @flow
-def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file_pb: str, file_tb: str, n_workers: int = None) -> bool:
+def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime],
+                          file_pb: str, file_tb: str, n_workers: int = 64) -> bool:
     """Generate level 3 synthetic data at specified times with a fixed GAMERA model."""
     # Set file output path
     print(f"Running from {datadir}")
@@ -262,6 +264,7 @@ def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime], file
     for i, time_obs in tqdm(enumerate(times), total=len(times)):
         runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, timedelta(minutes=4),
                                            rotation_indices[i % 8]))
-        runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, timedelta(minutes=4), rotation_indices[i % 8]))
+        runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, timedelta(minutes=4),
+                                  rotation_indices[i % 8]))
     wait(runs)
     return True

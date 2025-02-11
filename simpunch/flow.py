@@ -42,14 +42,17 @@ def generate_flow(gamera_directory: str,
 
         previous_month = [start_time + timedelta(days=td)
                           for td in np.linspace(1, -30, int(timedelta(days=30)/time_delta))]
-        generate_l3_all_fixed(gamera_directory, output_directory, previous_month, files_pb[0], files_tb[0], n_workers=n_workers)
+        generate_l3_all_fixed(gamera_directory, output_directory, previous_month, files_pb[0], files_tb[0],
+                              n_workers=n_workers)
 
         next_month = [start_time + timedelta(days=td)
                           for td in np.linspace(1, 30, int(timedelta(days=30)/time_delta))]
-        generate_l3_all_fixed(gamera_directory, output_directory, next_month, files_pb[-1], files_tb[-1], n_workers=n_workers)
+        generate_l3_all_fixed(gamera_directory, output_directory, next_month, files_pb[-1], files_tb[-1],
+                              n_workers=n_workers)
 
         if generate_full_day:
-            generate_l3_all(gamera_directory, output_directory, start_time, num_repeats=num_repeats, n_workers=n_workers)
+            generate_l3_all(gamera_directory, output_directory, start_time,
+                            num_repeats=num_repeats, n_workers=n_workers)
 
         generate_l2_all(gamera_directory, output_directory, n_workers=n_workers)
         generate_l1_all(gamera_directory, output_directory, n_workers=n_workers)

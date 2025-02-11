@@ -291,7 +291,7 @@ def generate_l0_all(datadir: str,
                     wfi_quartic_coeffs_path: str, nfi_quartic_coeffs_path: str,
                     transient_probability: float = 0.03,
                     shift_pointing: bool = False,
-                    n_workers: int = None) -> bool:
+                    n_workers: int = 64) -> bool:
     """Generate all level 0 synthetic data."""
     print(f"Running from {datadir}")
     outdir = os.path.join(outputdir, "synthetic_l0/")
