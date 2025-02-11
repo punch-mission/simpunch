@@ -38,7 +38,7 @@ jobs:
         ruff check .
     - name: Test with pytest
       run: |
-        pytest --cov
+        pytest --cov=simpunch/
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       env:

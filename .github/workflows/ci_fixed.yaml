@@ -38,7 +38,7 @@ jobs:
         pip install ".[test]"
     - name: Test with pytest
       run: |
-        coverage run -m pytest
+        pytest --cov=simpunch/
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       env:
