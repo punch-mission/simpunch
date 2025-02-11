@@ -65,6 +65,7 @@ exclude=[
     "__pycache__",
     "build",
     "simpunch/version.py",
+    "scripts/"
 ]
 show-fixes = true
 
