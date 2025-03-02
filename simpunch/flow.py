@@ -1,10 +1,10 @@
 """Run the entire pipeline backward."""
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
 
 import numpy as np
-from prefect import flow
 from dateutil.parser import parse as parse_datetime_str
+from prefect import flow
 
 from simpunch.level0 import generate_l0_cr, generate_l0_pmzp
 from simpunch.level1 import generate_l1_cr, generate_l1_pmzp
@@ -23,7 +23,7 @@ def generate_flow(file_tb: str,
                   transient_probability: float = 0.03,
                   shift_pointing: bool = False) -> list[str]:
     """Generate all the products in the reverse pipeline."""
-    i = int(os.path.basename(file_tb).split("_")[4][4:])  # todo: make less specific to the filename
+    i = int(os.path.basename(file_tb).split("_")[4][4:])  # TODO: make less specific to the filename
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
     rotation_stage: int = rotation_indices[i % 8]
 
