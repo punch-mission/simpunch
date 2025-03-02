@@ -1,17 +1,15 @@
 """Generate synthetic level 2 data.
 
 PTM - PUNCH Level-2 Polarized (MZP) Mosaic
+CTM - PUNCH Level-2 Clear Mosaic
 """
-import glob
-import os
 
 import astropy.time
 import astropy.units as u
 import numpy as np
 import solpolpy
-from dask.distributed import Client, wait
 from ndcube import NDCollection, NDCube
-from prefect import flow
+from prefect import task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 
@@ -123,8 +121,8 @@ def remix_polarization(input_data: NDCube) -> NDCube:
 
     return NDCube(data=new_data, wcs=new_wcs, uncertainty=new_uncertainty, meta=input_data.meta)
 
-
-def generate_l2_ptm(input_file: str, path_output: str) -> bool:
+@task
+def generate_l2_ptm(input_file: str, path_output: str) -> str:
     """Generate level 2 PTM synthetic data."""
     # Read in the input data
     input_pdata = load_ndcube_from_fits(input_file)
@@ -152,11 +150,12 @@ def generate_l2_ptm(input_file: str, path_output: str) -> bool:
     output_pdata = update_spacecraft_location(output_pdata, input_pdata.meta.astropy_time)
 
     # Write out
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
-    return True
+    out_path = path_output + get_base_file_name(output_pdata) + ".fits"
+    write_ndcube_to_fits(output_pdata, out_path)
+    return out_path
 
-
-def generate_l2_ctm(input_file: str, path_output: str) -> bool:
+@task
+def generate_l2_ctm(input_file: str, path_output: str) -> str:
     """Generate level 2 CTM synthetic data."""
     # Read in the input data
     input_pdata = load_ndcube_from_fits(input_file)
@@ -182,37 +181,7 @@ def generate_l2_ctm(input_file: str, path_output: str) -> bool:
     # Package into a PUNCHdata object
     output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
     output_pdata = update_spacecraft_location(output_pdata, input_pdata.meta.astropy_time)
+    out_path = path_output + get_base_file_name(output_pdata) + ".fits"
+    write_ndcube_to_fits(output_pdata, out_path)
+    return out_path
 
-    # Write out
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
-    return True
-
-
-@flow
-def generate_l2_all(datadir: str, outdir: str, n_workers: int = 64) -> bool:
-    """Generate all level 2 synthetic data.
-
-    L2_PTM <- f-corona subtraction <- starfield subtraction <- remix polarization <- L3_PTM
-    """
-    # Set file output path
-    print(f"Running from {datadir}")
-    outdir = os.path.join(outdir, "synthetic_l2/")
-    os.makedirs(outdir, exist_ok=True)
-    print(f"Outputting to {outdir}")
-
-    # Parse list of level 3 model data
-    files_ptm = glob.glob(datadir + "/synthetic_l3/*PTM*.fits")
-    files_ctm = glob.glob(datadir + "/synthetic_l3/*CTM*.fits")
-    print(f"Generating based on {len(files_ptm)} PTM files.")
-    print(f"Generating based on {len(files_ctm)} CTM files.")
-    files_ptm.sort()
-
-    client = Client(n_workers=n_workers)
-    futures = []
-    for file_ptm in files_ptm:
-        futures.append(client.submit(generate_l2_ptm, file_ptm, outdir))  # noqa: PERF401
-
-    for file_ctm in files_ctm:
-        futures.append(client.submit(generate_l2_ctm, file_ctm, outdir))  # noqa: PERF401
-    wait(futures)
-    return True
