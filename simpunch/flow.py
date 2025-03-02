@@ -1,14 +1,13 @@
 """Run the entire pipeline backward."""
 from datetime import datetime, timedelta
-from typing import List
 
 import numpy as np
 from prefect import flow
 
-from simpunch.level0 import generate_l0_pmzp, generate_l0_cr
-from simpunch.level1 import generate_l1_pmzp, generate_l1_cr
-from simpunch.level2 import generate_l2_ptm, generate_l2_ctm
-from simpunch.level3 import generate_l3_ptm, generate_l3_ctm
+from simpunch.level0 import generate_l0_cr, generate_l0_pmzp
+from simpunch.level1 import generate_l1_cr, generate_l1_pmzp
+from simpunch.level2 import generate_l2_ctm, generate_l2_ptm
+from simpunch.level3 import generate_l3_ctm, generate_l3_ptm
 
 
 @flow
@@ -20,7 +19,7 @@ def generate_flow(file_tb: str,
                   wfi_quartic_backward_model_path: str,
                   nfi_quartic_backward_model_path: str,
                   transient_probability: float = 0.03,
-                  shift_pointing: bool = False) -> List[str]:
+                  shift_pointing: bool = False) -> list[str]:
     """Generate all the products in the reverse pipeline."""
     i = int(file_tb.split("_")[6][4:])
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])

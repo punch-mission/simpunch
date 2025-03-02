@@ -184,4 +184,3 @@ def generate_l2_ctm(input_file: str, path_output: str) -> str:
     out_path = path_output + get_base_file_name(output_pdata) + ".fits"
     write_ndcube_to_fits(output_pdata, out_path)
     return out_path
-

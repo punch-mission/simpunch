@@ -4,7 +4,6 @@ Generate synthetic level 3 data.
 PTM - PUNCH Level-3 Polarized Mosaic
 CTM - PUNCH Level-3 Clear Mosaic
 """
-import glob
 import os
 from datetime import datetime, timedelta
 
@@ -17,9 +16,9 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
 from ndcube import NDCube
+from prefect import task
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import get_base_file_name
-from prefect import task
 
 from simpunch.util import update_spacecraft_location
 

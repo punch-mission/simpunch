@@ -2,7 +2,6 @@
 import copy
 import os
 from math import floor
-from typing import List
 
 import astropy.units as u
 import numpy as np
@@ -380,7 +379,7 @@ def generate_dummy_polarization(map_scale: float = 0.225,
     return NDCube(data=zin, wcs=wcs_sky)
 
 @task
-def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> List[str]:
+def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> list[str]:
     """Generate level 1 polarized synthetic data."""
     input_pdata = load_ndcube_from_fits(input_file)
 
@@ -450,7 +449,7 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
     return [path_output + get_base_file_name(output_mdata) + ".fits",
             path_output + get_base_file_name(output_zdata) + ".fits",
-            path_output + get_base_file_name(output_pdata) + ".fits"
+            path_output + get_base_file_name(output_pdata) + ".fits",
             ]
 
 @task
