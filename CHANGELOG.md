@@ -2,6 +2,14 @@
 
 [Available through GitHub](https://github.com/punch-mission/simpunch/releases)
 
+## Latest: unreleased
+
+* added STEREO empirical model-based straylight by @s0larish in https://github.com/punch-mission/simpunch/pull/104
+* Support creating a projected target PSF by @svank in https://github.com/punch-mission/simpunch/pull/105
+* specify codecov path by @jmbhughes in https://github.com/punch-mission/simpunch/pull/107
+* Incorporate SOC2NOAA updates by @jmbhughes in https://github.com/punch-mission/simpunch/pull/106
+* Update issue templates by @jmbhughes in https://github.com/punch-mission/simpunch/pull/109
+
 ## Version 0.0.3: Dec 19, 2024
 
 - Updates for V4 RFR2 by @jmbhughes in #102
