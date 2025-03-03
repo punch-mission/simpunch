@@ -1,15 +1,13 @@
 """Generate synthetic level 0 data."""
 import copy
-import glob
 import os
 from pathlib import Path
 from random import random
 
 import astropy.units as u
 import numpy as np
-from dask.distributed import Client, wait
 from ndcube import NDCube
-from prefect import flow
+from prefect import task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
@@ -117,14 +115,14 @@ def starfield_misalignment(input_data: NDCube,
 
     return input_data, original_wcs
 
-
-def generate_l0_pmzp(input_file: NDCube,
+@task
+def generate_l0_pmzp(input_file: str,
                      path_output: str,
                      psf_model_path: str,  # ArrayPSFTransform,
                      wfi_quartic_coeffs_path: str,  # np.ndarray,
                      nfi_quartic_coeffs_path: str,  # np.ndarray,
                      transient_probability: float = 0.03,
-                     shift_pointing: bool = False) -> bool:
+                     shift_pointing: bool = False) -> str:
     """Generate level 0 polarized synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
@@ -199,18 +197,19 @@ def generate_l0_pmzp(input_file: NDCube,
 
     # Write out
     output_data.meta["FILEVRSN"] = "1"
-    write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + ".fits")
-    write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
-    write_array_to_fits(path_output + get_base_file_name(output_data) + "_transient.fits", transient)
-    original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
-    return True
+    write_ndcube_to_fits(write_data, os.path.join(path_output, get_base_file_name(output_data) + ".fits"))
+    write_array_to_fits(os.path.join(path_output, get_base_file_name(output_data) + "_spike.fits"), spike_image)
+    write_array_to_fits(os.path.join(path_output, get_base_file_name(output_data) + "_transient.fits"), transient)
+    original_wcs.to_header().tofile(os.path.join(path_output, get_base_file_name(output_data) + "_original_wcs.txt"))
+    return os.path.join(path_output, get_base_file_name(output_data) + ".fits")
 
-def generate_l0_cr(input_file: NDCube, path_output: str,
+@task
+def generate_l0_cr(input_file: str, path_output: str,
                    psf_model_path: str,  # ArrayPSFTransform,
                    wfi_quartic_coeffs_path: str,  # np.ndarray,
                    nfi_quartic_coeffs_path: str,  # np.ndarray,
                    transient_probability: float = 0.03,
-                   shift_pointing: bool = False) -> bool:
+                   shift_pointing: bool = False) -> str:
     """Generate level 0 clear synthetic data."""
     input_data = load_ndcube_from_fits(input_file)
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
@@ -278,44 +277,8 @@ def generate_l0_cr(input_file: NDCube, path_output: str,
 
     # Write out
     output_data.meta["FILEVRSN"] = "1"
-    write_ndcube_to_fits(write_data, path_output + get_base_file_name(output_data) + ".fits")
-    write_array_to_fits(path_output + get_base_file_name(output_data) + "_spike.fits", spike_image)
-    write_array_to_fits(path_output + get_base_file_name(output_data) + "_transient.fits", transient)
-    original_wcs.to_header().tofile(path_output + get_base_file_name(output_data) + "_original_wcs.txt")
-    return True
-
-@flow
-def generate_l0_all(datadir: str,
-                    outputdir: str,
-                    psf_model_path: str,
-                    wfi_quartic_coeffs_path: str, nfi_quartic_coeffs_path: str,
-                    transient_probability: float = 0.03,
-                    shift_pointing: bool = False,
-                    n_workers: int = 64) -> bool:
-    """Generate all level 0 synthetic data."""
-    print(f"Running from {datadir}")
-    outdir = os.path.join(outputdir, "synthetic_l0/")
-    os.makedirs(outdir, exist_ok=True)
-    print(f"Outputting to {outdir}")
-
-    # Parse list of level 1 model data
-    files_l1 = glob.glob(datadir + "/synthetic_l1/*L1_P*_v1.fits")
-    files_cr = glob.glob(datadir + "/synthetic_l1/*CR*_v1.fits")
-    print(f"Generating based on {len(files_l1) + len(files_cr)} files.")
-    files_l1.sort()
-    files_cr.sort()
-
-    client = Client(n_workers=n_workers)
-    futures = []
-    for file_l1 in files_l1:
-        futures.append(client.submit(generate_l0_pmzp, file_l1, outdir, psf_model_path,  # noqa: PERF401
-                                               wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
-                                               transient_probability, shift_pointing))
-
-    for file_cr in files_cr:
-        futures.append(client.submit(generate_l0_cr, file_cr, outdir, psf_model_path,  # noqa: PERF401
-                                             wfi_quartic_coeffs_path, nfi_quartic_coeffs_path,
-                                             transient_probability, shift_pointing))
-
-    wait(futures)
-    return True
+    write_ndcube_to_fits(write_data, os.path.join(path_output, get_base_file_name(output_data) + ".fits"))
+    write_array_to_fits(os.path.join(path_output, get_base_file_name(output_data) + "_spike.fits"), spike_image)
+    write_array_to_fits(os.path.join(path_output, get_base_file_name(output_data) + "_transient.fits"), transient)
+    original_wcs.to_header().tofile(os.path.join(path_output, get_base_file_name(output_data) + "_original_wcs.txt"))
+    return os.path.join(path_output, get_base_file_name(output_data) + ".fits")
