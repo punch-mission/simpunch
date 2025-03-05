@@ -158,7 +158,7 @@ def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
     tstring_end = (time_obs + time_delta).strftime("%Y-%m-%dT%H:%M:%S.000")
     tstring_avg = (time_obs + time_delta / 2).strftime("%Y-%m-%dT%H:%M:%S.000")
 
-    pdata.meta["DATE-OBS"] = tstring_start
+    pdata.meta["DATE-OBS"] = tstring_avg
     pdata.meta["DATE-BEG"] = tstring_start
     pdata.meta["DATE-END"] = tstring_end
     pdata.meta["DATE-AVG"] = tstring_avg
@@ -198,7 +198,7 @@ def generate_l3_ctm(input_tb: str,
     tstring_end = (time_obs + time_delta).strftime("%Y-%m-%dT%H:%M:%S.000")
     tstring_avg = (time_obs + time_delta / 2).strftime("%Y-%m-%dT%H:%M:%S.000")
 
-    pdata.meta["DATE-OBS"] = tstring_start
+    pdata.meta["DATE-OBS"] = tstring_avg
     pdata.meta["DATE-BEG"] = tstring_start
     pdata.meta["DATE-END"] = tstring_end
     pdata.meta["DATE-AVG"] = tstring_avg
