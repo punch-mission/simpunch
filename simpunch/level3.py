@@ -4,7 +4,6 @@ Generate synthetic level 3 data.
 PTM - PUNCH Level-3 Polarized Mosaic
 CTM - PUNCH Level-3 Clear Mosaic
 """
-import glob
 import os
 from datetime import datetime, timedelta
 
@@ -16,14 +15,12 @@ from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
-from dask.distributed import Client, wait
 from ndcube import NDCube
-from prefect import flow
+from prefect import task
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.io import get_base_file_name
-from tqdm import tqdm
 
-from .util import update_spacecraft_location
+from simpunch.util import update_spacecraft_location
 
 
 def define_mask(shape: (int, int) = (4096, 4096), distance_value: float =0.68) -> np.ndarray:
@@ -132,8 +129,9 @@ def assemble_punchdata_clear(input_tb: str, wcs: WCS,
     return NDCube(data=datacube, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
 
+@task
 def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
-                    time_obs: datetime, time_delta: timedelta, rotation_stage: int) -> bool:
+                    time_obs: datetime, time_delta: timedelta, rotation_stage: int) -> str:
     """Generate PTM - PUNCH Level-3 Polarized Mosaic."""
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
@@ -168,14 +166,18 @@ def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
 
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
-    write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + ".fits")
-    return True
 
+    out_filename = path_output + get_base_file_name(pdata) + ".fits"
+    write_ndcube_to_fits(pdata, out_filename)
+    return out_filename
+
+
+@task
 def generate_l3_ctm(input_tb: str,
                     path_output: str,
                     time_obs: datetime,
                     time_delta: timedelta,
-                    rotation_stage: int) -> bool:
+                    rotation_stage: int) -> str:
     """Generate CTM - PUNCH Level-3 Clear Mosaic."""
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
@@ -208,63 +210,7 @@ def generate_l3_ctm(input_tb: str,
 
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
-    write_ndcube_to_fits(pdata, path_output + get_base_file_name(pdata) + ".fits")
-    return True
 
-@flow
-def generate_l3_all(datadir: str, outdir: str, start_time: datetime, num_repeats: int = 1, n_workers: int = 64) -> bool:
-    """Generate all level 3 synthetic data."""
-    # Set file output path
-    print(f"Running from {datadir}")
-    outdir = os.path.join(datadir, "synthetic_l3/")
-    os.makedirs(outdir, exist_ok=True)
-    print(f"Outputting to {outdir}")
-
-    # Parse list of model data
-    files_tb = glob.glob(datadir + "/synthetic_cme/*_TB.fits")
-    files_pb = glob.glob(datadir + "/synthetic_cme/*_PB.fits")
-    print(f"Generating based on {len(files_tb)} TB files and {len(files_pb)} PB files.")
-    files_tb.sort()
-    files_pb.sort()
-
-    # Stack and repeat these data for testing
-    files_tb = np.tile(files_tb, num_repeats)
-    files_pb = np.tile(files_pb, num_repeats)
-
-    # Generate a corresponding set of observation times for polarized trefoil / NFI data
-    time_delta = timedelta(minutes=4)
-    times_obs = np.arange(len(files_tb)) * time_delta + start_time
-
-    rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
-
-    client = Client(n_workers=n_workers)
-    runs = []
-    for i, (file_tb, file_pb, time_obs) \
-            in tqdm(enumerate(zip(files_tb, files_pb, times_obs, strict=False)), total=len(files_tb)):
-        runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, time_delta,
-                                  rotation_indices[i % 8]))
-        runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, time_delta, rotation_indices[i % 8]))
-    wait(runs)
-    return True
-
-@flow
-def generate_l3_all_fixed(datadir: str, outdir: str, times: list[datetime],
-                          file_pb: str, file_tb: str, n_workers: int = 64) -> bool:
-    """Generate level 3 synthetic data at specified times with a fixed GAMERA model."""
-    # Set file output path
-    print(f"Running from {datadir}")
-    outdir = os.path.join(outdir, "synthetic_l3/")
-    os.makedirs(outdir, exist_ok=True)
-    print(f"Outputting to {outdir}")
-
-    rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
-
-    client = Client(n_workers=n_workers)
-    runs = []
-    for i, time_obs in tqdm(enumerate(times), total=len(times)):
-        runs.append(client.submit(generate_l3_ptm, file_tb, file_pb, outdir, time_obs, timedelta(minutes=4),
-                                           rotation_indices[i % 8]))
-        runs.append(client.submit(generate_l3_ctm, file_tb, outdir, time_obs, timedelta(minutes=4),
-                                  rotation_indices[i % 8]))
-    wait(runs)
-    return True
+    out_filename = path_output + get_base_file_name(pdata) + ".fits"
+    write_ndcube_to_fits(pdata, out_filename)
+    return out_filename

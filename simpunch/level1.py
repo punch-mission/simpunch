@@ -1,6 +1,5 @@
 """Generates synthetic level 1 data."""
 import copy
-import glob
 import os
 from math import floor
 
@@ -12,15 +11,13 @@ from astropy.io import fits
 from astropy.modeling.functional_models import Gaussian2D
 from astropy.table import QTable
 from astropy.wcs import WCS, DistortionLookupTable
-from dask.distributed import Client, wait
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_model_image, make_noise_image
-from prefect import flow
+from prefect import task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
                                 calculate_pc_matrix, get_p_angle)
-from tqdm import tqdm
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
@@ -231,157 +228,6 @@ def add_distortion(input_data: NDCube) -> NDCube:
     return input_data
 
 
-def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> bool:
-    """Generate level 1 polarized synthetic data."""
-    input_pdata = load_ndcube_from_fits(input_file)
-
-    # Define the output data product
-    product_code = "PM" + spacecraft_id
-    product_level = "1"
-    output_meta = NormalizedMetadata.load_template(product_code, product_level)
-    output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
-    output_meta["DESCRPTN"] = "Simulated " + output_meta["DESCRPTN"].value
-    output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value
-
-    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
-
-    # Synchronize overlapping metadata keys
-    output_header = output_meta.to_fits_header(output_wcs)
-    for key in output_header:
-        if (key in input_pdata.meta) and output_header[key] == "" and key not in ("COMMENT", "HISTORY"):
-            output_meta[key].value = input_pdata.meta[key].value
-
-    output_data, output_wcs = deproject_polar(input_pdata, output_wcs)
-    output_data = mark_quality(output_data)
-    output_data = remix_polarization(output_data)
-
-    output_mmeta = copy.deepcopy(output_meta)
-    output_zmeta = copy.deepcopy(output_meta)
-    output_pmeta = copy.deepcopy(output_meta)
-
-    output_mwcs = copy.deepcopy(output_wcs)
-    output_zwcs = copy.deepcopy(output_wcs)
-    output_pwcs = copy.deepcopy(output_wcs)
-
-    output_mdata = NDCube(data=output_data.data[0, :, :].astype(np.float32), wcs=output_mwcs, meta=output_mmeta)
-    output_zdata = NDCube(data=output_data.data[1, :, :].astype(np.float32), wcs=output_zwcs, meta=output_zmeta)
-    output_pdata = NDCube(data=output_data.data[2, :, :].astype(np.float32), wcs=output_pwcs, meta=output_pmeta)
-
-    output_mdata.meta["TYPECODE"] = "PM"
-    output_zdata.meta["TYPECODE"] = "PZ"
-    output_pdata.meta["TYPECODE"] = "PP"
-
-    output_mdata.meta["POLAR"] = -60
-    output_zdata.meta["POLAR"] = 0
-    output_pdata.meta["POLAR"] = 60
-
-    # Add distortion
-    output_mdata = add_distortion(output_mdata)
-    output_zdata = add_distortion(output_zdata)
-    output_pdata = add_distortion(output_pdata)
-
-    output_collection = NDCollection(
-        [("M", output_mdata),
-         ("Z", output_zdata),
-         ("P", output_pdata)],
-        aligned_axes="all")
-
-    output_mzp = add_starfield_polarized(output_collection)
-    output_mdata = output_mzp["M"]
-    output_zdata = output_mzp["Z"]
-    output_pdata = output_mzp["P"]
-
-    output_pdata = update_spacecraft_location(output_pdata, output_pdata.meta.astropy_time)
-    output_mdata = update_spacecraft_location(output_mdata, output_mdata.meta.astropy_time)
-    output_zdata = update_spacecraft_location(output_zdata, output_zdata.meta.astropy_time)
-
-    # Write out
-    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + ".fits")
-    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + ".fits")
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
-    return True
-
-def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> bool:
-    """Generate level 1 clear synthetic data."""
-    input_pdata = load_ndcube_from_fits(input_file)
-
-    # Define the output data product
-    product_code = "CR" + spacecraft_id
-    product_level = "1"
-    output_meta = NormalizedMetadata.load_template(product_code, product_level)
-    output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
-    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
-
-    # Synchronize overlapping metadata keys
-    output_header = output_meta.to_fits_header(output_wcs)
-    for key in output_header:
-        if (key in input_pdata.meta) and output_header[key] == "" and key not in ("COMMENT", "HISTORY"):
-            output_meta[key].value = input_pdata.meta[key].value
-
-    # Deproject to spacecraft frame
-    output_data, output_wcs = deproject_clear(input_pdata, output_wcs)
-
-    # Quality marking
-    output_data = mark_quality(output_data)
-    # output_data = add_distortion(output_data)  # noqa: ERA001
-
-    output_data = add_starfield_clear(output_data)
-
-    output_cmeta = copy.deepcopy(output_meta)
-    output_cwcs = copy.deepcopy(output_wcs)
-
-    # Package into NDCube objects
-    output_cdata = NDCube(data=output_data.data[:, :].astype(np.float32), wcs=output_cwcs, meta=output_cmeta)
-
-    output_cdata.meta["TYPECODE"] = "CR"
-    output_cdata.meta["DESCRPTN"] = "Simulated" + output_cdata.meta["DESCRPTN"].value
-    output_cdata.meta["TITLE"] = "Simulated " + output_cdata.meta["TITLE"].value
-
-    output_cdata.meta["POLAR"] = 9999
-
-    output_cdata = update_spacecraft_location(output_cdata, output_cdata.meta.astropy_time)
-
-    # Write out
-    write_ndcube_to_fits(output_cdata, path_output + get_base_file_name(output_cdata) + ".fits")
-    return True
-
-@flow
-def generate_l1_all(datadir: str, outdir: str, n_workers: int = 64) -> bool:
-    """Generate all level 1 synthetic data.
-
-    L1 <- polarization deprojection <- quality marking <- deproject to spacecraft FOV <- L2_PTM
-    """
-    # Set file output path
-    print(f"Running from {datadir}")
-    outdir = os.path.join(outdir, "synthetic_l1/")
-    os.makedirs(outdir, exist_ok=True)
-    print(f"Outputting to {outdir}")
-
-    # Parse list of level 3 model data
-    files_ptm = glob.glob(datadir + "/synthetic_l2/*PTM*.fits")
-    files_ctm = glob.glob(datadir + "/synthetic_l2/*CTM*.fits")
-    print(f"Generating based on {len(files_ptm)} PTM files.")
-    files_ptm.sort()
-
-    client = Client(n_workers=n_workers)
-    futures = []
-    for i, file_ptm in tqdm(enumerate(files_ptm), total=len(files_ptm)):
-        rotation_stage = int((i % 16) / 2)
-        futures.append(client.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, "1"))
-        futures.append(client.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, "2"))
-        futures.append(client.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, "3"))
-        futures.append(client.submit(generate_l1_pmzp, file_ptm, outdir, rotation_stage, "4"))
-
-    for i, file_ctm in tqdm(enumerate(files_ctm), total=len(files_ctm)):
-        rotation_stage = int((i % 16) / 2)
-        futures.append(client.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, "1"))
-        futures.append(client.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, "2"))
-        futures.append(client.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, "3"))
-        futures.append(client.submit(generate_l1_cr, file_ctm, outdir, rotation_stage, "4"))
-
-    wait(futures)
-    return True
-
 def generate_starfield(wcs: WCS,
                        img_shape: (int, int),
                        fwhm: float,
@@ -531,3 +377,123 @@ def generate_dummy_polarization(map_scale: float = 0.225,
     wcs_sky.wcs.cunit = "deg", "deg"
 
     return NDCube(data=zin, wcs=wcs_sky)
+
+@task
+def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> list[str]:
+    """Generate level 1 polarized synthetic data."""
+    input_pdata = load_ndcube_from_fits(input_file)
+
+    # Define the output data product
+    product_code = "PM" + spacecraft_id
+    product_level = "1"
+    output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
+    output_meta["DESCRPTN"] = "Simulated " + output_meta["DESCRPTN"].value
+    output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value
+
+    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
+
+    # Synchronize overlapping metadata keys
+    output_header = output_meta.to_fits_header(output_wcs)
+    for key in output_header:
+        if (key in input_pdata.meta) and output_header[key] == "" and key not in ("COMMENT", "HISTORY"):
+            output_meta[key].value = input_pdata.meta[key].value
+
+    output_data, output_wcs = deproject_polar(input_pdata, output_wcs)
+    output_data = mark_quality(output_data)
+    output_data = remix_polarization(output_data)
+
+    output_mmeta = copy.deepcopy(output_meta)
+    output_zmeta = copy.deepcopy(output_meta)
+    output_pmeta = copy.deepcopy(output_meta)
+
+    output_mwcs = copy.deepcopy(output_wcs)
+    output_zwcs = copy.deepcopy(output_wcs)
+    output_pwcs = copy.deepcopy(output_wcs)
+
+    output_mdata = NDCube(data=output_data.data[0, :, :].astype(np.float32), wcs=output_mwcs, meta=output_mmeta)
+    output_zdata = NDCube(data=output_data.data[1, :, :].astype(np.float32), wcs=output_zwcs, meta=output_zmeta)
+    output_pdata = NDCube(data=output_data.data[2, :, :].astype(np.float32), wcs=output_pwcs, meta=output_pmeta)
+
+    output_mdata.meta["TYPECODE"] = "PM"
+    output_zdata.meta["TYPECODE"] = "PZ"
+    output_pdata.meta["TYPECODE"] = "PP"
+
+    output_mdata.meta["POLAR"] = -60
+    output_zdata.meta["POLAR"] = 0
+    output_pdata.meta["POLAR"] = 60
+
+    # Add distortion
+    output_mdata = add_distortion(output_mdata)
+    output_zdata = add_distortion(output_zdata)
+    output_pdata = add_distortion(output_pdata)
+
+    output_collection = NDCollection(
+        [("M", output_mdata),
+         ("Z", output_zdata),
+         ("P", output_pdata)],
+        aligned_axes="all")
+
+    output_mzp = add_starfield_polarized(output_collection)
+    output_mdata = output_mzp["M"]
+    output_zdata = output_mzp["Z"]
+    output_pdata = output_mzp["P"]
+
+    output_pdata = update_spacecraft_location(output_pdata, output_pdata.meta.astropy_time)
+    output_mdata = update_spacecraft_location(output_mdata, output_mdata.meta.astropy_time)
+    output_zdata = update_spacecraft_location(output_zdata, output_zdata.meta.astropy_time)
+
+    # Write out
+    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + ".fits")
+    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + ".fits")
+    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
+    return [path_output + get_base_file_name(output_mdata) + ".fits",
+            path_output + get_base_file_name(output_zdata) + ".fits",
+            path_output + get_base_file_name(output_pdata) + ".fits",
+            ]
+
+@task
+def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> str:
+    """Generate level 1 clear synthetic data."""
+    input_pdata = load_ndcube_from_fits(input_file)
+
+    # Define the output data product
+    product_code = "CR" + spacecraft_id
+    product_level = "1"
+    output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
+    output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
+
+    # Synchronize overlapping metadata keys
+    output_header = output_meta.to_fits_header(output_wcs)
+    for key in output_header:
+        if (key in input_pdata.meta) and output_header[key] == "" and key not in ("COMMENT", "HISTORY"):
+            output_meta[key].value = input_pdata.meta[key].value
+
+    # Deproject to spacecraft frame
+    output_data, output_wcs = deproject_clear(input_pdata, output_wcs)
+
+    # Quality marking
+    output_data = mark_quality(output_data)
+    # output_data = add_distortion(output_data)  # noqa: ERA001
+
+    output_data = add_starfield_clear(output_data)
+
+    output_cmeta = copy.deepcopy(output_meta)
+    output_cwcs = copy.deepcopy(output_wcs)
+
+    # Package into NDCube objects
+    output_cdata = NDCube(data=output_data.data[:, :].astype(np.float32), wcs=output_cwcs, meta=output_cmeta)
+
+    output_cdata.meta["TYPECODE"] = "CR"
+    output_cdata.meta["DESCRPTN"] = "Simulated" + output_cdata.meta["DESCRPTN"].value
+    output_cdata.meta["TITLE"] = "Simulated " + output_cdata.meta["TITLE"].value
+
+    output_cdata.meta["POLAR"] = 9999
+
+    output_cdata = update_spacecraft_location(output_cdata, output_cdata.meta.astropy_time)
+
+    # Write out
+    out_path =  path_output + get_base_file_name(output_cdata) + ".fits"
+    write_ndcube_to_fits(output_cdata, out_path)
+    return out_path
