@@ -31,7 +31,7 @@ Level 1
 
 To generate level 1 data in the mzp polarized framework, the ``simpunch.level1.generate_l1_pmzp`` function can be called.
 
-.. autofunction:: simpunch.level1.generate_l01pmzp
+.. autofunction:: simpunch.level1.generate_l1_pmzp
     :no-index:
 
 To generate level 1 clear data, the ``simpunch.level1.generate_l1_cr`` function can be called.
@@ -57,10 +57,10 @@ Level 3
 
 To generate a level 3 polarized trefoil mosaic, the ``simpunch.level2.generate_l3_ptm`` function can be called.
 
-.. autofunction:: simpunch.level2.generate_l3_ptm
+.. autofunction:: simpunch.level3.generate_l3_ptm
     :no-index:
 
 To generate a level 3 clear trefoil mosaic, the ``simpunch.level2.generate_l3_ctm`` function can be called.
 
-.. autofunction:: simpunch.level2.generate_l3_ctm
+.. autofunction:: simpunch.level3.generate_l3_ctm
     :no-index:
