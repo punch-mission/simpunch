@@ -11,6 +11,7 @@ Welcome to simpunch's documentation!
    :caption: Contents:
 
    intro
+   usage
    help
    contribute
 
