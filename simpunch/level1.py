@@ -348,7 +348,7 @@ def add_starfield_clear(input_data: NDCube) -> NDCube:
                                                            input_data.data.shape)
 
     starfield, stars = generate_starfield(wcs_stellar_input, input_data.data[:, :].shape,
-                                          flux_set=30*2.0384547E-9,
+                                          flux_set=5*2.0384547E-9,
                                           fwhm=3, dimmest_magnitude=12,
                                           noise_mean=None, noise_std=None)
 
