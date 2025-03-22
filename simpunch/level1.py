@@ -312,14 +312,22 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     input_data_cel = solpolpy.resolve(data_collection, "npol", reference_angle=0 * u.degree, out_angles=new_angles)
     valid_keys = [key for key in input_data_cel if key != "alpha"]
 
+    dummy_polarmaps = []
     for k, key in enumerate(valid_keys):
-        dummy_polarmap = generate_dummy_polarization(pol_factor=polfactor[k])
-        # Extract ROI corresponding to input wcs
-        polar_roi = reproject.reproject_adaptive(
-            (dummy_polarmap.data, dummy_polarmap.wcs), wcs_stellar_input, input_data.data.shape,
-            roundtrip_coords=False, return_footprint=False, x_cyclic=True,
-            conserve_flux=True, center_jacobian=True, despike_jacobian=True)
-        input_data_cel[key].data[...] = input_data_cel[key].data + polar_roi * starfield_data
+        # Generate an all-sky polarization map for each of the three polarization states
+        dummy_polarmaps.append(generate_dummy_polarization(pol_factor=polfactor[k]))
+    polarmap_wcs = dummy_polarmaps[0].wcs
+    dummy_polarmaps = [d.data for d in dummy_polarmaps]
+    
+    # Reproject the polarization maps in one go into the frame of the input image
+    polar_rois = reproject.reproject_adaptive(
+        (np.array(dummy_polarmaps), polarmap_wcs), wcs_stellar_input, input_data.data.shape,
+        roundtrip_coords=False, return_footprint=False, x_cyclic=True,
+        conserve_flux=True, center_jacobian=True, despike_jacobian=True)
+    
+    # Apply the polarization maps to the starfield and add them to the data
+    for k, key in enumerate(valid_keys):
+        input_data_cel[key].data[...] = input_data_cel[key].data + polar_rois[k] * starfield_data
 
     mzp_data_instru = solpolpy.resolve(input_data_cel, "mzpinstru", reference_angle=0 * u.degree)  # Instrument MZP
 
