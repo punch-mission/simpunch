@@ -91,7 +91,7 @@ def generate_stray_light(shape: tuple, instrument:str="WFI")->tuple[np.ndarray, 
         x -= center[1]
         y -= center[0]
         r = np.sqrt(x ** 2 + y ** 2)
-        r_threshold = 5.6
+        r_threshold = 150
         r = (r * (32 / center[0])) * (r > r_threshold)
         def intensity_func(r:float, a:float, b:float, c:float)->float:
             return a + b * np.exp(r ** c)
@@ -100,11 +100,14 @@ def generate_stray_light(shape: tuple, instrument:str="WFI")->tuple[np.ndarray, 
         raise ValueError(msg)
 
     # Calculate intensity for B channel
-    intensity_b = intensity_func(r, a, b, c)
+    intensity_b = intensity_func(r, a, b, c) - 2
     strayarray_b[:, :] = 10 ** intensity_b
 
     # Calculate intensity for pB channel (2 orders of magnitude less than B)
-    intensity_pb = intensity_func(r, a - 2, b, c)
+    intensity_pb = intensity_func(r, a - 2, b, c) - 2
     strayarray_pb[:, :] = 10 ** intensity_pb
+
+    strayarray_b[~np.isfinite(strayarray_b)] = 0
+    strayarray_pb[~np.isfinite(strayarray_pb)] = 0
 
     return strayarray_b, strayarray_pb
