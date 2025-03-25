@@ -115,6 +115,19 @@ def starfield_misalignment(input_data: NDCube,
 
     return input_data, original_wcs
 
+def apply_mask(input_data: NDCube):
+    this_directory = Path(__file__).parent.resolve()
+    if input_data.meta["OBSCODE"].value == "4":
+        path = this_directory / "data" / "imt_nfi.bin"
+    else:
+        path = this_directory / "data" / "imt_wfi.bin"
+
+    with open(path, 'rb') as f:
+        bytes = f.read()
+    mask = np.unpackbits(np.frombuffer(bytes, dtype=np.uint8)).reshape(2048, 2048)
+    input_data.data[np.logical_not(mask)] = 0
+    return input_data
+
 @task
 def generate_l0_pmzp(input_file: str,
                      path_output: str,
@@ -153,13 +166,12 @@ def generate_l0_pmzp(input_file: str,
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
     output_data = uncorrect_psf(output_data, psf_model)
 
-    inst = "WFI" \
-        if input_data.meta["OBSCODE"].value != "4" else "NFI"
+    inst = "WFI" if input_data.meta["OBSCODE"].value != "4" else "NFI"
 
-    # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data, inst = inst, polar="mzp")
     output_data = add_deficient_pixels(output_data)
     output_data = apply_streaks(output_data)
+    output_data = apply_mask(output_data)
     output_data = perform_photometric_uncalibration(output_data, quartic_coefficients)
 
     if input_data.meta["OBSCODE"].value == "4":
@@ -180,7 +192,7 @@ def generate_l0_pmzp(input_file: str,
     output_data, spike_image = add_spikes(output_data)
 
     output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
-
+    output_data = apply_mask(output_data)
     # TODO - Sync up any final header data here
 
     # Set output dtype
@@ -244,6 +256,7 @@ def generate_l0_cr(input_file: str, path_output: str,
     output_data = add_stray_light(output_data, inst=inst, polar="clear")
     output_data = add_deficient_pixels(output_data)
     output_data = apply_streaks(output_data)
+    output_data = apply_mask(output_data)
     output_data = perform_photometric_uncalibration(output_data, quartic_coefficients)
 
     if input_data.meta["OBSCODE"].value == "4":
@@ -264,6 +277,7 @@ def generate_l0_cr(input_file: str, path_output: str,
     output_data, spike_image = add_spikes(output_data)
 
     output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
+    output_data = apply_mask(output_data)
 
     output_data.data[output_data.data > 2 ** 10 - 1] = 2 ** 10 - 1
     output_data.meta["DESCRPTN"] = "Simulated " + output_data.meta["DESCRPTN"].value
