@@ -13,7 +13,7 @@ from astropy.table import QTable
 from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_model_image, make_noise_image
-from prefect import task
+from prefect import task, get_run_logger
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
@@ -389,7 +389,9 @@ def generate_dummy_polarization(map_scale: float = 0.225,
 @task
 def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> list[str]:
     """Generate level 1 polarized synthetic data."""
+    logger = get_run_logger()
     input_pdata = load_ndcube_from_fits(input_file)
+    logger.info(f"Read input file {input_file}")
 
     # Define the output data product
     product_code = "PM" + spacecraft_id
@@ -408,8 +410,11 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
             output_meta[key].value = input_pdata.meta[key].value
 
     output_data, output_wcs = deproject_polar(input_pdata, output_wcs)
+    logger.info("Deprojected")
     output_data = mark_quality(output_data)
+    logger.info("Quality marked")
     output_data = remix_polarization(output_data)
+    logger.info("Polarization mixed")
 
     output_mmeta = copy.deepcopy(output_meta)
     output_zmeta = copy.deepcopy(output_meta)
@@ -435,6 +440,7 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_mdata = add_distortion(output_mdata)
     output_zdata = add_distortion(output_zdata)
     output_pdata = add_distortion(output_pdata)
+    logger.info("Distortion added")
 
     output_collection = NDCollection(
         [("M", output_mdata),
@@ -443,6 +449,7 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
         aligned_axes="all")
 
     output_mzp = add_starfield_polarized(output_collection)
+    logger.info("Starfield added")
     output_mdata = output_mzp["M"]
     output_zdata = output_mzp["Z"]
     output_pdata = output_mzp["P"]
@@ -452,9 +459,16 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_zdata = update_spacecraft_location(output_zdata, output_zdata.meta.astropy_time)
 
     # Write out
-    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + ".fits")
-    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + ".fits")
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
+    path = path_output + get_base_file_name(output_mdata) + ".fits"
+    logger.info(f"Writing data to {path}")
+    write_ndcube_to_fits(output_mdata, path)
+    path = path_output + get_base_file_name(output_zdata) + ".fits"
+    logger.info(f"Writing data to {path}")
+    write_ndcube_to_fits(output_zdata, path)
+    path = path_output + get_base_file_name(output_pdata) + ".fits"
+    logger.info(f"Writing data to {path}")
+    write_ndcube_to_fits(output_pdata, path)
+    logger.info("All data written")
     return [path_output + get_base_file_name(output_mdata) + ".fits",
             path_output + get_base_file_name(output_zdata) + ".fits",
             path_output + get_base_file_name(output_pdata) + ".fits",
@@ -463,7 +477,9 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
 @task
 def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> str:
     """Generate level 1 clear synthetic data."""
+    logger = get_run_logger()
     input_pdata = load_ndcube_from_fits(input_file)
+    logger.info(f"Read input file {input_file}")
 
     # Define the output data product
     product_code = "CR" + spacecraft_id
@@ -480,12 +496,16 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 
     # Deproject to spacecraft frame
     output_data, output_wcs = deproject_clear(input_pdata, output_wcs)
+    logger.info("Deprojected")
 
     # Quality marking
     output_data = mark_quality(output_data)
+    logger.info("Quality marked")
     # output_data = add_distortion(output_data)  # noqa: ERA001
+    # logger.info("Distortion added")
 
     output_data = add_starfield_clear(output_data)
+    logger.info("Starfield added")
 
     output_cmeta = copy.deepcopy(output_meta)
     output_cwcs = copy.deepcopy(output_wcs)
@@ -503,5 +523,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 
     # Write out
     out_path =  path_output + get_base_file_name(output_cdata) + ".fits"
+    logger.info(f"Writing data to {out_path}")
     write_ndcube_to_fits(output_cdata, out_path)
+    logger.info("Data written")
     return out_path
