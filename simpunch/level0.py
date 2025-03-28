@@ -3,8 +3,10 @@ import copy
 import os
 from pathlib import Path
 from random import random
+import warnings
 
 import astropy.units as u
+import astropy.wcs
 import numpy as np
 from ndcube import NDCube
 from prefect import task, get_run_logger
@@ -253,9 +255,12 @@ def generate_l0_cr(input_file: str, path_output: str,
     logger.info(f"Read input file {input_file}")
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
     logger.info(f"PSF model loaded")
-    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
-    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
-    logger.info(f"Quartic coefficients loaded loaded")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action='ignore', category=astropy.wcs.FITSFixedWarning,
+                                message=r".*[A-Z]*_OBS.*\n.*a floating-point value was expected.*")
+        wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
+        nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
+    logger.info(f"Quartic coefficients loaded")
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
