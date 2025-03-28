@@ -88,21 +88,18 @@ def deproject_polar(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: 
                                                     input_data.meta.astropy_time,
                                                     input_data.data.shape).dropaxis(2)
 
-    reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
-
-    for i in np.arange(3):
-        if adaptive_reprojection:
-            reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :],
-                                                                      reconstructed_wcs),
-                                                                     output_wcs,
-                                                                     (2048, 2048),
-                                                                     roundtrip_coords=False, return_footprint=False,
-                                                                     kernel="Gaussian", boundary_mode="ignore")
-        else:
-            reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :],
-                                                                    reconstructed_wcs),
-                                                                   output_wcs, (2048, 2048),
-                                                                   roundtrip_coords=False, return_footprint=False)
+    if adaptive_reprojection:
+        reprojected_data = reproject.reproject_adaptive((input_data.data,
+                                                                  reconstructed_wcs),
+                                                                 output_wcs,
+                                                                 (2048, 2048),
+                                                                 roundtrip_coords=False, return_footprint=False,
+                                                                 kernel="Gaussian", boundary_mode="ignore")
+    else:
+        reprojected_data = reproject.reproject_interp((input_data.data,
+                                                                reconstructed_wcs),
+                                                               output_wcs, (2048, 2048),
+                                                               roundtrip_coords=False, return_footprint=False)
 
     reprojected_data[np.isnan(reprojected_data)] = 0
 
@@ -128,17 +125,15 @@ def deproject_clear(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: 
                                                     input_data.meta.astropy_time,
                                                     input_data.data.shape)
 
-    reprojected_data = np.zeros((2048, 2048), dtype=input_data.data.dtype)
-
     if adaptive_reprojection:
-        reprojected_data[:, :] = reproject.reproject_adaptive((input_data.data[:, :],
+        reprojected_data= reproject.reproject_adaptive((input_data.data,
                                                                reconstructed_wcs),
                                                               output_wcs,
                                                               (2048, 2048),
                                                               roundtrip_coords=False, return_footprint=False,
                                                               kernel="Gaussian", boundary_mode="ignore")
     else:
-        reprojected_data[:, :] = reproject.reproject_interp((input_data.data[:, :],
+        reprojected_data = reproject.reproject_interp((input_data.data,
                                                              reconstructed_wcs),
                                                             output_wcs, (2048, 2048),
                                                             roundtrip_coords=False, return_footprint=False)
