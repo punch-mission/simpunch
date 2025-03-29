@@ -198,7 +198,9 @@ def generate_l0_pmzp(input_file: str,
                    "wavelength": 530. * u.nm,
                    "exposure": 49 * u.s,
                    "aperture": 34 * u.mm ** 2}
-    output_data.data[:, :] = msb_to_dn(output_data.data[:, :], output_data.wcs, **scaling)
+    output_data.data[:, :] = msb_to_dn(
+        output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
+    logger.info("Units scaled")
 
     noise = compute_noise(output_data.data)
     output_data.data[...] += noise[...]
@@ -319,7 +321,9 @@ def generate_l0_cr(input_file: str, path_output: str,
                    "wavelength": 530. * u.nm,
                    "exposure": 49 * u.s,
                    "aperture": 34 * u.mm ** 2}
-    output_data.data[:, :] = msb_to_dn(output_data.data[:, :], output_data.wcs, **scaling)
+    output_data.data[:, :] = msb_to_dn(
+        output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
+    logger.info("Units scaled")
 
     noise = compute_noise(output_data.data)
     output_data.data[...] += noise[...]
