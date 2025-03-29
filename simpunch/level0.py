@@ -19,7 +19,7 @@ from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayPSFTransform
 
 from simpunch.spike import generate_spike_image
-from simpunch.util import (generate_stray_light, update_spacecraft_location,
+from simpunch.util import (generate_stray_light, get_subdirectory, update_spacecraft_location,
                            write_array_to_fits)
 
 
@@ -227,20 +227,28 @@ def generate_l0_pmzp(input_file: str,
 
     # Write out
     output_data.meta["FILEVRSN"] = "1"
-    path = os.path.join(path_output, get_base_file_name(output_data) + ".fits")
-    logger.info(f"Writing {path}")
-    write_ndcube_to_fits(write_data, path)
-    path = os.path.join(path_output, get_base_file_name(output_data) + "_spike.fits")
+    dir = os.path.join(path_output, get_subdirectory(output_data))
+    os.makedirs(dir, exist_ok=True)
+    basename = get_base_file_name(output_data)
+
+    main_output_path = os.path.join(dir, basename + ".fits")
+    logger.info(f"Writing {main_output_path}")
+    write_ndcube_to_fits(write_data, main_output_path)
+
+    path = os.path.join(dir, basename + "_spike.fits")
     logger.info(f"Writing {path}")
     write_array_to_fits(path, spike_image)
-    path = os.path.join(path_output, get_base_file_name(output_data) + "_transient.fits")
+
+    path = os.path.join(dir, basename + "_transient.fits")
     logger.info(f"Writing {path}")
     write_array_to_fits(path, transient)
-    path = os.path.join(path_output, get_base_file_name(output_data) + "_original_wcs.txt")
+
+    path = os.path.join(dir, basename + "_original_wcs.txt")
     logger.info(f"Writing {path}")
     original_wcs.to_header().tofile(path)
+
     logger.info("All data written")
-    return os.path.join(path_output, get_base_file_name(output_data) + ".fits")
+    return main_output_path
 
 @task
 def generate_l0_cr(input_file: str, path_output: str,
@@ -337,17 +345,25 @@ def generate_l0_cr(input_file: str, path_output: str,
 
     # Write out
     output_data.meta["FILEVRSN"] = "1"
-    path = os.path.join(path_output, get_base_file_name(output_data) + ".fits")
-    logger.info(f"Writing {path}")
-    write_ndcube_to_fits(write_data, path)
-    path = os.path.join(path_output, get_base_file_name(output_data) + "_spike.fits")
+    dir = os.path.join(path_output, get_subdirectory(output_data))
+    os.makedirs(dir, exist_ok=True)
+    basename = get_base_file_name(output_data)
+
+    main_output_path = os.path.join(dir, basename + ".fits")
+    logger.info(f"Writing {main_output_path}")
+    write_ndcube_to_fits(write_data, main_output_path)
+
+    path = os.path.join(dir, basename + "_spike.fits")
     logger.info(f"Writing {path}")
     write_array_to_fits(path, spike_image)
-    path = os.path.join(path_output, get_base_file_name(output_data) + "_transient.fits")
+
+    path = os.path.join(dir, basename + "_transient.fits")
     logger.info(f"Writing {path}")
     write_array_to_fits(path, transient)
-    path = os.path.join(path_output, get_base_file_name(output_data) + "_original_wcs.txt")
+
+    path = os.path.join(dir, basename + "_original_wcs.txt")
     logger.info(f"Writing {path}")
     original_wcs.to_header().tofile(path)
+
     logger.info("All data written")
-    return os.path.join(path_output, get_base_file_name(output_data) + ".fits")
+    return main_output_path

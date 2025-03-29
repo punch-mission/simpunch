@@ -1,4 +1,6 @@
 """Utility functions."""
+import os
+
 import astropy.time
 import astropy.units as u
 import numpy as np
@@ -111,3 +113,11 @@ def generate_stray_light(shape: tuple, instrument:str="WFI")->tuple[np.ndarray, 
     strayarray_pb[~np.isfinite(strayarray_pb)] = 0
 
     return strayarray_b, strayarray_pb
+
+
+def get_subdirectory(cube: NDCube) -> str:
+    """Determine where to put a file."""
+    obscode = cube.meta["OBSCODE"].value
+    file_level = cube.meta["LEVEL"].value
+    type_code = cube.meta["TYPECODE"].value
+    return os.path.join(file_level, type_code + obscode, *cube.meta.datetime.strftime("%Y-%m-%d").split('-'))

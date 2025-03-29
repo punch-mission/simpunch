@@ -21,7 +21,7 @@ from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
-from simpunch.util import update_spacecraft_location
+from simpunch.util import get_subdirectory, update_spacecraft_location
 
 CURRENT_DIR = os.path.dirname(__file__)
 
@@ -454,20 +454,27 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_zdata = update_spacecraft_location(output_zdata, output_zdata.meta.astropy_time)
 
     # Write out
-    path = path_output + get_base_file_name(output_mdata) + ".fits"
+    paths = []
+    path = os.path.join(path_output, get_subdirectory(output_mdata), get_base_file_name(output_mdata) + ".fits")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    paths.append(path)
     logger.info(f"Writing data to {path}")
     write_ndcube_to_fits(output_mdata, path)
-    path = path_output + get_base_file_name(output_zdata) + ".fits"
+
+    path = os.path.join(path_output, get_subdirectory(output_zdata), get_base_file_name(output_zdata) + ".fits")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    paths.append(path)
     logger.info(f"Writing data to {path}")
     write_ndcube_to_fits(output_zdata, path)
-    path = path_output + get_base_file_name(output_pdata) + ".fits"
+
+    path = os.path.join(path_output, get_subdirectory(output_pdata), get_base_file_name(output_pdata) + ".fits")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    paths.append(path)
     logger.info(f"Writing data to {path}")
     write_ndcube_to_fits(output_pdata, path)
+
     logger.info("All data written")
-    return [path_output + get_base_file_name(output_mdata) + ".fits",
-            path_output + get_base_file_name(output_zdata) + ".fits",
-            path_output + get_base_file_name(output_pdata) + ".fits",
-            ]
+    return paths
 
 @task
 def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> str:
@@ -517,7 +524,8 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
     output_cdata = update_spacecraft_location(output_cdata, output_cdata.meta.astropy_time)
 
     # Write out
-    out_path =  path_output + get_base_file_name(output_cdata) + ".fits"
+    out_path = os.path.join(path_output, get_subdirectory(output_cdata), get_base_file_name(output_cdata) + ".fits")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     logger.info(f"Writing data to {out_path}")
     write_ndcube_to_fits(output_cdata, out_path)
     logger.info("Data written")

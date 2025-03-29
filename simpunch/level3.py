@@ -20,7 +20,7 @@ from prefect import task, get_run_logger
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.punch_io import get_base_file_name
 
-from simpunch.util import update_spacecraft_location
+from simpunch.util import get_subdirectory, update_spacecraft_location
 
 
 def define_mask(shape: (int, int) = (4096, 4096), distance_value: float =0.68) -> np.ndarray:
@@ -170,7 +170,8 @@ def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
 
-    out_filename = path_output + get_base_file_name(pdata) + ".fits"
+    out_filename = os.path.join(path_output, get_subdirectory(pdata), get_base_file_name(pdata) + ".fits")
+    os.makedirs(os.path.dirname(out_filename), exist_ok=True)
     logger.info(f"Writing data to {out_filename}")
     write_ndcube_to_fits(pdata, out_filename)
     logger.info("Data written")
@@ -219,7 +220,8 @@ def generate_l3_ctm(input_tb: str,
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
 
-    out_filename = path_output + get_base_file_name(pdata) + ".fits"
+    out_filename = os.path.join(path_output, get_subdirectory(pdata), get_base_file_name(pdata) + ".fits")
+    os.makedirs(os.path.dirname(out_filename), exist_ok=True)
     logger.info(f"Writing data to {out_filename}")
     write_ndcube_to_fits(pdata, out_filename)
     logger.info("Data written")

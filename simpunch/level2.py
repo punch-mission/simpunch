@@ -3,6 +3,7 @@
 PTM - PUNCH Level-2 Polarized (MZP) Mosaic
 CTM - PUNCH Level-2 Clear Mosaic
 """
+import os
 
 import astropy.time
 import astropy.units as u
@@ -13,7 +14,7 @@ from prefect import task, get_run_logger
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 
-from simpunch.util import update_spacecraft_location
+from simpunch.util import get_subdirectory, update_spacecraft_location
 
 
 def get_fcorona_parameters(date_obs: astropy.time.Time) -> dict[str, float]:
@@ -154,7 +155,8 @@ def generate_l2_ptm(input_file: str, path_output: str) -> str:
     output_pdata = update_spacecraft_location(output_pdata, input_pdata.meta.astropy_time)
 
     # Write out
-    out_path = path_output + get_base_file_name(output_pdata) + ".fits"
+    out_path = os.path.join(path_output, get_subdirectory(output_pdata), get_base_file_name(output_pdata) + ".fits")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     logger.info(f"Writing data to {out_path}")
     write_ndcube_to_fits(output_pdata, out_path)
     logger.info("Data written")
@@ -190,7 +192,10 @@ def generate_l2_ctm(input_file: str, path_output: str) -> str:
     # Package into a PUNCHdata object
     output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
     output_pdata = update_spacecraft_location(output_pdata, input_pdata.meta.astropy_time)
-    out_path = path_output + get_base_file_name(output_pdata) + ".fits"
+
+    # Write out
+    out_path = os.path.join(path_output, get_subdirectory(output_pdata), get_base_file_name(output_pdata) + ".fits")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     logger.info(f"Writing data to {out_path}")
     write_ndcube_to_fits(output_pdata, out_path)
     logger.info("Data written")
