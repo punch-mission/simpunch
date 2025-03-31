@@ -1,15 +1,15 @@
 """Generate synthetic level 0 data."""
 import copy
 import os
+import warnings
 from pathlib import Path
 from random import random
-import warnings
 
 import astropy.units as u
 import astropy.wcs
 import numpy as np
 from ndcube import NDCube
-from prefect import task, get_run_logger
+from prefect import get_run_logger, task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
@@ -19,8 +19,8 @@ from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayPSFTransform
 
 from simpunch.spike import generate_spike_image
-from simpunch.util import (generate_stray_light, get_subdirectory, update_spacecraft_location,
-                           write_array_to_fits)
+from simpunch.util import (generate_stray_light, get_subdirectory,
+                           update_spacecraft_location, write_array_to_fits)
 
 
 def perform_photometric_uncalibration(input_data: NDCube, coefficient_array: np.ndarray) -> NDCube:
@@ -71,7 +71,7 @@ def add_stray_light(input_data: NDCube,
                     inst: str = "WFI",
                     polar: str = "mzp") -> NDCube:
     """Add stray light to the image."""
-    straydata = generate_stray_light(input_data.data.shape, instrument=inst, pstate='pb' if polar == 'mzp' else 'b')
+    straydata = generate_stray_light(input_data.data.shape, instrument=inst, pstate="pb" if polar == "mzp" else "b")
     input_data.data[:, :] = input_data.data[:, :] + straydata
     return input_data
 
@@ -121,7 +121,7 @@ def apply_mask(input_data: NDCube):
     else:
         path = this_directory / "data" / "imt_wfi.bin"
 
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         bytes = f.read()
     mask = np.unpackbits(np.frombuffer(bytes, dtype=np.uint8)).reshape(2048, 2048)
     input_data.data[np.logical_not(mask)] = 0
@@ -140,10 +140,10 @@ def generate_l0_pmzp(input_file: str,
     input_data = load_ndcube_from_fits(input_file)
     logger.info(f"Read input file {input_file}")
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
-    logger.info(f"PSF model loaded")
+    logger.info("PSF model loaded")
     wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
     nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
-    logger.info(f"Quartic coefficients loaded loaded")
+    logger.info("Quartic coefficients loaded loaded")
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
@@ -261,13 +261,13 @@ def generate_l0_cr(input_file: str, path_output: str,
     input_data = load_ndcube_from_fits(input_file)
     logger.info(f"Read input file {input_file}")
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
-    logger.info(f"PSF model loaded")
+    logger.info("PSF model loaded")
     with warnings.catch_warnings():
-        warnings.filterwarnings(action='ignore', category=astropy.wcs.FITSFixedWarning,
+        warnings.filterwarnings(action="ignore", category=astropy.wcs.FITSFixedWarning,
                                 message=r".*[A-Z]*_OBS.*\n.*a floating-point value was expected.*")
         wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
         nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
-    logger.info(f"Quartic coefficients loaded")
+    logger.info("Quartic coefficients loaded")
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value

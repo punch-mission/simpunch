@@ -10,7 +10,7 @@ import astropy.units as u
 import numpy as np
 import solpolpy
 from ndcube import NDCollection, NDCube
-from prefect import task, get_run_logger
+from prefect import get_run_logger, task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 

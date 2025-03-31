@@ -13,7 +13,7 @@ from astropy.table import QTable
 from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_model_image, make_noise_image
-from prefect import task, get_run_logger
+from prefect import get_run_logger, task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
@@ -313,13 +313,13 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
         dummy_polarmaps.append(generate_dummy_polarization(pol_factor=polfactor[k]))
     polarmap_wcs = dummy_polarmaps[0].wcs
     dummy_polarmaps = [d.data for d in dummy_polarmaps]
-    
+
     # Reproject the polarization maps in one go into the frame of the input image
     polar_rois = reproject.reproject_adaptive(
         (np.array(dummy_polarmaps), polarmap_wcs), wcs_stellar_input, input_data.data.shape,
         roundtrip_coords=False, return_footprint=False, x_cyclic=True,
         conserve_flux=True, center_jacobian=True, despike_jacobian=True)
-    
+
     # Apply the polarization maps to the starfield and add them to the data
     for k, key in enumerate(valid_keys):
         input_data_cel[key].data[...] = input_data_cel[key].data + polar_rois[k] * starfield_data

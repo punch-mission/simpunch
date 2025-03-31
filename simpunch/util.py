@@ -75,7 +75,7 @@ def generate_stray_light(shape: tuple, instrument:str="WFI", pstate: str = "both
     - strayarray_B: 2D numpy array, intensity for B channel.
     - strayarray_pB: 2D numpy array, intensity for pB channel.
     """
-    if pstate.lower() not in ('both', 'b', 'pb'):
+    if pstate.lower() not in ("both", "b", "pb"):
         raise ValueError("pstate must be 'b', 'pb', or 'both'")
     y, x = np.indices(shape)
 
@@ -104,14 +104,14 @@ def generate_stray_light(shape: tuple, instrument:str="WFI", pstate: str = "both
 
     return_vals = []
 
-    if pstate.lower() in ('both', 'b'):
+    if pstate.lower() in ("both", "b"):
         # Calculate intensity for B channel
         intensity_b = intensity_func(r, a, b, c) - 1
         strayarray_b = 10 ** intensity_b
         strayarray_b[~np.isfinite(strayarray_b)] = 0
         return_vals.append(strayarray_b)
 
-    if pstate.lower() in ('both', 'pb'):
+    if pstate.lower() in ("both", "pb"):
         # Calculate intensity for pB channel (2 orders of magnitude less than B)
         intensity_pb = intensity_func(r, a - 2, b, c) - 1
         strayarray_pb = 10 ** intensity_pb
@@ -128,4 +128,4 @@ def get_subdirectory(cube: NDCube) -> str:
     obscode = cube.meta["OBSCODE"].value
     file_level = cube.meta["LEVEL"].value
     type_code = cube.meta["TYPECODE"].value
-    return os.path.join(file_level, type_code + obscode, *cube.meta.datetime.strftime("%Y-%m-%d").split('-'))
+    return os.path.join(file_level, type_code + obscode, *cube.meta.datetime.strftime("%Y-%m-%d").split("-"))

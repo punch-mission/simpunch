@@ -16,7 +16,7 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
 from ndcube import NDCube
-from prefect import task, get_run_logger
+from prefect import get_run_logger, task
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.punch_io import get_base_file_name
 
