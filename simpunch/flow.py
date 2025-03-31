@@ -56,17 +56,3 @@ def generate_flow(file_tb: str,
     l0_cr = [entry.result() for entry in l0_cr]
 
     return [l3_ptm, l3_ctm, l2_ptm, l2_ctm] + l1_polarized + l1_clear + l0_pmzp + l0_cr  # noqa: RUF005
-
-
-if __name__ == "__main__":
-    file_tb = "/Users/mhughes/data/punch_simulation/gamera_jan2024/DOICMEM_00912all_plasma_GLOBAL_step0005_dcmer0000_azequi_TB.fits"
-    file_pb = "/Users/mhughes/data/punch_simulation/gamera_jan2024/DOICMEM_00912all_plasma_GLOBAL_step0005_dcmer0000_azequi_PB.fits"
-    out_dir = "/Users/mhughes/data/punch_simulation/sync_test/"
-    backward_psf_model_path = "/Users/mhughes/data/punch_simulation/inputs/synthetic_backward_psf.fits"
-    wfi_quartic_backward_model_path = "/Users/mhughes/data/punch_simulation/inputs/wfi_quartic_backward_coeffs.fits"
-    nfi_quartic_backward_model_path = "/Users/mhughes/data/punch_simulation/inputs/nfi_quartic_backward_coeffs.fits"
-    transient_probability = 0.0
-    shift_pointing = False
-
-    generate_flow(file_tb, file_pb, datetime.now(UTC), out_dir, backward_psf_model_path,
-                  wfi_quartic_backward_model_path, nfi_quartic_backward_model_path, transient_probability, shift_pointing)
