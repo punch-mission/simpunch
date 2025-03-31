@@ -308,7 +308,7 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     valid_keys = [key for key in input_data_cel if key != "alpha"]
 
     dummy_polarmaps = []
-    for k, key in enumerate(valid_keys):
+    for k, _ in enumerate(valid_keys):
         # Generate an all-sky polarization map for each of the three polarization states
         dummy_polarmaps.append(generate_dummy_polarization(pol_factor=polfactor[k]))
     polarmap_wcs = dummy_polarmaps[0].wcs

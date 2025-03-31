@@ -68,6 +68,9 @@ exclude=[
     "scripts/"
 ]
 show-fixes = true
+lint.ignore = [
+    'G004',
+]
 
 lint.select = ["ALL"]
 lint.ignore = ["PTH", "S113", "S311", "NPY002",

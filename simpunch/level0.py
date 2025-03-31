@@ -114,7 +114,8 @@ def starfield_misalignment(input_data: NDCube,
 
     return input_data, original_wcs
 
-def apply_mask(input_data: NDCube):
+def apply_mask(input_data: NDCube) -> NDCube:
+    """Apply the appropriate instrument mask to a NDCube"""
     this_directory = Path(__file__).parent.resolve()
     if input_data.meta["OBSCODE"].value == "4":
         path = this_directory / "data" / "imt_nfi.bin"
@@ -122,8 +123,8 @@ def apply_mask(input_data: NDCube):
         path = this_directory / "data" / "imt_wfi.bin"
 
     with open(path, "rb") as f:
-        bytes = f.read()
-    mask = np.unpackbits(np.frombuffer(bytes, dtype=np.uint8)).reshape(2048, 2048)
+        data = f.read()
+    mask = np.unpackbits(np.frombuffer(data, dtype=np.uint8)).reshape(2048, 2048)
     input_data.data[np.logical_not(mask)] = 0
     return input_data
 
@@ -226,23 +227,23 @@ def generate_l0_pmzp(input_file: str,
 
     # Write out
     output_data.meta["FILEVRSN"] = "1"
-    dir = os.path.join(path_output, get_subdirectory(output_data))
-    os.makedirs(dir, exist_ok=True)
+    out_dir = os.path.join(path_output, get_subdirectory(output_data))
+    os.makedirs(out_dir, exist_ok=True)
     basename = get_base_file_name(output_data)
 
-    main_output_path = os.path.join(dir, basename + ".fits")
+    main_output_path = os.path.join(out_dir, basename + ".fits")
     logger.info(f"Writing {main_output_path}")
     write_ndcube_to_fits(write_data, main_output_path)
 
-    path = os.path.join(dir, basename + "_spike.fits")
+    path = os.path.join(out_dir, basename + "_spike.fits")
     logger.info(f"Writing {path}")
     write_array_to_fits(path, spike_image)
 
-    path = os.path.join(dir, basename + "_transient.fits")
+    path = os.path.join(out_dir, basename + "_transient.fits")
     logger.info(f"Writing {path}")
     write_array_to_fits(path, transient)
 
-    path = os.path.join(dir, basename + "_original_wcs.txt")
+    path = os.path.join(out_dir, basename + "_original_wcs.txt")
     logger.info(f"Writing {path}")
     original_wcs.to_header().tofile(path)
 
@@ -346,23 +347,23 @@ def generate_l0_cr(input_file: str, path_output: str,
 
     # Write out
     output_data.meta["FILEVRSN"] = "1"
-    dir = os.path.join(path_output, get_subdirectory(output_data))
-    os.makedirs(dir, exist_ok=True)
+    out_dir = os.path.join(path_output, get_subdirectory(output_data))
+    os.makedirs(out_dir, exist_ok=True)
     basename = get_base_file_name(output_data)
 
-    main_output_path = os.path.join(dir, basename + ".fits")
+    main_output_path = os.path.join(out_dir, basename + ".fits")
     logger.info(f"Writing {main_output_path}")
     write_ndcube_to_fits(write_data, main_output_path)
 
-    path = os.path.join(dir, basename + "_spike.fits")
+    path = os.path.join(out_dir, basename + "_spike.fits")
     logger.info(f"Writing {path}")
     write_array_to_fits(path, spike_image)
 
-    path = os.path.join(dir, basename + "_transient.fits")
+    path = os.path.join(out_dir, basename + "_transient.fits")
     logger.info(f"Writing {path}")
     write_array_to_fits(path, transient)
 
-    path = os.path.join(dir, basename + "_original_wcs.txt")
+    path = os.path.join(out_dir, basename + "_original_wcs.txt")
     logger.info(f"Writing {path}")
     original_wcs.to_header().tofile(path)
 
