@@ -1,6 +1,6 @@
 """Run the entire pipeline backward."""
 import os
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 import numpy as np
 from prefect import flow
