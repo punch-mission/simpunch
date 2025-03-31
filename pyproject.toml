@@ -71,7 +71,8 @@ show-fixes = true
 
 lint.select = ["ALL"]
 lint.ignore = ['G004', "PTH", "S113", "S311", "NPY002",
-    "FBT002", "FBT001", "PLR0913", "TD003",
+    "FBT002", "FBT001", "PLR0913", "TD003", "TRY003", "EM101",
+    "PLR0915", # TODO: This is basically a "function too long" check---someday let's refactor those functions
     "TD004", "TD002", "FIX002", "DTZ001", "I001", "PT001"]
 
 [tool.ruff.lint.per-file-ignores]

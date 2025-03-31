@@ -115,7 +115,7 @@ def starfield_misalignment(input_data: NDCube,
     return input_data, original_wcs
 
 def apply_mask(input_data: NDCube) -> NDCube:
-    """Apply the appropriate instrument mask to a NDCube"""
+    """Apply the appropriate instrument mask to a NDCube."""
     this_directory = Path(__file__).parent.resolve()
     if input_data.meta["OBSCODE"].value == "4":
         path = this_directory / "data" / "imt_nfi.bin"

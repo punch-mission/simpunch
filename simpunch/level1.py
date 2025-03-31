@@ -504,7 +504,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
     output_data = mark_quality(output_data)
     logger.info("Quality marked")
     # output_data = add_distortion(output_data)  # noqa: ERA001
-    # logger.info("Distortion added")
+    # logger.info("Distortion added")  # noqa: ERA001
 
     output_data = add_starfield_clear(output_data)
     logger.info("Starfield added")
