@@ -10,7 +10,10 @@ Welcome to simpunch's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+   intro
+   usage
+   help
+   contribute
 
 Indices and tables
 ==================
