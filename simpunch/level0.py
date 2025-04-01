@@ -1,13 +1,15 @@
 """Generate synthetic level 0 data."""
 import copy
 import os
+import warnings
 from pathlib import Path
 from random import random
 
 import astropy.units as u
+import astropy.wcs
 import numpy as np
 from ndcube import NDCube
-from prefect import task
+from prefect import get_run_logger, task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.units import msb_to_dn
@@ -17,8 +19,8 @@ from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayPSFTransform
 
 from simpunch.spike import generate_spike_image
-from simpunch.util import (generate_stray_light, update_spacecraft_location,
-                           write_array_to_fits)
+from simpunch.util import (generate_stray_light, get_subdirectory,
+                           update_spacecraft_location, write_array_to_fits)
 
 
 def perform_photometric_uncalibration(input_data: NDCube, coefficient_array: np.ndarray) -> NDCube:
@@ -69,11 +71,8 @@ def add_stray_light(input_data: NDCube,
                     inst: str = "WFI",
                     polar: str = "mzp") -> NDCube:
     """Add stray light to the image."""
-    straydata = generate_stray_light(input_data.data.shape, instrument=inst)
-    if polar == "mzp":
-        input_data.data[:, :] = input_data.data[:, :] + straydata[1]
-    else:
-        input_data.data[:, :] = input_data.data[:, :] + straydata[0]
+    straydata = generate_stray_light(input_data.data.shape, instrument=inst, pstate="pb" if polar == "mzp" else "b")
+    input_data.data[:, :] = input_data.data[:, :] + straydata
     return input_data
 
 
@@ -115,6 +114,20 @@ def starfield_misalignment(input_data: NDCube,
 
     return input_data, original_wcs
 
+def apply_mask(input_data: NDCube) -> NDCube:
+    """Apply the appropriate instrument mask to a NDCube."""
+    this_directory = Path(__file__).parent.resolve()
+    if input_data.meta["OBSCODE"].value == "4":
+        path = this_directory / "data" / "imt_nfi.bin"
+    else:
+        path = this_directory / "data" / "imt_wfi.bin"
+
+    with open(path, "rb") as f:
+        data = f.read()
+    mask = np.unpackbits(np.frombuffer(data, dtype=np.uint8)).reshape(2048, 2048)
+    input_data.data[np.logical_not(mask)] = 0
+    return input_data
+
 @task
 def generate_l0_pmzp(input_file: str,
                      path_output: str,
@@ -124,10 +137,14 @@ def generate_l0_pmzp(input_file: str,
                      transient_probability: float = 0.03,
                      shift_pointing: bool = False) -> str:
     """Generate level 0 polarized synthetic data."""
+    logger = get_run_logger()
     input_data = load_ndcube_from_fits(input_file)
+    logger.info(f"Read input file {input_file}")
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    logger.info("PSF model loaded")
     wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
     nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
+    logger.info("Quartic coefficients loaded loaded")
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
@@ -147,20 +164,27 @@ def generate_l0_pmzp(input_file: str,
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
     if shift_pointing:
         output_data, original_wcs = starfield_misalignment(input_data)
+        logger.info("Pointing shifted")
     else:
         output_data = input_data
         original_wcs = input_data.wcs.copy()
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
+    logger.info("Transients added")
     output_data = uncorrect_psf(output_data, psf_model)
+    logger.info("Beautiful PSF ruined")
 
-    inst = "WFI" \
-        if input_data.meta["OBSCODE"].value != "4" else "NFI"
+    inst = "WFI" if input_data.meta["OBSCODE"].value != "4" else "NFI"
 
-    # TODO - look for stray light model from WFI folks? Or just use some kind of gradient with poisson noise.
     output_data = add_stray_light(output_data, inst = inst, polar="mzp")
+    logger.info("Stray light added")
     output_data = add_deficient_pixels(output_data)
+    logger.info("Pixels broken")
     output_data = apply_streaks(output_data)
+    logger.info("Streaks added")
+    output_data = apply_mask(output_data)
+    logger.info("Mask applied")
     output_data = perform_photometric_uncalibration(output_data, quartic_coefficients)
+    logger.info("Photometry scrambled")
 
     if input_data.meta["OBSCODE"].value == "4":
         scaling = {"gain": 4.9 * u.photon / u.DN,
@@ -172,15 +196,21 @@ def generate_l0_pmzp(input_file: str,
                    "wavelength": 530. * u.nm,
                    "exposure": 49 * u.s,
                    "aperture": 34 * u.mm ** 2}
-    output_data.data[:, :] = msb_to_dn(output_data.data[:, :], output_data.wcs, **scaling)
+    output_data.data[:, :] = msb_to_dn(
+        output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
+    logger.info("Units scaled")
 
     noise = compute_noise(output_data.data)
     output_data.data[...] += noise[...]
+    logger.info("Noise added")
 
     output_data, spike_image = add_spikes(output_data)
+    logger.info("Spikes added")
 
     output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
-
+    logger.info("Sqrt encoded")
+    output_data = apply_mask(output_data)
+    logger.info("Mask applied")
     # TODO - Sync up any final header data here
 
     # Set output dtype
@@ -197,11 +227,28 @@ def generate_l0_pmzp(input_file: str,
 
     # Write out
     output_data.meta["FILEVRSN"] = "1"
-    write_ndcube_to_fits(write_data, os.path.join(path_output, get_base_file_name(output_data) + ".fits"))
-    write_array_to_fits(os.path.join(path_output, get_base_file_name(output_data) + "_spike.fits"), spike_image)
-    write_array_to_fits(os.path.join(path_output, get_base_file_name(output_data) + "_transient.fits"), transient)
-    original_wcs.to_header().tofile(os.path.join(path_output, get_base_file_name(output_data) + "_original_wcs.txt"))
-    return os.path.join(path_output, get_base_file_name(output_data) + ".fits")
+    out_dir = os.path.join(path_output, get_subdirectory(output_data))
+    os.makedirs(out_dir, exist_ok=True)
+    basename = get_base_file_name(output_data)
+
+    main_output_path = os.path.join(out_dir, basename + ".fits")
+    logger.info(f"Writing {main_output_path}")
+    write_ndcube_to_fits(write_data, main_output_path)
+
+    path = os.path.join(out_dir, basename + "_spike.fits")
+    logger.info(f"Writing {path}")
+    write_array_to_fits(path, spike_image)
+
+    path = os.path.join(out_dir, basename + "_transient.fits")
+    logger.info(f"Writing {path}")
+    write_array_to_fits(path, transient)
+
+    path = os.path.join(out_dir, basename + "_original_wcs.txt")
+    logger.info(f"Writing {path}")
+    original_wcs.to_header().tofile(path)
+
+    logger.info("All data written")
+    return main_output_path
 
 @task
 def generate_l0_cr(input_file: str, path_output: str,
@@ -211,10 +258,17 @@ def generate_l0_cr(input_file: str, path_output: str,
                    transient_probability: float = 0.03,
                    shift_pointing: bool = False) -> str:
     """Generate level 0 clear synthetic data."""
+    logger = get_run_logger()
     input_data = load_ndcube_from_fits(input_file)
+    logger.info(f"Read input file {input_file}")
     psf_model = ArrayPSFTransform.load(Path(psf_model_path))
-    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
-    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
+    logger.info("PSF model loaded")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action="ignore", category=astropy.wcs.FITSFixedWarning,
+                                message=r".*[A-Z]*_OBS.*\n.*a floating-point value was expected.*")
+        wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
+        nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
+    logger.info("Quartic coefficients loaded")
 
     # Define the output data product
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
@@ -234,17 +288,26 @@ def generate_l0_cr(input_file: str, path_output: str,
     input_data = NDCube(data=input_data.data, meta=output_meta, wcs=input_data.wcs)
     if shift_pointing:
         output_data, original_wcs = starfield_misalignment(input_data)
+        logger.info("Pointing shifted")
     else:
         output_data = input_data
         original_wcs = input_data.wcs.copy()
     inst = "WFI" \
         if input_data.meta["OBSCODE"].value != "4" else "NFI"
     output_data, transient = add_transients(output_data, transient_probability=transient_probability)
+    logger.info("Transients added")
     output_data = uncorrect_psf(output_data, psf_model)
+    logger.info("Beautiful PSF ruined")
     output_data = add_stray_light(output_data, inst=inst, polar="clear")
+    logger.info("Stray light added")
     output_data = add_deficient_pixels(output_data)
+    logger.info("Pixels broken")
     output_data = apply_streaks(output_data)
+    logger.info("Streaks added")
+    output_data = apply_mask(output_data)
+    logger.info("Mask applied")
     output_data = perform_photometric_uncalibration(output_data, quartic_coefficients)
+    logger.info("Photometry scrambled")
 
     if input_data.meta["OBSCODE"].value == "4":
         scaling = {"gain": 4.9 * u.photon / u.DN,
@@ -256,14 +319,21 @@ def generate_l0_cr(input_file: str, path_output: str,
                    "wavelength": 530. * u.nm,
                    "exposure": 49 * u.s,
                    "aperture": 34 * u.mm ** 2}
-    output_data.data[:, :] = msb_to_dn(output_data.data[:, :], output_data.wcs, **scaling)
+    output_data.data[:, :] = msb_to_dn(
+        output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
+    logger.info("Units scaled")
 
     noise = compute_noise(output_data.data)
     output_data.data[...] += noise[...]
+    logger.info("Noise added")
 
     output_data, spike_image = add_spikes(output_data)
+    logger.info("Spikes added")
 
     output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
+    logger.info("Sqrt encoded")
+    output_data = apply_mask(output_data)
+    logger.info("Mask applied")
 
     output_data.data[output_data.data > 2 ** 10 - 1] = 2 ** 10 - 1
     output_data.meta["DESCRPTN"] = "Simulated " + output_data.meta["DESCRPTN"].value
@@ -277,8 +347,25 @@ def generate_l0_cr(input_file: str, path_output: str,
 
     # Write out
     output_data.meta["FILEVRSN"] = "1"
-    write_ndcube_to_fits(write_data, os.path.join(path_output, get_base_file_name(output_data) + ".fits"))
-    write_array_to_fits(os.path.join(path_output, get_base_file_name(output_data) + "_spike.fits"), spike_image)
-    write_array_to_fits(os.path.join(path_output, get_base_file_name(output_data) + "_transient.fits"), transient)
-    original_wcs.to_header().tofile(os.path.join(path_output, get_base_file_name(output_data) + "_original_wcs.txt"))
-    return os.path.join(path_output, get_base_file_name(output_data) + ".fits")
+    out_dir = os.path.join(path_output, get_subdirectory(output_data))
+    os.makedirs(out_dir, exist_ok=True)
+    basename = get_base_file_name(output_data)
+
+    main_output_path = os.path.join(out_dir, basename + ".fits")
+    logger.info(f"Writing {main_output_path}")
+    write_ndcube_to_fits(write_data, main_output_path)
+
+    path = os.path.join(out_dir, basename + "_spike.fits")
+    logger.info(f"Writing {path}")
+    write_array_to_fits(path, spike_image)
+
+    path = os.path.join(out_dir, basename + "_transient.fits")
+    logger.info(f"Writing {path}")
+    write_array_to_fits(path, transient)
+
+    path = os.path.join(out_dir, basename + "_original_wcs.txt")
+    logger.info(f"Writing {path}")
+    original_wcs.to_header().tofile(path)
+
+    logger.info("All data written")
+    return main_output_path

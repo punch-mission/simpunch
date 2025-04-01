@@ -16,11 +16,11 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs, proj_plane_pixel_area
 from ndcube import NDCube
-from prefect import task
+from prefect import get_run_logger, task
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
-from punchbowl.data.io import get_base_file_name
+from punchbowl.data.punch_io import get_base_file_name
 
-from simpunch.util import update_spacecraft_location
+from simpunch.util import get_subdirectory, update_spacecraft_location
 
 
 def define_mask(shape: (int, int) = (4096, 4096), distance_value: float =0.68) -> np.ndarray:
@@ -133,6 +133,7 @@ def assemble_punchdata_clear(input_tb: str, wcs: WCS,
 def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
                     time_obs: datetime, time_delta: timedelta, rotation_stage: int) -> str:
     """Generate PTM - PUNCH Level-3 Polarized Mosaic."""
+    logger = get_run_logger()
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
@@ -151,6 +152,8 @@ def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
     pdata = assemble_punchdata_polarized(input_tb, input_pb,
                                          mosaic_wcs, product_code="PTM", product_level="3", mask=mask)
 
+    logger.info("Data assembled")
+
     # Update required metadata
     tstring_start = time_obs.strftime("%Y-%m-%dT%H:%M:%S.000")
     tstring_end = (time_obs + time_delta).strftime("%Y-%m-%dT%H:%M:%S.000")
@@ -167,8 +170,11 @@ def generate_l3_ptm(input_tb: str, input_pb: str, path_output: str,
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
 
-    out_filename = path_output + get_base_file_name(pdata) + ".fits"
+    out_filename = os.path.join(path_output, get_subdirectory(pdata), get_base_file_name(pdata) + ".fits")
+    os.makedirs(os.path.dirname(out_filename), exist_ok=True)
+    logger.info(f"Writing data to {out_filename}")
     write_ndcube_to_fits(pdata, out_filename)
+    logger.info("Data written")
     return out_filename
 
 
@@ -179,6 +185,7 @@ def generate_l3_ctm(input_tb: str,
                     time_delta: timedelta,
                     rotation_stage: int) -> str:
     """Generate CTM - PUNCH Level-3 Clear Mosaic."""
+    logger = get_run_logger()
     # Define the mosaic WCS (helio)
     mosaic_shape = (4096, 4096)
     mosaic_wcs = WCS(naxis=2)
@@ -195,6 +202,8 @@ def generate_l3_ctm(input_tb: str,
     # Read data and assemble into PUNCHData object
     pdata = assemble_punchdata_clear(input_tb, mosaic_wcs, product_code="CTM", product_level="3", mask=mask)
 
+    logger.info("Data assembled")
+
     # Update required metadata
     tstring_start = time_obs.strftime("%Y-%m-%dT%H:%M:%S.000")
     tstring_end = (time_obs + time_delta).strftime("%Y-%m-%dT%H:%M:%S.000")
@@ -211,6 +220,9 @@ def generate_l3_ctm(input_tb: str,
     pdata = update_spacecraft_location(pdata, time_obs)
     pdata = generate_uncertainty(pdata)
 
-    out_filename = path_output + get_base_file_name(pdata) + ".fits"
+    out_filename = os.path.join(path_output, get_subdirectory(pdata), get_base_file_name(pdata) + ".fits")
+    os.makedirs(os.path.dirname(out_filename), exist_ok=True)
+    logger.info(f"Writing data to {out_filename}")
     write_ndcube_to_fits(pdata, out_filename)
+    logger.info("Data written")
     return out_filename

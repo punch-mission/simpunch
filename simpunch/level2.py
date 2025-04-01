@@ -3,17 +3,18 @@
 PTM - PUNCH Level-2 Polarized (MZP) Mosaic
 CTM - PUNCH Level-2 Clear Mosaic
 """
+import os
 
 import astropy.time
 import astropy.units as u
 import numpy as np
 import solpolpy
 from ndcube import NDCollection, NDCube
-from prefect import task
+from prefect import get_run_logger, task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 
-from simpunch.util import update_spacecraft_location
+from simpunch.util import get_subdirectory, update_spacecraft_location
 
 
 def get_fcorona_parameters(date_obs: astropy.time.Time) -> dict[str, float]:
@@ -124,8 +125,10 @@ def remix_polarization(input_data: NDCube) -> NDCube:
 @task
 def generate_l2_ptm(input_file: str, path_output: str) -> str:
     """Generate level 2 PTM synthetic data."""
+    logger = get_run_logger()
     # Read in the input data
     input_pdata = load_ndcube_from_fits(input_file)
+    logger.info(f"Read input file {input_file}")
 
     # Define the output data product
     product_code = "PTM"
@@ -143,22 +146,29 @@ def generate_l2_ptm(input_file: str, path_output: str) -> str:
     output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value
 
     output_data = remix_polarization(input_pdata)
+    logger.info("Polarization mixed")
     output_data = add_fcorona(output_data)
+    logger.info("F corona added")
 
     # Package into a PUNCHdata object
     output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
     output_pdata = update_spacecraft_location(output_pdata, input_pdata.meta.astropy_time)
 
     # Write out
-    out_path = path_output + get_base_file_name(output_pdata) + ".fits"
+    out_path = os.path.join(path_output, get_subdirectory(output_pdata), get_base_file_name(output_pdata) + ".fits")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    logger.info(f"Writing data to {out_path}")
     write_ndcube_to_fits(output_pdata, out_path)
+    logger.info("Data written")
     return out_path
 
 @task
 def generate_l2_ctm(input_file: str, path_output: str) -> str:
     """Generate level 2 CTM synthetic data."""
+    logger = get_run_logger()
     # Read in the input data
     input_pdata = load_ndcube_from_fits(input_file)
+    logger.info(f"Read input file {input_file}")
 
     # Define the output data product
     product_code = "CTM"
@@ -177,10 +187,16 @@ def generate_l2_ctm(input_file: str, path_output: str) -> str:
     output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value
 
     output_data = add_fcorona(input_pdata)
+    logger.info("F corona added")
 
     # Package into a PUNCHdata object
     output_pdata = NDCube(data=output_data.data.astype(np.float32), wcs=output_wcs, meta=output_meta)
     output_pdata = update_spacecraft_location(output_pdata, input_pdata.meta.astropy_time)
-    out_path = path_output + get_base_file_name(output_pdata) + ".fits"
+
+    # Write out
+    out_path = os.path.join(path_output, get_subdirectory(output_pdata), get_base_file_name(output_pdata) + ".fits")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    logger.info(f"Writing data to {out_path}")
     write_ndcube_to_fits(output_pdata, out_path)
+    logger.info("Data written")
     return out_path
