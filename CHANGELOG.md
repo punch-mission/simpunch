@@ -9,6 +9,7 @@
 * specify codecov path by @jmbhughes in https://github.com/punch-mission/simpunch/pull/107
 * Incorporate SOC2NOAA updates by @jmbhughes in https://github.com/punch-mission/simpunch/pull/106
 * Update issue templates by @jmbhughes in https://github.com/punch-mission/simpunch/pull/109
+* Fix star brightness, speed up polarized starfield, and other optimizations in https://github.com/punch-mission/simpunch/pull/117
 
 ## Version 0.0.3: Dec 19, 2024
 

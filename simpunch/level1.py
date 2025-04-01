@@ -13,7 +13,7 @@ from astropy.table import QTable
 from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCollection, NDCube
 from photutils.datasets import make_model_image, make_noise_image
-from prefect import task
+from prefect import get_run_logger, task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
@@ -21,7 +21,7 @@ from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
-from simpunch.util import update_spacecraft_location
+from simpunch.util import get_subdirectory, update_spacecraft_location
 
 CURRENT_DIR = os.path.dirname(__file__)
 
@@ -88,21 +88,18 @@ def deproject_polar(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: 
                                                     input_data.meta.astropy_time,
                                                     input_data.data.shape).dropaxis(2)
 
-    reprojected_data = np.zeros((3, 2048, 2048), dtype=input_data.data.dtype)
-
-    for i in np.arange(3):
-        if adaptive_reprojection:
-            reprojected_data[i, :, :] = reproject.reproject_adaptive((input_data.data[i, :, :],
-                                                                      reconstructed_wcs),
-                                                                     output_wcs,
-                                                                     (2048, 2048),
-                                                                     roundtrip_coords=False, return_footprint=False,
-                                                                     kernel="Gaussian", boundary_mode="ignore")
-        else:
-            reprojected_data[i, :, :] = reproject.reproject_interp((input_data.data[i, :, :],
-                                                                    reconstructed_wcs),
-                                                                   output_wcs, (2048, 2048),
-                                                                   roundtrip_coords=False, return_footprint=False)
+    if adaptive_reprojection:
+        reprojected_data = reproject.reproject_adaptive((input_data.data,
+                                                                  reconstructed_wcs),
+                                                                 output_wcs,
+                                                                 (2048, 2048),
+                                                                 roundtrip_coords=False, return_footprint=False,
+                                                                 kernel="Gaussian", boundary_mode="ignore")
+    else:
+        reprojected_data = reproject.reproject_interp((input_data.data,
+                                                                reconstructed_wcs),
+                                                               output_wcs, (2048, 2048),
+                                                               roundtrip_coords=False, return_footprint=False)
 
     reprojected_data[np.isnan(reprojected_data)] = 0
 
@@ -128,17 +125,15 @@ def deproject_clear(input_data: NDCube, output_wcs: WCS, adaptive_reprojection: 
                                                     input_data.meta.astropy_time,
                                                     input_data.data.shape)
 
-    reprojected_data = np.zeros((2048, 2048), dtype=input_data.data.dtype)
-
     if adaptive_reprojection:
-        reprojected_data[:, :] = reproject.reproject_adaptive((input_data.data[:, :],
+        reprojected_data= reproject.reproject_adaptive((input_data.data,
                                                                reconstructed_wcs),
                                                               output_wcs,
                                                               (2048, 2048),
                                                               roundtrip_coords=False, return_footprint=False,
                                                               kernel="Gaussian", boundary_mode="ignore")
     else:
-        reprojected_data[:, :] = reproject.reproject_interp((input_data.data[:, :],
+        reprojected_data = reproject.reproject_interp((input_data.data,
                                                              reconstructed_wcs),
                                                             output_wcs, (2048, 2048),
                                                             roundtrip_coords=False, return_footprint=False)
@@ -312,14 +307,22 @@ def add_starfield_polarized(input_collection: NDCollection, polfactor: tuple = (
     input_data_cel = solpolpy.resolve(data_collection, "npol", reference_angle=0 * u.degree, out_angles=new_angles)
     valid_keys = [key for key in input_data_cel if key != "alpha"]
 
+    dummy_polarmaps = []
+    for k, _ in enumerate(valid_keys):
+        # Generate an all-sky polarization map for each of the three polarization states
+        dummy_polarmaps.append(generate_dummy_polarization(pol_factor=polfactor[k]))
+    polarmap_wcs = dummy_polarmaps[0].wcs
+    dummy_polarmaps = [d.data for d in dummy_polarmaps]
+
+    # Reproject the polarization maps in one go into the frame of the input image
+    polar_rois = reproject.reproject_adaptive(
+        (np.array(dummy_polarmaps), polarmap_wcs), wcs_stellar_input, input_data.data.shape,
+        roundtrip_coords=False, return_footprint=False, x_cyclic=True,
+        conserve_flux=True, center_jacobian=True, despike_jacobian=True)
+
+    # Apply the polarization maps to the starfield and add them to the data
     for k, key in enumerate(valid_keys):
-        dummy_polarmap = generate_dummy_polarization(pol_factor=polfactor[k])
-        # Extract ROI corresponding to input wcs
-        polar_roi = reproject.reproject_adaptive(
-            (dummy_polarmap.data, dummy_polarmap.wcs), wcs_stellar_input, input_data.data.shape,
-            roundtrip_coords=False, return_footprint=False, x_cyclic=True,
-            conserve_flux=True, center_jacobian=True, despike_jacobian=True)
-        input_data_cel[key].data[...] = input_data_cel[key].data + polar_roi * starfield_data
+        input_data_cel[key].data[...] = input_data_cel[key].data + polar_rois[k] * starfield_data
 
     mzp_data_instru = solpolpy.resolve(input_data_cel, "mzpinstru", reference_angle=0 * u.degree)  # Instrument MZP
 
@@ -348,7 +351,7 @@ def add_starfield_clear(input_data: NDCube) -> NDCube:
                                                            input_data.data.shape)
 
     starfield, stars = generate_starfield(wcs_stellar_input, input_data.data[:, :].shape,
-                                          flux_set=30*2.0384547E-9,
+                                          flux_set=0.1*2.0384547E-9,
                                           fwhm=3, dimmest_magnitude=12,
                                           noise_mean=None, noise_std=None)
 
@@ -363,7 +366,7 @@ def add_starfield_clear(input_data: NDCube) -> NDCube:
 def generate_dummy_polarization(map_scale: float = 0.225,
                                 pol_factor: float = 0.5) -> NDCube:
     """Create a synthetic polarization map."""
-    shape = [int(floor(180 / map_scale)), int(floor(360 / map_scale))]
+    shape = [floor(180 / map_scale), floor(360 / map_scale)]
     xcoord = np.linspace(-pol_factor, pol_factor, shape[1])
     ycoord = np.linspace(-pol_factor, pol_factor, shape[0])
     xin, yin = np.meshgrid(xcoord, ycoord)
@@ -381,7 +384,9 @@ def generate_dummy_polarization(map_scale: float = 0.225,
 @task
 def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> list[str]:
     """Generate level 1 polarized synthetic data."""
+    logger = get_run_logger()
     input_pdata = load_ndcube_from_fits(input_file)
+    logger.info(f"Read input file {input_file}")
 
     # Define the output data product
     product_code = "PM" + spacecraft_id
@@ -400,8 +405,11 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
             output_meta[key].value = input_pdata.meta[key].value
 
     output_data, output_wcs = deproject_polar(input_pdata, output_wcs)
+    logger.info("Deprojected")
     output_data = mark_quality(output_data)
+    logger.info("Quality marked")
     output_data = remix_polarization(output_data)
+    logger.info("Polarization mixed")
 
     output_mmeta = copy.deepcopy(output_meta)
     output_zmeta = copy.deepcopy(output_meta)
@@ -427,6 +435,7 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_mdata = add_distortion(output_mdata)
     output_zdata = add_distortion(output_zdata)
     output_pdata = add_distortion(output_pdata)
+    logger.info("Distortion added")
 
     output_collection = NDCollection(
         [("M", output_mdata),
@@ -435,6 +444,7 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
         aligned_axes="all")
 
     output_mzp = add_starfield_polarized(output_collection)
+    logger.info("Starfield added")
     output_mdata = output_mzp["M"]
     output_zdata = output_mzp["Z"]
     output_pdata = output_mzp["P"]
@@ -444,18 +454,34 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     output_zdata = update_spacecraft_location(output_zdata, output_zdata.meta.astropy_time)
 
     # Write out
-    write_ndcube_to_fits(output_mdata, path_output + get_base_file_name(output_mdata) + ".fits")
-    write_ndcube_to_fits(output_zdata, path_output + get_base_file_name(output_zdata) + ".fits")
-    write_ndcube_to_fits(output_pdata, path_output + get_base_file_name(output_pdata) + ".fits")
-    return [path_output + get_base_file_name(output_mdata) + ".fits",
-            path_output + get_base_file_name(output_zdata) + ".fits",
-            path_output + get_base_file_name(output_pdata) + ".fits",
-            ]
+    paths = []
+    path = os.path.join(path_output, get_subdirectory(output_mdata), get_base_file_name(output_mdata) + ".fits")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    paths.append(path)
+    logger.info(f"Writing data to {path}")
+    write_ndcube_to_fits(output_mdata, path)
+
+    path = os.path.join(path_output, get_subdirectory(output_zdata), get_base_file_name(output_zdata) + ".fits")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    paths.append(path)
+    logger.info(f"Writing data to {path}")
+    write_ndcube_to_fits(output_zdata, path)
+
+    path = os.path.join(path_output, get_subdirectory(output_pdata), get_base_file_name(output_pdata) + ".fits")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    paths.append(path)
+    logger.info(f"Writing data to {path}")
+    write_ndcube_to_fits(output_pdata, path)
+
+    logger.info("All data written")
+    return paths
 
 @task
 def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, spacecraft_id: str) -> str:
     """Generate level 1 clear synthetic data."""
+    logger = get_run_logger()
     input_pdata = load_ndcube_from_fits(input_file)
+    logger.info(f"Read input file {input_file}")
 
     # Define the output data product
     product_code = "CR" + spacecraft_id
@@ -472,12 +498,16 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
 
     # Deproject to spacecraft frame
     output_data, output_wcs = deproject_clear(input_pdata, output_wcs)
+    logger.info("Deprojected")
 
     # Quality marking
     output_data = mark_quality(output_data)
+    logger.info("Quality marked")
     # output_data = add_distortion(output_data)  # noqa: ERA001
+    # logger.info("Distortion added")  # noqa: ERA001
 
     output_data = add_starfield_clear(output_data)
+    logger.info("Starfield added")
 
     output_cmeta = copy.deepcopy(output_meta)
     output_cwcs = copy.deepcopy(output_wcs)
@@ -494,6 +524,9 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
     output_cdata = update_spacecraft_location(output_cdata, output_cdata.meta.astropy_time)
 
     # Write out
-    out_path =  path_output + get_base_file_name(output_cdata) + ".fits"
+    out_path = os.path.join(path_output, get_subdirectory(output_cdata), get_base_file_name(output_cdata) + ".fits")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    logger.info(f"Writing data to {out_path}")
     write_ndcube_to_fits(output_cdata, out_path)
+    logger.info("Data written")
     return out_path

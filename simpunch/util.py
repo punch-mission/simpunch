@@ -1,4 +1,6 @@
 """Utility functions."""
+import os
+
 import astropy.time
 import astropy.units as u
 import numpy as np
@@ -57,7 +59,8 @@ def write_array_to_fits(path: str, image: np.ndarray, overwrite: bool = True) ->
     hdul.close()
 
 
-def generate_stray_light(shape: tuple, instrument:str="WFI")->tuple[np.ndarray, np.ndarray]:
+def generate_stray_light(shape: tuple, instrument:str="WFI", pstate: str = "both") \
+        -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """
     Generate stray light arrays for B and pB channels for WFI and NFI instruments.
 
@@ -65,15 +68,15 @@ def generate_stray_light(shape: tuple, instrument:str="WFI")->tuple[np.ndarray, 
     ----------
     - shape: tuple, the shape of the output array (height, width).
     - instrument: str, either 'WFI' or 'NFI' specifying the formula to use.
+    - pstate: str, the polarization state to compute. Should be 'both', 'b', or 'pb'.
 
     Returns
     -------
     - strayarray_B: 2D numpy array, intensity for B channel.
     - strayarray_pB: 2D numpy array, intensity for pB channel.
     """
-    strayarray_b = np.zeros(shape)
-    strayarray_pb = np.zeros(shape)
-
+    if pstate.lower() not in ("both", "b", "pb"):
+        raise ValueError("pstate must be 'b', 'pb', or 'both'")
     y, x = np.indices(shape)
 
     if instrument == "WFI":
@@ -91,7 +94,7 @@ def generate_stray_light(shape: tuple, instrument:str="WFI")->tuple[np.ndarray, 
         x -= center[1]
         y -= center[0]
         r = np.sqrt(x ** 2 + y ** 2)
-        r_threshold = 5.6
+        r_threshold = 150
         r = (r * (32 / center[0])) * (r > r_threshold)
         def intensity_func(r:float, a:float, b:float, c:float)->float:
             return a + b * np.exp(r ** c)
@@ -99,12 +102,30 @@ def generate_stray_light(shape: tuple, instrument:str="WFI")->tuple[np.ndarray, 
         msg = "Instrument must be 'WFI' or 'NFI'"
         raise ValueError(msg)
 
-    # Calculate intensity for B channel
-    intensity_b = intensity_func(r, a, b, c)
-    strayarray_b[:, :] = 10 ** intensity_b
+    return_vals = []
 
-    # Calculate intensity for pB channel (2 orders of magnitude less than B)
-    intensity_pb = intensity_func(r, a - 2, b, c)
-    strayarray_pb[:, :] = 10 ** intensity_pb
+    if pstate.lower() in ("both", "b"):
+        # Calculate intensity for B channel
+        intensity_b = intensity_func(r, a, b, c) - 1
+        strayarray_b = 10 ** intensity_b
+        strayarray_b[~np.isfinite(strayarray_b)] = 0
+        return_vals.append(strayarray_b)
 
-    return strayarray_b, strayarray_pb
+    if pstate.lower() in ("both", "pb"):
+        # Calculate intensity for pB channel (2 orders of magnitude less than B)
+        intensity_pb = intensity_func(r, a - 2, b, c) - 1
+        strayarray_pb = 10 ** intensity_pb
+        strayarray_pb[~np.isfinite(strayarray_pb)] = 0
+        return_vals.append(strayarray_pb)
+
+    if len(return_vals) > 1:
+        return tuple(return_vals)
+    return return_vals[0]
+
+
+def get_subdirectory(cube: NDCube) -> str:
+    """Determine where to put a file."""
+    obscode = cube.meta["OBSCODE"].value
+    file_level = cube.meta["LEVEL"].value
+    type_code = cube.meta["TYPECODE"].value
+    return os.path.join(file_level, type_code + obscode, *cube.meta.datetime.strftime("%Y-%m-%d").split("-"))
