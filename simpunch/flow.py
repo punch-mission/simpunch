@@ -12,7 +12,7 @@ from simpunch.level2 import generate_l2_ctm, generate_l2_ptm
 from simpunch.level3 import generate_l3_ctm, generate_l3_ptm
 
 
-@flow(task_runner=DaskTaskRunner())
+@flow(task_runner=DaskTaskRunner(address="localhost:8786"))
 def generate_flow(file_tb: str,
                   file_pb: str,
                   time_obs: datetime,
