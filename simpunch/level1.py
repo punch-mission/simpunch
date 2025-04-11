@@ -21,7 +21,7 @@ from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
-from simpunch.util import get_subdirectory, update_spacecraft_location
+from simpunch.util import fill_metadata_defaults, get_subdirectory, update_spacecraft_location
 
 CURRENT_DIR = os.path.dirname(__file__)
 
@@ -392,6 +392,7 @@ def generate_l1_pmzp(input_file: str, path_output: str, rotation_stage: int, spa
     product_code = "PM" + spacecraft_id
     product_level = "1"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    fill_metadata_defaults(output_meta)
     output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
     output_meta["DESCRPTN"] = "Simulated " + output_meta["DESCRPTN"].value
     output_meta["TITLE"] = "Simulated " + output_meta["TITLE"].value
@@ -487,6 +488,7 @@ def generate_l1_cr(input_file: str, path_output: str, rotation_stage: int, space
     product_code = "CR" + spacecraft_id
     product_level = "1"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    fill_metadata_defaults(output_meta)
     output_meta["DATE-OBS"] = input_pdata.meta["DATE-OBS"].value
     output_wcs = generate_spacecraft_wcs(spacecraft_id, rotation_stage)
 
