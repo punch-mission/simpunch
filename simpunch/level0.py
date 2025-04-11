@@ -19,7 +19,7 @@ from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayPSFTransform
 
 from simpunch.spike import generate_spike_image
-from simpunch.util import (generate_stray_light, get_subdirectory,
+from simpunch.util import (fill_metadata_defaults, generate_stray_light, get_subdirectory,
                            update_spacecraft_location, write_array_to_fits)
 
 
@@ -150,6 +150,8 @@ def generate_l0_pmzp(input_file: str,
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
     product_level = "0"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    fill_metadata_defaults(output_meta)
+
     output_meta["DATE-OBS"] = input_data.meta.datetime.isoformat()
 
     quartic_coefficients = wfi_quartic_coefficients \
@@ -274,6 +276,7 @@ def generate_l0_cr(input_file: str, path_output: str,
     product_code = input_data.meta["TYPECODE"].value + input_data.meta["OBSCODE"].value
     product_level = "0"
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
+    fill_metadata_defaults(output_meta)
     output_meta["DATE-OBS"] = input_data.meta.datetime.isoformat()
 
     quartic_coefficients = wfi_quartic_coefficients \
