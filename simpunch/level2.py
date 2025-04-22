@@ -14,7 +14,8 @@ from prefect import get_run_logger, task
 from punchbowl.data import (NormalizedMetadata, get_base_file_name,
                             load_ndcube_from_fits, write_ndcube_to_fits)
 
-from simpunch.util import fill_metadata_defaults, get_subdirectory, update_spacecraft_location
+from simpunch.util import (fill_metadata_defaults, get_subdirectory,
+                           update_spacecraft_location)
 
 
 def get_fcorona_parameters(date_obs: astropy.time.Time) -> dict[str, float]:

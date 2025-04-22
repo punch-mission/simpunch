@@ -20,7 +20,8 @@ from prefect import get_run_logger, task
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
 from punchbowl.data.punch_io import get_base_file_name
 
-from simpunch.util import fill_metadata_defaults, get_subdirectory, update_spacecraft_location
+from simpunch.util import (fill_metadata_defaults, get_subdirectory,
+                           update_spacecraft_location)
 
 
 def define_mask(shape: (int, int) = (4096, 4096), distance_value: float =0.68) -> np.ndarray:

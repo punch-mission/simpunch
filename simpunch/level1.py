@@ -21,7 +21,8 @@ from punchbowl.data.wcs import (calculate_celestial_wcs_from_helio,
 
 from simpunch.stars import (filter_for_visible_stars, find_catalog_in_image,
                             load_raw_hipparcos_catalog)
-from simpunch.util import fill_metadata_defaults, get_subdirectory, update_spacecraft_location
+from simpunch.util import (fill_metadata_defaults, get_subdirectory,
+                           update_spacecraft_location)
 
 CURRENT_DIR = os.path.dirname(__file__)
 
