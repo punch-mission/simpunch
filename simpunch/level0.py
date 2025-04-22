@@ -334,6 +334,7 @@ def generate_l0_cr(input_file: str, path_output: str,
     logger.info("Spikes added")
 
     output_data.data[:, :] = encode_sqrt(output_data.data[:, :], to_bits=10)
+    output_data.meta["ISSQRT"] = True
     logger.info("Sqrt encoded")
     output_data = apply_mask(output_data)
     logger.info("Mask applied")
