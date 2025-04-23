@@ -6,6 +6,7 @@ import astropy.units as u
 import numpy as np
 from astropy.io import fits
 from ndcube import NDCube
+from punchbowl.data import NormalizedMetadata
 from punchbowl.data.wcs import get_p_angle
 from sunpy.coordinates import sun
 from sunpy.coordinates.ephemeris import get_earth
@@ -129,3 +130,48 @@ def get_subdirectory(cube: NDCube) -> str:
     file_level = cube.meta["LEVEL"].value
     type_code = cube.meta["TYPECODE"].value
     return os.path.join(file_level, type_code + obscode, *cube.meta.datetime.strftime("%Y-%m-%d").split("-"))
+
+
+def fill_metadata_defaults(meta: NormalizedMetadata) -> None:
+    """Add some extra default values to a NormalizedMetadata instance."""
+    defaults = {
+        "CAMERA": "FMCFMD",
+        "CAR_ROT": 0.0,
+        "COMPBITS": 10,
+        "COMP_RAT": -1.0,
+        "DSTART1": 1,
+        "DSTART2": 1,
+        "DSTOP1": 2048,
+        "DSTOP2": 2048,
+        "EXPTIME": 3.,
+        "GAINCMDL": 4.9,
+        "GAINCMDR": 4.9,
+        "GAINLEFT": 4.9,
+        "GAINRGHT": 4.9,
+        "IMGCTR": 8370,
+        "LEDDAC": 0,
+        "LEDSTATE": "Off",
+        "NBIN": 1,
+        "NBIN1": 1,
+        "NBIN2": 1,
+        "NSUMBAD": 0,
+        "NSUMEXP": 3,
+        "OBT_BEG": 317813545.8,
+        "OBT_END": 317813586.4,
+        "OFFSET": 40,
+        "PXBEG1": 1,
+        "PXBEG2": 1,
+        "PXEND1": 2048,
+        "PXEND2": 2048,
+        "RAWBITS": 16,
+        "READOUT0": 3,
+        "READTIME": 2.4576,
+        "REGION": 1,
+        "TELAPSE": 48.1296,
+        "XFBYTES": 1374028,
+    }
+    for key, value in defaults.items():
+        if key in meta:
+            field = meta[key]
+            if field.default is None:
+                field.default = value
