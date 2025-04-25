@@ -73,7 +73,7 @@ def add_stray_light(input_data: NDCube,
                     polar: str = "mzp") -> NDCube:
     """Add stray light to the image."""
     straydata = generate_stray_light(input_data.data.shape, instrument=inst, pstate="pb" if polar == "mzp" else "b")
-    input_data.data[:, :] = input_data.data[:, :] + straydata
+    input_data.data[:, :] += straydata
     return input_data
 
 
