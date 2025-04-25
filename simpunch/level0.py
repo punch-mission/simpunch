@@ -190,21 +190,23 @@ def generate_l0_pmzp(input_file: str,
     logger.info("Photometry scrambled")
 
     if input_data.meta["OBSCODE"].value == "4":
-        scaling = {"gain": 4.9 * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta['GAINLEFT'].value * u.photon / u.DN,
+                   "gain_right": input_data.meta['GAINRGHT'].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": 49 * u.s,
+                   "exposure": input_data.meta['EXPTIME'].value * u.s,
                    "aperture": 49.57 * u.mm ** 2}
     else:
-        scaling = {"gain": 4.9 * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta['GAINLEFT'].value * u.photon / u.DN,
+                   "gain_right": input_data.meta['GAINRGHT'].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": 49 * u.s,
+                   "exposure": input_data.meta['EXPTIME'].value * u.s,
                    "aperture": 34 * u.mm ** 2}
     output_data.data[:, :] = msb_to_dn(
         output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
     logger.info("Units scaled")
 
-    noise = compute_noise(output_data.data)
-    output_data.data[...] += noise[...]
+    data, noise = compute_noise(output_data.data, bias_level=output_data.meta['OFFSET'].value)
+    output_data.data[...] = data + noise
     logger.info("Noise added")
 
     output_data, spike_image = add_spikes(output_data)
@@ -314,21 +316,23 @@ def generate_l0_cr(input_file: str, path_output: str,
     logger.info("Photometry scrambled")
 
     if input_data.meta["OBSCODE"].value == "4":
-        scaling = {"gain": 4.9 * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta['GAINLEFT'].value * u.photon / u.DN,
+                   "gain_right": input_data.meta['GAINRGHT'].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": 49 * u.s,
+                   "exposure": input_data.meta['EXPTIME'].value * u.s,
                    "aperture": 49.57 * u.mm ** 2}
     else:
-        scaling = {"gain": 4.9 * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta['GAINLEFT'].value * u.photon / u.DN,
+                   "gain_right": input_data.meta['GAINRGHT'].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": 49 * u.s,
+                   "exposure": input_data.meta['EXPTIME'].value * u.s,
                    "aperture": 34 * u.mm ** 2}
     output_data.data[:, :] = msb_to_dn(
         output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
     logger.info("Units scaled")
 
-    noise = compute_noise(output_data.data)
-    output_data.data[...] += noise[...]
+    data, noise = compute_noise(output_data.data, bias_level=output_data.meta['OFFSET'].value)
+    output_data.data[...] = data + noise
     logger.info("Noise added")
 
     output_data, spike_image = add_spikes(output_data)
