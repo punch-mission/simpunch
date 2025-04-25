@@ -4,6 +4,7 @@ import os
 import warnings
 from pathlib import Path
 from random import random
+from typing import Callable
 
 import astropy.units as u
 import astropy.wcs
@@ -132,19 +133,27 @@ def apply_mask(input_data: NDCube) -> NDCube:
 @task
 def generate_l0_pmzp(input_file: str,
                      path_output: str,
-                     psf_model_path: str,  # ArrayPSFTransform,
-                     wfi_quartic_coeffs_path: str,  # np.ndarray,
-                     nfi_quartic_coeffs_path: str,  # np.ndarray,
+                     psf_model_path: str | Callable,  # ArrayPSFTransform,
+                     wfi_quartic_coeffs_path: str | Callable,  # np.ndarray,
+                     nfi_quartic_coeffs_path: str | Callable,  # np.ndarray,
                      transient_probability: float = 0.03,
                      shift_pointing: bool = False) -> str:
     """Generate level 0 polarized synthetic data."""
     logger = get_run_logger()
     input_data = load_ndcube_from_fits(input_file)
     logger.info(f"Read input file {input_file}")
-    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    if isinstance(psf_model_path, Callable):
+        psf_model, _ = psf_model_path()
+    else:
+        psf_model = ArrayPSFTransform.load(Path(psf_model_path))
     logger.info("PSF model loaded")
-    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
-    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
+    quartic_coefficients_path = wfi_quartic_coeffs_path \
+        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coeffs_path
+    if isinstance(quartic_coefficients_path, Callable):
+        quartic_coefficients, _ = quartic_coefficients_path()
+        quartic_coefficients = quartic_coefficients.data
+    else:
+        quartic_coefficients = load_ndcube_from_fits(quartic_coefficients_path, include_provenance=False).data
     logger.info("Quartic coefficients loaded loaded")
 
     # Define the output data product
@@ -154,9 +163,6 @@ def generate_l0_pmzp(input_file: str,
     fill_metadata_defaults(output_meta)
 
     output_meta["DATE-OBS"] = input_data.meta.datetime.isoformat()
-
-    quartic_coefficients = wfi_quartic_coefficients \
-        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coefficients
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(input_data.wcs)
@@ -257,22 +263,27 @@ def generate_l0_pmzp(input_file: str,
 
 @task
 def generate_l0_cr(input_file: str, path_output: str,
-                   psf_model_path: str,  # ArrayPSFTransform,
-                   wfi_quartic_coeffs_path: str,  # np.ndarray,
-                   nfi_quartic_coeffs_path: str,  # np.ndarray,
+                   psf_model_path: str | Callable,  # ArrayPSFTransform,
+                   wfi_quartic_coeffs_path: str | Callable,  # np.ndarray,
+                   nfi_quartic_coeffs_path: str | Callable,  # np.ndarray,
                    transient_probability: float = 0.03,
                    shift_pointing: bool = False) -> str:
     """Generate level 0 clear synthetic data."""
     logger = get_run_logger()
     input_data = load_ndcube_from_fits(input_file)
     logger.info(f"Read input file {input_file}")
-    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    if isinstance(psf_model_path, Callable):
+        psf_model, _ = psf_model_path()
+    else:
+        psf_model = ArrayPSFTransform.load(Path(psf_model_path))
     logger.info("PSF model loaded")
-    with warnings.catch_warnings():
-        warnings.filterwarnings(action="ignore", category=astropy.wcs.FITSFixedWarning,
-                                message=r".*[A-Z]*_OBS.*\n.*a floating-point value was expected.*")
-        wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
-        nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
+    quartic_coefficients_path = wfi_quartic_coeffs_path \
+        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coeffs_path
+    if isinstance(quartic_coefficients_path, Callable):
+        quartic_coefficients, _ = quartic_coefficients_path()
+        quartic_coefficients = quartic_coefficients.data
+    else:
+        quartic_coefficients = load_ndcube_from_fits(quartic_coefficients_path, include_provenance=False).data
     logger.info("Quartic coefficients loaded")
 
     # Define the output data product
@@ -281,9 +292,6 @@ def generate_l0_cr(input_file: str, path_output: str,
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
     fill_metadata_defaults(output_meta)
     output_meta["DATE-OBS"] = input_data.meta.datetime.isoformat()
-
-    quartic_coefficients = wfi_quartic_coefficients \
-        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coefficients
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(input_data.wcs)

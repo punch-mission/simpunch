@@ -1,5 +1,6 @@
 """Run the entire pipeline backward."""
 import os
+from typing import Callable
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -17,9 +18,9 @@ def generate_flow(file_tb: str,
                   file_pb: str,
                   time_obs: datetime,
                   out_dir: str,
-                  backward_psf_model_path: str,
-                  wfi_quartic_backward_model_path: str,
-                  nfi_quartic_backward_model_path: str,
+                  backward_psf_model_path: str | Callable,
+                  wfi_quartic_backward_model_path: str | Callable,
+                  nfi_quartic_backward_model_path: str | Callable,
                   transient_probability: float = 0.03,
                   shift_pointing: bool = False) -> list[str]:
     """Generate all the products in the reverse pipeline."""
