@@ -28,9 +28,9 @@ def perform_photometric_uncalibration(input_data: NDCube, coefficient_array: np.
     """Undo quartic fit calibration."""
     num_coefficients = coefficient_array.shape[0]
     new_data = np.nansum(
-        [coefficient_array[i, ...] * np.power(input_data.data, num_coefficients - i - 1)
+        [coefficient_array[i] * np.power(input_data.data, num_coefficients - i - 1)
          for i in range(num_coefficients)], axis=0)
-    input_data.data[...] = new_data[...]
+    input_data.data[...] = new_data
     return input_data
 
 
@@ -59,7 +59,7 @@ def apply_streaks(input_data: NDCube,
     """Apply the streak matrix to the image."""
     streak_matrix = create_streak_matrix(input_data.data.shape[0],
                                          exposure_time, readout_line_time, reset_line_time)
-    input_data.data[:, :] = streak_matrix @ input_data.data[:, :] / exposure_time
+    input_data.data[:, :] = streak_matrix @ input_data.data / exposure_time
     return input_data
 
 
@@ -79,7 +79,7 @@ def add_stray_light(input_data: NDCube,
 
 def uncorrect_psf(input_data: NDCube, psf_model: ArrayPSFTransform) -> NDCube:
     """Apply an inverse PSF to an image."""
-    input_data.data[...] = psf_model.apply(input_data.data)[...]
+    input_data.data[...] = psf_model.apply(input_data.data)
     return input_data
 
 
