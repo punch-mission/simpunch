@@ -1,13 +1,11 @@
 """Generate synthetic level 0 data."""
 import copy
 import os
-import warnings
+from collections.abc import Callable
 from pathlib import Path
 from random import random
-from typing import Callable
 
 import astropy.units as u
-import astropy.wcs
 import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger, task
@@ -198,22 +196,22 @@ def generate_l0_pmzp(input_file: str,
     logger.info("Photometry scrambled")
 
     if input_data.meta["OBSCODE"].value == "4":
-        scaling = {"gain_left": input_data.meta['GAINLEFT'].value * u.photon / u.DN,
-                   "gain_right": input_data.meta['GAINRGHT'].value * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta["GAINLEFT"].value * u.photon / u.DN,
+                   "gain_right": input_data.meta["GAINRGHT"].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": input_data.meta['EXPTIME'].value * u.s,
+                   "exposure": input_data.meta["EXPTIME"].value * u.s,
                    "aperture": 49.57 * u.mm ** 2}
     else:
-        scaling = {"gain_left": input_data.meta['GAINLEFT'].value * u.photon / u.DN,
-                   "gain_right": input_data.meta['GAINRGHT'].value * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta["GAINLEFT"].value * u.photon / u.DN,
+                   "gain_right": input_data.meta["GAINRGHT"].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": input_data.meta['EXPTIME'].value * u.s,
+                   "exposure": input_data.meta["EXPTIME"].value * u.s,
                    "aperture": 34 * u.mm ** 2}
     output_data.data[:, :] = msb_to_dn(
         output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
     logger.info("Units scaled")
 
-    data, noise = compute_noise(output_data.data, bias_level=output_data.meta['OFFSET'].value)
+    data, noise = compute_noise(output_data.data, bias_level=output_data.meta["OFFSET"].value)
     output_data.data[...] = data + noise
     logger.info("Noise added")
 
@@ -326,22 +324,22 @@ def generate_l0_cr(input_file: str, path_output: str,
     logger.info("Photometry scrambled")
 
     if input_data.meta["OBSCODE"].value == "4":
-        scaling = {"gain_left": input_data.meta['GAINLEFT'].value * u.photon / u.DN,
-                   "gain_right": input_data.meta['GAINRGHT'].value * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta["GAINLEFT"].value * u.photon / u.DN,
+                   "gain_right": input_data.meta["GAINRGHT"].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": input_data.meta['EXPTIME'].value * u.s,
+                   "exposure": input_data.meta["EXPTIME"].value * u.s,
                    "aperture": 49.57 * u.mm ** 2}
     else:
-        scaling = {"gain_left": input_data.meta['GAINLEFT'].value * u.photon / u.DN,
-                   "gain_right": input_data.meta['GAINRGHT'].value * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta["GAINLEFT"].value * u.photon / u.DN,
+                   "gain_right": input_data.meta["GAINRGHT"].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": input_data.meta['EXPTIME'].value * u.s,
+                   "exposure": input_data.meta["EXPTIME"].value * u.s,
                    "aperture": 34 * u.mm ** 2}
     output_data.data[:, :] = msb_to_dn(
         output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
     logger.info("Units scaled")
 
-    data, noise = compute_noise(output_data.data, bias_level=output_data.meta['OFFSET'].value)
+    data, noise = compute_noise(output_data.data, bias_level=output_data.meta["OFFSET"].value)
     output_data.data[...] = data + noise
     logger.info("Noise added")
 

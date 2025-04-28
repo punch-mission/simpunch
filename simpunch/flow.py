@@ -1,6 +1,6 @@
 """Run the entire pipeline backward."""
 import os
-from typing import Callable
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 import numpy as np

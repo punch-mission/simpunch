@@ -35,7 +35,6 @@ def generate_fcorona(shape: (int, int),
                      b: float = 300.,
                      tilt_offset: tuple[float] = (0, 0)) -> np.ndarray:
     """Generate an F corona model."""
-
     if len(shape) > 2:  # noqa: PLR2004
         xdim = 1
         ydim = 2
