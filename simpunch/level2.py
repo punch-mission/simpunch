@@ -62,9 +62,7 @@ def generate_fcorona(shape: (int, int),
     max_distance = 1
     fcorona_profile = np.exp(-superellipse ** 2 / (2 * max_distance ** 2))
 
-    fcorona_profile = fcorona_profile / fcorona_profile.max() * 1e-12
-
-    return fcorona_profile
+    return fcorona_profile / fcorona_profile.max() * 1e-12
 
 
 def add_fcorona(input_data: NDCube) -> NDCube:
