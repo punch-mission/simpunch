@@ -18,6 +18,7 @@ from punchbowl.data.wcs import calculate_pc_matrix, extract_crota_from_wcs
 from punchbowl.level1.initial_uncertainty import compute_noise
 from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayPSFTransform
+from threadpoolctl import threadpool_limits
 
 from simpunch.spike import generate_spike_image
 from simpunch.util import (fill_metadata_defaults, generate_stray_light,
@@ -60,7 +61,8 @@ def apply_streaks(input_data: NDCube,
     """Apply the streak matrix to the image."""
     streak_matrix = create_streak_matrix(input_data.data.shape[0],
                                          exposure_time, readout_line_time, reset_line_time)
-    input_data.data[:, :] = streak_matrix @ input_data.data / exposure_time
+    with threadpool_limits(4):
+        input_data.data[:, :] = streak_matrix @ input_data.data / exposure_time
     return input_data
 
 
