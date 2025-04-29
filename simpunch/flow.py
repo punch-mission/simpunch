@@ -1,5 +1,6 @@
 """Run the entire pipeline backward."""
 import os
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -12,14 +13,14 @@ from simpunch.level2 import generate_l2_ctm, generate_l2_ptm
 from simpunch.level3 import generate_l3_ctm, generate_l3_ptm
 
 
-@flow(task_runner=DaskTaskRunner())
+@flow(task_runner=DaskTaskRunner(address="localhost:8786"))
 def generate_flow(file_tb: str,
                   file_pb: str,
                   time_obs: datetime,
                   out_dir: str,
-                  backward_psf_model_path: str,
-                  wfi_quartic_backward_model_path: str,
-                  nfi_quartic_backward_model_path: str,
+                  backward_psf_model_path: str | Callable,
+                  wfi_quartic_backward_model_path: str | Callable,
+                  nfi_quartic_backward_model_path: str | Callable,
                   transient_probability: float = 0.03,
                   shift_pointing: bool = False) -> list[str]:
     """Generate all the products in the reverse pipeline."""
@@ -27,10 +28,14 @@ def generate_flow(file_tb: str,
     rotation_indices = np.array([0, 0, 1, 1, 2, 2, 3, 3])
     rotation_stage: int = rotation_indices[i % 8]
 
-    l3_ptm = generate_l3_ptm(file_tb, file_pb, out_dir, time_obs, timedelta(minutes=4), rotation_stage)
-    l3_ctm = generate_l3_ctm(file_tb, out_dir, time_obs, timedelta(minutes=4), rotation_stage)
-    l2_ptm = generate_l2_ptm(l3_ptm, out_dir)
-    l2_ctm = generate_l2_ctm(l3_ctm, out_dir)
+    l3_ptm = generate_l3_ptm.submit(file_tb, file_pb, out_dir, time_obs, timedelta(minutes=4), rotation_stage)
+    l3_ctm = generate_l3_ctm.submit(file_tb, out_dir, time_obs, timedelta(minutes=4), rotation_stage)
+    l3_ptm = l3_ptm.result()
+    l3_ctm = l3_ctm.result()
+    l2_ptm = generate_l2_ptm.submit(l3_ptm, out_dir)
+    l2_ctm = generate_l2_ctm.submit(l3_ctm, out_dir)
+    l2_ptm = l2_ptm.result()
+    l2_ctm = l2_ctm.result()
 
     l1_polarized = []
     l1_clear = []
@@ -46,13 +51,13 @@ def generate_flow(file_tb: str,
         l0_pmzp.append(generate_l0_pmzp.submit(filename, out_dir, backward_psf_model_path,  # noqa: PERF401
                                                wfi_quartic_backward_model_path, nfi_quartic_backward_model_path,
                                                    transient_probability, shift_pointing))
-    l0_pmzp = [entry.result() for entry in l0_pmzp]
 
     l0_cr = []
     for filename in l1_clear:
         l0_cr.append(generate_l0_cr.submit(filename, out_dir, backward_psf_model_path,  # noqa: PERF401
                                                wfi_quartic_backward_model_path, nfi_quartic_backward_model_path,
                                                transient_probability, shift_pointing))
+    l0_pmzp = [entry.result() for entry in l0_pmzp]
     l0_cr = [entry.result() for entry in l0_cr]
 
     return [l3_ptm, l3_ctm, l2_ptm, l2_ctm] + l1_polarized + l1_clear + l0_pmzp + l0_cr  # noqa: RUF005

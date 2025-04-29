@@ -1,12 +1,11 @@
 """Generate synthetic level 0 data."""
 import copy
 import os
-import warnings
+from collections.abc import Callable
 from pathlib import Path
 from random import random
 
 import astropy.units as u
-import astropy.wcs
 import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger, task
@@ -17,6 +16,7 @@ from punchbowl.data.wcs import calculate_pc_matrix, extract_crota_from_wcs
 from punchbowl.level1.initial_uncertainty import compute_noise
 from punchbowl.level1.sqrt import encode_sqrt
 from regularizepsf import ArrayPSFTransform
+from threadpoolctl import threadpool_limits
 
 from simpunch.spike import generate_spike_image
 from simpunch.util import (fill_metadata_defaults, generate_stray_light,
@@ -28,9 +28,9 @@ def perform_photometric_uncalibration(input_data: NDCube, coefficient_array: np.
     """Undo quartic fit calibration."""
     num_coefficients = coefficient_array.shape[0]
     new_data = np.nansum(
-        [coefficient_array[i, ...] * np.power(input_data.data, num_coefficients - i - 1)
+        [coefficient_array[i] * np.power(input_data.data, num_coefficients - i - 1)
          for i in range(num_coefficients)], axis=0)
-    input_data.data[...] = new_data[...]
+    input_data.data[...] = new_data
     return input_data
 
 
@@ -59,7 +59,8 @@ def apply_streaks(input_data: NDCube,
     """Apply the streak matrix to the image."""
     streak_matrix = create_streak_matrix(input_data.data.shape[0],
                                          exposure_time, readout_line_time, reset_line_time)
-    input_data.data[:, :] = streak_matrix @ input_data.data[:, :] / exposure_time
+    with threadpool_limits(4):
+        input_data.data[:, :] = streak_matrix @ input_data.data / exposure_time
     return input_data
 
 
@@ -73,13 +74,13 @@ def add_stray_light(input_data: NDCube,
                     polar: str = "mzp") -> NDCube:
     """Add stray light to the image."""
     straydata = generate_stray_light(input_data.data.shape, instrument=inst, pstate="pb" if polar == "mzp" else "b")
-    input_data.data[:, :] = input_data.data[:, :] + straydata
+    input_data.data[:, :] += straydata
     return input_data
 
 
 def uncorrect_psf(input_data: NDCube, psf_model: ArrayPSFTransform) -> NDCube:
     """Apply an inverse PSF to an image."""
-    input_data.data[...] = psf_model.apply(input_data.data)[...]
+    input_data.data[...] = psf_model.apply(input_data.data)
     return input_data
 
 
@@ -132,19 +133,27 @@ def apply_mask(input_data: NDCube) -> NDCube:
 @task
 def generate_l0_pmzp(input_file: str,
                      path_output: str,
-                     psf_model_path: str,  # ArrayPSFTransform,
-                     wfi_quartic_coeffs_path: str,  # np.ndarray,
-                     nfi_quartic_coeffs_path: str,  # np.ndarray,
+                     psf_model_path: str | Callable,  # ArrayPSFTransform,
+                     wfi_quartic_coeffs_path: str | Callable,  # np.ndarray,
+                     nfi_quartic_coeffs_path: str | Callable,  # np.ndarray,
                      transient_probability: float = 0.03,
                      shift_pointing: bool = False) -> str:
     """Generate level 0 polarized synthetic data."""
     logger = get_run_logger()
     input_data = load_ndcube_from_fits(input_file)
     logger.info(f"Read input file {input_file}")
-    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    if isinstance(psf_model_path, Callable):
+        psf_model, _ = psf_model_path()
+    else:
+        psf_model = ArrayPSFTransform.load(Path(psf_model_path))
     logger.info("PSF model loaded")
-    wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
-    nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
+    quartic_coefficients_path = wfi_quartic_coeffs_path \
+        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coeffs_path
+    if isinstance(quartic_coefficients_path, Callable):
+        quartic_coefficients, _ = quartic_coefficients_path()
+        quartic_coefficients = quartic_coefficients.data
+    else:
+        quartic_coefficients = load_ndcube_from_fits(quartic_coefficients_path, include_provenance=False).data
     logger.info("Quartic coefficients loaded loaded")
 
     # Define the output data product
@@ -154,9 +163,6 @@ def generate_l0_pmzp(input_file: str,
     fill_metadata_defaults(output_meta)
 
     output_meta["DATE-OBS"] = input_data.meta.datetime.isoformat()
-
-    quartic_coefficients = wfi_quartic_coefficients \
-        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coefficients
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(input_data.wcs)
@@ -190,21 +196,23 @@ def generate_l0_pmzp(input_file: str,
     logger.info("Photometry scrambled")
 
     if input_data.meta["OBSCODE"].value == "4":
-        scaling = {"gain": 4.9 * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta["GAINLEFT"].value * u.photon / u.DN,
+                   "gain_right": input_data.meta["GAINRGHT"].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": 49 * u.s,
+                   "exposure": input_data.meta["EXPTIME"].value * u.s,
                    "aperture": 49.57 * u.mm ** 2}
     else:
-        scaling = {"gain": 4.9 * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta["GAINLEFT"].value * u.photon / u.DN,
+                   "gain_right": input_data.meta["GAINRGHT"].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": 49 * u.s,
+                   "exposure": input_data.meta["EXPTIME"].value * u.s,
                    "aperture": 34 * u.mm ** 2}
     output_data.data[:, :] = msb_to_dn(
         output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
     logger.info("Units scaled")
 
-    noise = compute_noise(output_data.data)
-    output_data.data[...] += noise[...]
+    data, noise = compute_noise(output_data.data, bias_level=output_data.meta["OFFSET"].value)
+    output_data.data[...] = data + noise
     logger.info("Noise added")
 
     output_data, spike_image = add_spikes(output_data)
@@ -255,22 +263,27 @@ def generate_l0_pmzp(input_file: str,
 
 @task
 def generate_l0_cr(input_file: str, path_output: str,
-                   psf_model_path: str,  # ArrayPSFTransform,
-                   wfi_quartic_coeffs_path: str,  # np.ndarray,
-                   nfi_quartic_coeffs_path: str,  # np.ndarray,
+                   psf_model_path: str | Callable,  # ArrayPSFTransform,
+                   wfi_quartic_coeffs_path: str | Callable,  # np.ndarray,
+                   nfi_quartic_coeffs_path: str | Callable,  # np.ndarray,
                    transient_probability: float = 0.03,
                    shift_pointing: bool = False) -> str:
     """Generate level 0 clear synthetic data."""
     logger = get_run_logger()
     input_data = load_ndcube_from_fits(input_file)
     logger.info(f"Read input file {input_file}")
-    psf_model = ArrayPSFTransform.load(Path(psf_model_path))
+    if isinstance(psf_model_path, Callable):
+        psf_model, _ = psf_model_path()
+    else:
+        psf_model = ArrayPSFTransform.load(Path(psf_model_path))
     logger.info("PSF model loaded")
-    with warnings.catch_warnings():
-        warnings.filterwarnings(action="ignore", category=astropy.wcs.FITSFixedWarning,
-                                message=r".*[A-Z]*_OBS.*\n.*a floating-point value was expected.*")
-        wfi_quartic_coefficients = load_ndcube_from_fits(wfi_quartic_coeffs_path, include_provenance=False).data
-        nfi_quartic_coefficients = load_ndcube_from_fits(nfi_quartic_coeffs_path, include_provenance=False).data
+    quartic_coefficients_path = wfi_quartic_coeffs_path \
+        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coeffs_path
+    if isinstance(quartic_coefficients_path, Callable):
+        quartic_coefficients, _ = quartic_coefficients_path()
+        quartic_coefficients = quartic_coefficients.data
+    else:
+        quartic_coefficients = load_ndcube_from_fits(quartic_coefficients_path, include_provenance=False).data
     logger.info("Quartic coefficients loaded")
 
     # Define the output data product
@@ -279,9 +292,6 @@ def generate_l0_cr(input_file: str, path_output: str,
     output_meta = NormalizedMetadata.load_template(product_code, product_level)
     fill_metadata_defaults(output_meta)
     output_meta["DATE-OBS"] = input_data.meta.datetime.isoformat()
-
-    quartic_coefficients = wfi_quartic_coefficients \
-        if input_data.meta["OBSCODE"].value != "4" else nfi_quartic_coefficients
 
     # Synchronize overlapping metadata keys
     output_header = output_meta.to_fits_header(input_data.wcs)
@@ -314,21 +324,23 @@ def generate_l0_cr(input_file: str, path_output: str,
     logger.info("Photometry scrambled")
 
     if input_data.meta["OBSCODE"].value == "4":
-        scaling = {"gain": 4.9 * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta["GAINLEFT"].value * u.photon / u.DN,
+                   "gain_right": input_data.meta["GAINRGHT"].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": 49 * u.s,
+                   "exposure": input_data.meta["EXPTIME"].value * u.s,
                    "aperture": 49.57 * u.mm ** 2}
     else:
-        scaling = {"gain": 4.9 * u.photon / u.DN,
+        scaling = {"gain_left": input_data.meta["GAINLEFT"].value * u.photon / u.DN,
+                   "gain_right": input_data.meta["GAINRGHT"].value * u.photon / u.DN,
                    "wavelength": 530. * u.nm,
-                   "exposure": 49 * u.s,
+                   "exposure": input_data.meta["EXPTIME"].value * u.s,
                    "aperture": 34 * u.mm ** 2}
     output_data.data[:, :] = msb_to_dn(
         output_data.data[:, :], output_data.wcs, **scaling, pixel_area_stride=3)
     logger.info("Units scaled")
 
-    noise = compute_noise(output_data.data)
-    output_data.data[...] += noise[...]
+    data, noise = compute_noise(output_data.data, bias_level=output_data.meta["OFFSET"].value)
+    output_data.data[...] = data + noise
     logger.info("Noise added")
 
     output_data, spike_image = add_spikes(output_data)

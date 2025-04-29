@@ -35,8 +35,6 @@ def generate_fcorona(shape: (int, int),
                      b: float = 300.,
                      tilt_offset: tuple[float] = (0, 0)) -> np.ndarray:
     """Generate an F corona model."""
-    fcorona = np.zeros(shape)
-
     if len(shape) > 2:  # noqa: PLR2004
         xdim = 1
         ydim = 2
@@ -64,15 +62,7 @@ def generate_fcorona(shape: (int, int),
     max_distance = 1
     fcorona_profile = np.exp(-superellipse ** 2 / (2 * max_distance ** 2))
 
-    fcorona_profile = fcorona_profile / fcorona_profile.max() * 1e-12
-
-    if len(shape) > 2:  # noqa: PLR2004
-        for i in np.arange(fcorona.shape[0]):
-            fcorona[i, :, :] = fcorona_profile[:, :]
-    else:
-        fcorona[:, :] = fcorona_profile[:, :]
-
-    return fcorona
+    return fcorona_profile / fcorona_profile.max() * 1e-12
 
 
 def add_fcorona(input_data: NDCube) -> NDCube:
@@ -81,9 +71,10 @@ def add_fcorona(input_data: NDCube) -> NDCube:
 
     fcorona = generate_fcorona(input_data.data.shape, **fcorona_parameters)
 
-    fcorona = fcorona * (input_data.data != 0)
+    fcorona *= input_data.data != 0
 
-    input_data.data[...] = input_data.data[...] + fcorona
+    # For the polarized (3D array) case, this 2D F corona will broadcast to the right shape
+    input_data.data[...] += fcorona
 
     return input_data
 
