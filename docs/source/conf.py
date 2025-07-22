@@ -23,7 +23,7 @@ from packaging.version import Version
 # -- Project information -----------------------------------------------------
 
 project = "simpunch"
-copyright = "2024, PUNCH Science Operations Center"
+copyright = "2025, PUNCH Science Operations Center"
 author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags
@@ -41,6 +41,7 @@ if _version.is_devrelease:
 extensions = ["autoapi.extension",
               "sphinx.ext.autodoc",
               "sphinx.ext.napoleon",
+              "sphinx.ext.viewcode",
               "sphinx_favicon"]
 
 # Add any paths that contain templates here, relative to this directory.
