@@ -13,6 +13,7 @@
 * Improves documentation in https://github.com/punch-mission/simpunch/pull/113
 * Match metadata changes in punchbowl in https://github.com/punch-mission/simpunch/pull/120
 * Remove distortion maps from polarized L1s, use header parameters for msb_to_dn and compute_noise, adds bias to images, and small speedups in https://github.com/punch-mission/simpunch/pull/121
+* Adds docs button to view source in https://github.com/punch-mission/simpunch/pull/124
 
 ## Version 0.0.3: Dec 19, 2024
 
